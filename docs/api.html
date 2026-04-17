@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReSkillio — API Reference</title>
+  <style>
+    :root {
+      --bg:       #0a0e14;
+      --surface:  #111720;
+      --surface2: #161d28;
+      --border:   #1e2a38;
+      --text:     #e2eaf4;
+      --muted:    #7a8fa6;
+      --accent:   #3b82f6;
+      --accent2:  #6366f1;
+      --green:    #22c55e;
+      --yellow:   #eab308;
+      --purple:   #a855f7;
+      --orange:   #f97316;
+      --red:      #ef4444;
+      --teal:     #14b8a6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* ── Nav ──────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(10,14,20,0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; height: 58px;
+      display: flex; align-items: center; gap: 2rem;
+    }
+    .nav-logo {
+      font-size: 1.15rem; font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      text-decoration: none; white-space: nowrap;
+    }
+    nav a { color: var(--muted); text-decoration: none; font-size: 0.88rem; }
+    nav a:hover { color: var(--text); }
+    .nav-active { color: var(--text) !important; }
+    .nav-cta {
+      margin-left: auto;
+      background: var(--accent); color: #fff;
+      padding: 0.4rem 1.1rem; border-radius: 6px;
+      font-size: 0.85rem; font-weight: 600; text-decoration: none;
+    }
+
+    /* ── Layout ───────────────────────────────────────── */
+    .page-wrap {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 58px);
+    }
+
+    /* ── Sidebar ──────────────────────────────────────── */
+    .sidebar {
+      position: sticky; top: 58px;
+      height: calc(100vh - 58px);
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      padding: 2rem 0;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .sidebar-section {
+      padding: 0 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+    .sidebar-label {
+      font-size: 0.68rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--muted); margin-bottom: 0.5rem;
+      padding: 0 0.5rem;
+    }
+    .sidebar-link {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.38rem 0.6rem;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 0.84rem; color: var(--muted);
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .sidebar-link:hover { background: var(--surface2); color: var(--text); }
+    .sidebar-link.active { background: rgba(59,130,246,0.1); color: var(--accent); }
+    .method-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-post { background: var(--accent); }
+    .dot-get  { background: var(--green); }
+
+    /* ── Main content ─────────────────────────────────── */
+    .main-content {
+      padding: 3rem 3.5rem;
+      max-width: 860px;
+    }
+
+    /* ── Page header ──────────────────────────────────── */
+    .page-header { margin-bottom: 3.5rem; }
+    .page-header h1 {
+      font-size: 2.2rem; font-weight: 900; margin-bottom: 0.75rem;
+    }
+    .page-header p { font-size: 1rem; color: var(--muted); max-width: 560px; }
+    .base-url {
+      display: inline-flex; align-items: center; gap: 0.75rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 1rem;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.82rem;
+      margin-top: 1.25rem;
+    }
+    .base-url-label { color: var(--muted); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; }
+    .base-url-val { color: var(--green); }
+
+    /* ── Endpoint block ───────────────────────────────── */
+    .endpoint-block {
+      margin-bottom: 4rem;
+      scroll-margin-top: 80px;
+    }
+    .endpoint-header {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .method-badge {
+      font-size: 0.72rem; font-weight: 800;
+      padding: 0.3rem 0.65rem; border-radius: 5px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      letter-spacing: 0.05em; white-space: nowrap;
+    }
+    .badge-post { background: rgba(59,130,246,0.15); color: var(--accent); border: 1px solid rgba(59,130,246,0.3); }
+    .badge-get  { background: rgba(34,197,94,0.12);  color: var(--green);  border: 1px solid rgba(34,197,94,0.3); }
+    .endpoint-path {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 1rem; font-weight: 700; color: var(--text);
+    }
+    .endpoint-summary { font-size: 0.88rem; color: var(--muted); margin-bottom: 1.25rem; }
+    .tag-pill {
+      display: inline-block;
+      font-size: 0.68rem; font-weight: 700;
+      padding: 0.15rem 0.55rem; border-radius: 3px;
+      background: rgba(168,85,247,0.1); color: var(--purple);
+      border: 1px solid rgba(168,85,247,0.25);
+      margin-bottom: 1rem;
+    }
+
+    /* ── Param table ──────────────────────────────────── */
+    .param-table {
+      width: 100%; border-collapse: collapse;
+      font-size: 0.84rem; margin-bottom: 1.5rem;
+    }
+    .param-table thead th {
+      text-align: left; padding: 0.55rem 0.9rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted); font-weight: 700;
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .param-table td {
+      padding: 0.6rem 0.9rem;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .param-table tr:nth-child(even) td { background: #080c11; }
+    .param-name { font-family: monospace; font-weight: 700; color: var(--orange); }
+    .param-type { font-family: monospace; font-size: 0.78rem; color: var(--teal); }
+    .param-required {
+      font-size: 0.68rem; font-weight: 700;
+      padding: 0.1rem 0.4rem; border-radius: 3px;
+    }
+    .req { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+    .opt { background: rgba(122,143,166,0.12); color: var(--muted); border: 1px solid var(--border); }
+
+    /* ── Code block ───────────────────────────────────── */
+    .code-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .code-header {
+      background: #0d1520;
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1.2rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .cd-red    { background: #ef4444; }
+    .cd-yellow { background: #eab308; }
+    .cd-green  { background: #22c55e; }
+    .code-title {
+      margin-left: 0.5rem; font-size: 0.75rem;
+      color: var(--muted); font-family: monospace;
+    }
+    .code-body {
+      padding: 1.25rem 1.5rem;
+      overflow-x: auto;
+    }
+    pre {
+      font-family: "SFMono-Regular", "Fira Code", Consolas, monospace;
+      font-size: 0.8rem; line-height: 1.8; color: #adbac7;
+    }
+    .c  { color: #7a8fa6; }          /* comment */
+    .k  { color: #a855f7; }          /* keyword */
+    .s  { color: #86efac; }          /* string */
+    .n  { color: #f97316; }          /* number */
+    .jk { color: #93c5fd; }          /* json key */
+    .jv { color: #86efac; }          /* json value string */
+    .jn { color: #f97316; }          /* json number */
+    .jb { color: #a855f7; }          /* json bool */
+
+    /* ── Response schema ──────────────────────────────── */
+    .schema-block {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .schema-block h4 { font-size: 0.78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.85rem; }
+    .schema-field {
+      display: grid; grid-template-columns: 1fr 1fr 2fr;
+      gap: 0.5rem; padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .schema-field:last-child { border-bottom: none; }
+    .sf-name { font-family: monospace; color: var(--orange); }
+    .sf-type { font-family: monospace; color: var(--teal); }
+    .sf-desc { color: var(--muted); }
+
+    /* ── Section divider ──────────────────────────────── */
+    .section-divider {
+      border: none; border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+    .section-heading {
+      font-size: 1.3rem; font-weight: 800;
+      margin-bottom: 2rem; padding-top: 1rem;
+      color: var(--text);
+    }
+
+    /* ── Info callout ─────────────────────────────────── */
+    .callout {
+      display: flex; gap: 0.75rem;
+      background: rgba(59,130,246,0.07);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: 8px;
+      padding: 0.9rem 1.1rem;
+      font-size: 0.85rem; color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+    .callout-icon { flex-shrink: 0; color: var(--accent); }
+    .callout-warn {
+      background: rgba(234,179,8,0.07);
+      border-color: rgba(234,179,8,0.25);
+    }
+    .callout-warn .callout-icon { color: var(--yellow); }
+
+    /* ── Footer ───────────────────────────────────────── */
+    footer {
+      grid-column: 2;
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 3.5rem;
+      font-size: 0.8rem; color: var(--muted);
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    @media (max-width: 800px) {
+      .page-wrap { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main-content { padding: 2rem 1.25rem; }
+      footer { grid-column: 1; padding: 1.5rem 1.25rem; }
+      .schema-field { grid-template-columns: 1fr 1fr; }
+      .sf-desc { grid-column: 1 / -1; padding-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────── -->
+<nav>
+  <a class="nav-logo" href="index.html">ReSkillio</a>
+  <a href="index.html">Home</a>
+  <a href="architecture.html">Architecture</a>
+  <a href="api.html" class="nav-active">API Docs</a>
+  <a href="index.html#market">Market</a>
+  <a class="nav-cta" href="https://github.com/vipul9811kumar/ReSkillio">GitHub →</a>
+</nav>
+
+<div class="page-wrap">
+
+  <!-- ── Sidebar ────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Overview</div>
+      <a class="sidebar-link" href="#overview">Introduction</a>
+      <a class="sidebar-link" href="#authentication">Authentication</a>
+      <a class="sidebar-link" href="#errors">Error Codes</a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Orchestration</div>
+      <a class="sidebar-link" href="#analyze">
+        <span class="method-dot dot-post"></span>POST /analyze
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Extraction</div>
+      <a class="sidebar-link" href="#extract">
+        <span class="method-dot dot-post"></span>POST /extract
+      </a>
+      <a class="sidebar-link" href="#resume-upload">
+        <span class="method-dot dot-post"></span>POST /resume/upload
+      </a>
+      <a class="sidebar-link" href="#agent-extract">
+        <span class="method-dot dot-post"></span>POST /agent/extract
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Candidate</div>
+      <a class="sidebar-link" href="#candidate-profile">
+        <span class="method-dot dot-get"></span>GET /candidate/{id}/profile
+      </a>
+      <a class="sidebar-link" href="#candidate-refresh">
+        <span class="method-dot dot-post"></span>POST /candidate/{id}/profile/refresh
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Job Descriptions</div>
+      <a class="sidebar-link" href="#jd-ingest">
+        <span class="method-dot dot-post"></span>POST /jd
+      </a>
+      <a class="sidebar-link" href="#jd-get">
+        <span class="method-dot dot-get"></span>GET /jd/{jd_id}
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Intelligence</div>
+      <a class="sidebar-link" href="#gap">
+        <span class="method-dot dot-post"></span>POST /gap
+      </a>
+      <a class="sidebar-link" href="#industry">
+        <span class="method-dot dot-get"></span>GET /industry/match/{id}
+      </a>
+      <a class="sidebar-link" href="#narrative">
+        <span class="method-dot dot-post"></span>POST /narrative
+      </a>
+      <a class="sidebar-link" href="#market">
+        <span class="method-dot dot-post"></span>POST /market/analyze
+      </a>
+      <a class="sidebar-link" href="#pathway">
+        <span class="method-dot dot-post"></span>POST /pathway/plan
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Embeddings</div>
+      <a class="sidebar-link" href="#embed-candidate">
+        <span class="method-dot dot-post"></span>POST /embeddings/candidate/{id}
+      </a>
+      <a class="sidebar-link" href="#embed-similar">
+        <span class="method-dot dot-post"></span>POST /embeddings/similar
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Lakehouse</div>
+      <a class="sidebar-link" href="#lakehouse-status">
+        <span class="method-dot dot-get"></span>GET /lakehouse/status
+      </a>
+      <a class="sidebar-link" href="#lakehouse-gold">
+        <span class="method-dot dot-get"></span>GET /lakehouse/gold/readiness/{id}
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Ops</div>
+      <a class="sidebar-link" href="#registry">
+        <span class="method-dot dot-post"></span>POST /registry/evaluate
+      </a>
+      <a class="sidebar-link" href="#drift">
+        <span class="method-dot dot-get"></span>GET /monitoring/drift/recent
+      </a>
+      <a class="sidebar-link" href="#health">
+        <span class="method-dot dot-get"></span>GET /health
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ── Main ───────────────────────────────────────────── -->
+  <div>
+  <main class="main-content">
+
+    <!-- Overview -->
+    <div class="page-header" id="overview">
+      <h1>API Reference</h1>
+      <p>ReSkillio exposes a RESTful API over HTTP. Interactive docs are available at <code style="font-size:0.85em;color:var(--orange)">/docs</code> (Swagger UI) and <code style="font-size:0.85em;color:var(--orange)">/redoc</code> when the server is running.</p>
+      <div class="base-url">
+        <span class="base-url-label">Local</span>
+        <span class="base-url-val">http://localhost:8000</span>
+        <span class="base-url-label" style="margin-left:1rem">Production</span>
+        <span class="base-url-val">https://&lt;cloud-run-url&gt;</span>
+      </div>
+    </div>
+
+    <!-- Auth -->
+    <div class="endpoint-block" id="authentication">
+      <h2 class="section-heading">Authentication</h2>
+      <div class="callout">
+        <span class="callout-icon">ℹ</span>
+        <div>The API currently uses GCP Application Default Credentials on the server side. No <code>Authorization</code> header is required from API clients. Set <code>GCP_PROJECT_ID</code> and <code>GOOGLE_APPLICATION_CREDENTIALS</code> in the server environment before starting.</div>
+      </div>
+      <div class="callout callout-warn">
+        <span class="callout-icon">⚠</span>
+        <div>Endpoints that require GCP (BigQuery, Vertex AI) will return <code>503 Service Unavailable</code> if <code>GCP_PROJECT_ID</code> is not configured.</div>
+      </div>
+    </div>
+
+    <!-- Errors -->
+    <div class="endpoint-block" id="errors">
+      <h2 class="section-heading">Error Codes</h2>
+      <table class="param-table">
+        <thead><tr><th>Status</th><th>Meaning</th><th>Common cause</th></tr></thead>
+        <tbody>
+          <tr><td><span class="param-type">400</span></td><td>Bad Request</td><td>Missing required field or empty resume text</td></tr>
+          <tr><td><span class="param-type">422</span></td><td>Unprocessable</td><td>PDF parsing failed or empty PDF</td></tr>
+          <tr><td><span class="param-type">500</span></td><td>Server Error</td><td>Pipeline orchestration failure</td></tr>
+          <tr><td><span class="param-type">503</span></td><td>Unavailable</td><td>GCP not configured — set GCP_PROJECT_ID</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- POST /analyze -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="endpoint-block" id="analyze">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/analyze</span>
+      </div>
+      <span class="tag-pill">analyze</span>
+      <p class="endpoint-summary">Full 5-stage career-rebound orchestration. The primary interview-demo endpoint — one call, complete output. Accepts a resume (PDF upload or raw text) plus a target role and optional JD, then runs all pipeline stages in sequence. Each stage is fail-safe: a failure in one never blocks results from earlier stages.</p>
+
+      <div class="callout">
+        <span class="callout-icon">ℹ</span>
+        <div>Send as <code>multipart/form-data</code>. Provide either <code>resume</code> (PDF file) <strong>or</strong> <code>resume_text</code> (plain string) — if both are given, the PDF takes precedence.</div>
+      </div>
+
+      <h4 style="font-size:0.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.75rem">Request Parameters</h4>
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">resume</td><td class="param-type">file</td><td><span class="param-required opt">optional</span></td><td>Resume PDF file upload</td></tr>
+          <tr><td class="param-name">resume_text</td><td class="param-type">string</td><td><span class="param-required opt">optional</span></td><td>Resume plain text (alternative to PDF)</td></tr>
+          <tr><td class="param-name">target_role</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Target job title, e.g. <code>Senior Data Engineer</code></td></tr>
+          <tr><td class="param-name">candidate_id</td><td class="param-type">string</td><td><span class="param-required opt">optional</span></td><td>Unique ID — auto-generated as <code>demo-{8hex}</code> if omitted</td></tr>
+          <tr><td class="param-name">jd_text</td><td class="param-type">string</td><td><span class="param-required opt">optional</span></td><td>Job description text — enables gap analysis (Stage 2)</td></tr>
+          <tr><td class="param-name">jd_title</td><td class="param-type">string</td><td><span class="param-required opt">optional</span></td><td>JD title used in narrative generation</td></tr>
+          <tr><td class="param-name">industry</td><td class="param-type">string</td><td><span class="param-required opt">optional</span></td><td>Target industry — auto-detected from industry match if omitted</td></tr>
+          <tr><td class="param-name">include_pathway</td><td class="param-type">bool</td><td><span class="param-required opt">optional</span></td><td>Include 90-day CrewAI roadmap (default <code>false</code>, adds ~45s)</td></tr>
+        </tbody>
+      </table>
+
+      <h4 style="font-size:0.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin:1.25rem 0 0.75rem">Example Request</h4>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot cd-red"></div><div class="code-dot cd-yellow"></div><div class="code-dot cd-green"></div>
+          <span class="code-title">curl</span>
+        </div>
+        <div class="code-body"><pre><span class="c"># PDF upload</span>
+curl -X POST http://localhost:8000/analyze \
+  -F <span class="s">"resume=@resume.pdf"</span> \
+  -F <span class="s">"target_role=Senior Data Engineer"</span> \
+  -F <span class="s">"jd_text=We need Python, BigQuery, Airflow, dbt, Spark"</span> \
+  -F <span class="s">"candidate_id=demo-001"</span>
+
+<span class="c"># Plain text (no file needed)</span>
+curl -X POST http://localhost:8000/analyze \
+  -F <span class="s">"resume_text=Experienced data engineer with Python, SQL, BigQuery..."</span> \
+  -F <span class="s">"target_role=Senior Data Engineer"</span>
+
+<span class="c"># With 90-day pathway (~45 s extra)</span>
+curl -X POST http://localhost:8000/analyze \
+  -F <span class="s">"resume=@resume.pdf"</span> \
+  -F <span class="s">"target_role=Senior Data Engineer"</span> \
+  -F <span class="s">"include_pathway=true"</span></pre>
+        </div>
+      </div>
+
+      <h4 style="font-size:0.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin:1.25rem 0 0.75rem">Response — AnalysisResult</h4>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dot cd-red"></div><div class="code-dot cd-yellow"></div><div class="code-dot cd-green"></div>
+          <span class="code-title">200 OK · application/json</span>
+        </div>
+        <div class="code-body"><pre>{
+  <span class="jk">"candidate_id"</span>:  <span class="jv">"demo-001"</span>,
+  <span class="jk">"target_role"</span>:   <span class="jv">"Senior Data Engineer"</span>,
+  <span class="jk">"analyzed_at"</span>:   <span class="jv">"2026-04-17T10:30:00Z"</span>,
+  <span class="jk">"skill_count"</span>:   <span class="jn">47</span>,
+  <span class="jk">"top_skills"</span>: [
+    { <span class="jk">"name"</span>: <span class="jv">"Python"</span>,   <span class="jk">"category"</span>: <span class="jv">"technical"</span>, <span class="jk">"confidence"</span>: <span class="jn">0.97</span> },
+    { <span class="jk">"name"</span>: <span class="jv">"BigQuery"</span>, <span class="jk">"category"</span>: <span class="jv">"tool"</span>,      <span class="jk">"confidence"</span>: <span class="jn">0.95</span> }
+  ],
+  <span class="jk">"gap"</span>: {
+    <span class="jk">"gap_score"</span>: <span class="jn">72.4</span>,
+    <span class="jk">"matched_skills"</span>:      [<span class="jv">"Python"</span>, <span class="jv">"SQL"</span>, <span class="jv">"BigQuery"</span>],
+    <span class="jk">"missing_skills"</span>:      [<span class="jv">"Kafka"</span>, <span class="jv">"Terraform"</span>],
+    <span class="jk">"transferable_skills"</span>: [
+      { <span class="jk">"jd_skill"</span>: <span class="jv">"Airflow"</span>, <span class="jk">"candidate_skill"</span>: <span class="jv">"Luigi"</span>, <span class="jk">"similarity"</span>: <span class="jn">0.81</span> }
+    ],
+    <span class="jk">"recommendation"</span>: <span class="jv">"Strong match. Bridge Kafka and Terraform to close gaps."</span>
+  },
+  <span class="jk">"industry_match"</span>: {
+    <span class="jk">"top_industry"</span>:       <span class="jv">"data_ai"</span>,
+    <span class="jk">"top_industry_label"</span>: <span class="jv">"Data &amp; AI"</span>,
+    <span class="jk">"scores"</span>: [
+      { <span class="jk">"rank"</span>: <span class="jn">1</span>, <span class="jk">"industry"</span>: <span class="jv">"data_ai"</span>,     <span class="jk">"match_score"</span>: <span class="jn">88.3</span> },
+      { <span class="jk">"rank"</span>: <span class="jn">2</span>, <span class="jk">"industry"</span>: <span class="jv">"cloud_devops"</span>, <span class="jk">"match_score"</span>: <span class="jn">74.1</span> }
+    ]
+  },
+  <span class="jk">"narrative"</span>: <span class="jv">"A data-first engineer with a strong Python foundation..."</span>,
+  <span class="jk">"pathway"</span>: <span class="jb">null</span>,
+  <span class="jk">"stages"</span>: {
+    <span class="jk">"extract"</span>:   { <span class="jk">"success"</span>: <span class="jb">true</span>, <span class="jk">"duration_ms"</span>: <span class="jn">342</span>  },
+    <span class="jk">"gap"</span>:       { <span class="jk">"success"</span>: <span class="jb">true</span>, <span class="jk">"duration_ms"</span>: <span class="jn">1820</span> },
+    <span class="jk">"industry"</span>:  { <span class="jk">"success"</span>: <span class="jb">true</span>, <span class="jk">"duration_ms"</span>: <span class="jn">510</span>  },
+    <span class="jk">"narrative"</span>: { <span class="jk">"success"</span>: <span class="jb">true</span>, <span class="jk">"duration_ms"</span>: <span class="jn">3102</span> },
+    <span class="jk">"pathway"</span>:   { <span class="jk">"success"</span>: <span class="jb">true</span>, <span class="jk">"duration_ms"</span>: <span class="jn">0</span>, <span class="jk">"error"</span>: <span class="jv">"skipped"</span> }
+  },
+  <span class="jk">"total_duration_ms"</span>: <span class="jn">5892</span>
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- POST /extract -->
+    <div class="endpoint-block" id="extract">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/extract</span>
+      </div>
+      <span class="tag-pill">extraction</span>
+      <p class="endpoint-summary">Extract skills from raw text using the spaCy PhraseMatcher + NER pipeline. Persists results to BigQuery and refreshes the candidate profile.</p>
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">text</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Raw text to extract skills from</td></tr>
+          <tr><td class="param-name">candidate_id</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Candidate identifier for BigQuery storage</td></tr>
+          <tr><td class="param-name">model_name</td><td class="param-type">string</td><td><span class="param-required opt">optional</span></td><td>spaCy model override (default: <code>en_core_web_lg</code>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- POST /resume/upload -->
+    <div class="endpoint-block" id="resume-upload">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/resume/upload</span>
+      </div>
+      <span class="tag-pill">resume</span>
+      <p class="endpoint-summary">Upload a PDF resume. Parses the PDF with pdfplumber, splits into labeled sections (Summary, Experience, Skills, Education, Certifications, Projects, Other), extracts skills per section, and deduplicates by highest confidence.</p>
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">file</td><td class="param-type">file</td><td><span class="param-required req">required</span></td><td>PDF resume file</td></tr>
+          <tr><td class="param-name">candidate_id</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Candidate identifier</td></tr>
+          <tr><td class="param-name">store</td><td class="param-type">bool</td><td><span class="param-required opt">optional</span></td><td>Persist to BigQuery (default: <code>true</code>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- POST /agent/extract -->
+    <div class="endpoint-block" id="agent-extract">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/agent/extract</span>
+      </div>
+      <span class="tag-pill">agent</span>
+      <p class="endpoint-summary">LangGraph stateful skill extractor. Runs section-by-section at high confidence (0.7), retries on full text at lower threshold (0.4) if skill count &lt; 3. Returns skills plus a full graph trace for debugging.</p>
+      <div class="schema-block">
+        <h4>Response includes</h4>
+        <div class="schema-field"><span class="sf-name">skills</span><span class="sf-type">Skill[]</span><span class="sf-desc">Extracted and validated skills</span></div>
+        <div class="schema-field"><span class="sf-name">retry_count</span><span class="sf-type">int</span><span class="sf-desc">Number of retry passes taken</span></div>
+        <div class="schema-field"><span class="sf-name">extraction_id</span><span class="sf-type">string</span><span class="sf-desc">BigQuery row ID if stored</span></div>
+        <div class="schema-field"><span class="sf-name">trace</span><span class="sf-type">list</span><span class="sf-desc">LangGraph node execution trace</span></div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- GET /candidate/:id/profile -->
+    <div class="endpoint-block" id="candidate-profile">
+      <div class="endpoint-header">
+        <span class="method-badge badge-get">GET</span>
+        <span class="endpoint-path">/candidate/{candidate_id}/profile</span>
+      </div>
+      <span class="tag-pill">candidate</span>
+      <p class="endpoint-summary">Returns the aggregated skill profile for a candidate — one entry per unique skill, ranked by frequency and confidence. Built from all extraction runs via BigQuery MERGE.</p>
+      <div class="schema-block">
+        <h4>ProfiledSkill fields</h4>
+        <div class="schema-field"><span class="sf-name">skill_name</span><span class="sf-type">string</span><span class="sf-desc">Normalized skill name</span></div>
+        <div class="schema-field"><span class="sf-name">category</span><span class="sf-type">string</span><span class="sf-desc">technical / soft / domain / tool / certification</span></div>
+        <div class="schema-field"><span class="sf-name">frequency</span><span class="sf-type">int</span><span class="sf-desc">Times seen across all extractions</span></div>
+        <div class="schema-field"><span class="sf-name">confidence_avg</span><span class="sf-type">float</span><span class="sf-desc">Average extraction confidence (0–1)</span></div>
+        <div class="schema-field"><span class="sf-name">first_seen / last_seen</span><span class="sf-type">datetime</span><span class="sf-desc">Temporal range of skill evidence</span></div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- POST /jd -->
+    <div class="endpoint-block" id="jd-ingest">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/jd</span>
+      </div>
+      <span class="tag-pill">job-description</span>
+      <p class="endpoint-summary">Ingest a job description. Detects seniority level (junior/mid/senior/lead/staff/manager), classifies into one of 8 industries, splits required vs preferred skills, extracts skills per section, and stores to BigQuery.</p>
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">jd_id</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Unique JD identifier</td></tr>
+          <tr><td class="param-name">title</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Job title</td></tr>
+          <tr><td class="param-name">text</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Full JD text</td></tr>
+          <tr><td class="param-name">company</td><td class="param-type">string</td><td><span class="param-required opt">optional</span></td><td>Company name</td></tr>
+          <tr><td class="param-name">industry</td><td class="param-type">string</td><td><span class="param-required opt">optional</span></td><td>Industry override (auto-detected if omitted)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- POST /gap -->
+    <div class="endpoint-block" id="gap">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/gap</span>
+      </div>
+      <span class="tag-pill">gap-analysis</span>
+      <p class="endpoint-summary">Gap analysis between a candidate's skill profile and a stored JD. Uses exact match plus semantic cosine similarity via Vertex AI embeddings. Surfaces transferable skills that keyword matching misses.</p>
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">candidate_id</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Candidate to evaluate</td></tr>
+          <tr><td class="param-name">jd_id</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Previously ingested JD ID</td></tr>
+          <tr><td class="param-name">similarity_threshold</td><td class="param-type">float</td><td><span class="param-required opt">optional</span></td><td>Minimum cosine similarity for transferable match (default: <code>0.75</code>)</td></tr>
+        </tbody>
+      </table>
+      <div class="schema-block">
+        <h4>GapAnalysisResult fields</h4>
+        <div class="schema-field"><span class="sf-name">gap_score</span><span class="sf-type">float 0–100</span><span class="sf-desc">Higher = stronger fit. Formula: <code>min(100, (matched + 0.7×transferable) / total_required × 100)</code></span></div>
+        <div class="schema-field"><span class="sf-name">matched_skills</span><span class="sf-type">string[]</span><span class="sf-desc">Skills that exactly match JD requirements</span></div>
+        <div class="schema-field"><span class="sf-name">transferable_skills</span><span class="sf-type">TransferableSkill[]</span><span class="sf-desc">Similar but not identical — includes similarity score</span></div>
+        <div class="schema-field"><span class="sf-name">missing_skills</span><span class="sf-type">string[]</span><span class="sf-desc">Required JD skills with no candidate match</span></div>
+        <div class="schema-field"><span class="sf-name">recommendation</span><span class="sf-type">string</span><span class="sf-desc">Human-readable career guidance</span></div>
+      </div>
+    </div>
+
+    <!-- GET /industry/match -->
+    <div class="endpoint-block" id="industry">
+      <div class="endpoint-header">
+        <span class="method-badge badge-get">GET</span>
+        <span class="endpoint-path">/industry/match/{candidate_id}</span>
+      </div>
+      <span class="tag-pill">industry-match</span>
+      <p class="endpoint-summary">Score a candidate against all 8 industry centroid vectors using BQML <code>ML.DISTANCE(COSINE)</code> directly in BigQuery. Returns ranked scores for: Data & AI, Software Engineering, FinTech, HealthTech, eCommerce, Cybersecurity, Cloud/DevOps, Product Management.</p>
+      <div class="schema-block">
+        <h4>IndustryScore fields (per industry)</h4>
+        <div class="schema-field"><span class="sf-name">rank</span><span class="sf-type">int</span><span class="sf-desc">1 = best fit</span></div>
+        <div class="schema-field"><span class="sf-name">industry</span><span class="sf-type">string</span><span class="sf-desc">Industry enum key</span></div>
+        <div class="schema-field"><span class="sf-name">industry_label</span><span class="sf-type">string</span><span class="sf-desc">Human-readable label</span></div>
+        <div class="schema-field"><span class="sf-name">match_score</span><span class="sf-type">float 0–100</span><span class="sf-desc">Converted from cosine distance (100 = perfect)</span></div>
+      </div>
+    </div>
+
+    <!-- POST /narrative -->
+    <div class="endpoint-block" id="narrative">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/narrative</span>
+      </div>
+      <span class="tag-pill">narrative</span>
+      <p class="endpoint-summary">Generate a RAG-grounded career narrative via Gemini 2.5 Flash. Retrieves candidate's top 8 skills, industry's top 10 demanded skills, skill overlap, and sample JD titles from BigQuery — then generates a 3-sentence, second-person story. System prompt enforces no hallucinations.</p>
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">candidate_id</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Candidate with an existing profile</td></tr>
+          <tr><td class="param-name">target_role</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Target job title for the narrative</td></tr>
+          <tr><td class="param-name">industry</td><td class="param-type">string</td><td><span class="param-required opt">optional</span></td><td>Industry context (auto-detected if omitted)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- POST /market/analyze -->
+    <div class="endpoint-block" id="market">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/market/analyze</span>
+      </div>
+      <span class="tag-pill">market-analyst</span>
+      <p class="endpoint-summary">Real-time skill demand analysis via a CrewAI single-agent crew. Uses DuckDuckGo search (no API key needed) to research current job market demand for up to 10 skills. Returns demand score 0–100, trend (growing / stable / declining), and evidence snippet per skill.</p>
+      <div class="callout callout-warn">
+        <span class="callout-icon">⚠</span>
+        <div>This endpoint makes live web search calls. Latency varies (~10–30s for 10 skills). Limit to the skills most important for the gap analysis to keep response time reasonable.</div>
+      </div>
+    </div>
+
+    <!-- POST /pathway/plan -->
+    <div class="endpoint-block" id="pathway">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/pathway/plan</span>
+      </div>
+      <span class="tag-pill">pathway-planner</span>
+      <p class="endpoint-summary">CrewAI two-agent 90-day reskilling roadmap. Researcher agent searches Coursera, Udemy, and YouTube for real courses per missing skill. Planner agent synthesizes into a 3-phase roadmap with weekly hours, milestones, and success metrics. Expect ~45s.</p>
+      <table class="param-table">
+        <thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">candidate_id</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Candidate identifier</td></tr>
+          <tr><td class="param-name">target_role</td><td class="param-type">string</td><td><span class="param-required req">required</span></td><td>Target job title</td></tr>
+          <tr><td class="param-name">missing_skills</td><td class="param-type">string[]</td><td><span class="param-required req">required</span></td><td>Skills from gap analysis to close</td></tr>
+          <tr><td class="param-name">gap_score</td><td class="param-type">float</td><td><span class="param-required opt">optional</span></td><td>Gap score 0–100 for roadmap pacing</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Embeddings -->
+    <div class="endpoint-block" id="embed-candidate">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/embeddings/candidate/{candidate_id}</span>
+      </div>
+      <span class="tag-pill">embeddings</span>
+      <p class="endpoint-summary">Embed a candidate's profile skills not yet in the global catalog. Reads the candidate profile, filters skills already embedded, embeds new ones via Vertex AI <code>text-embedding-004</code> (768-dim), and upserts to <code>skill_embeddings</code> table.</p>
+    </div>
+
+    <div class="endpoint-block" id="embed-similar">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/embeddings/similar</span>
+      </div>
+      <span class="tag-pill">embeddings</span>
+      <p class="endpoint-summary">Semantic skill similarity search. Embeds the query skill using <code>RETRIEVAL_QUERY</code> task type, then runs BigQuery <code>VECTOR_SEARCH</code> (COSINE) against the skill catalog. Returns the top-N most similar skills with distance scores.</p>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Lakehouse -->
+    <div class="endpoint-block" id="lakehouse-status">
+      <div class="endpoint-header">
+        <span class="method-badge badge-get">GET</span>
+        <span class="endpoint-path">/lakehouse/status</span>
+      </div>
+      <span class="tag-pill">lakehouse</span>
+      <p class="endpoint-summary">Returns row counts for all 8 tables across Bronze, Silver, and Gold BigQuery datasets. Use this to verify lakehouse health and confirm data is flowing through the medallion pipeline.</p>
+      <div class="schema-block">
+        <h4>LakehouseStatus structure</h4>
+        <div class="schema-field"><span class="sf-name">bronze</span><span class="sf-type">LayerTableInfo[]</span><span class="sf-desc">raw_resume_ingestion, raw_jd_ingestion</span></div>
+        <div class="schema-field"><span class="sf-name">silver</span><span class="sf-type">LayerTableInfo[]</span><span class="sf-desc">candidate_skills, jd_skill_profiles, ingestion_log</span></div>
+        <div class="schema-field"><span class="sf-name">gold</span><span class="sf-type">LayerTableInfo[]</span><span class="sf-desc">match_scores, industry_rankings, candidate_readiness</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint-block" id="lakehouse-gold">
+      <div class="endpoint-header">
+        <span class="method-badge badge-get">GET</span>
+        <span class="endpoint-path">/lakehouse/gold/readiness/{candidate_id}</span>
+      </div>
+      <span class="tag-pill">lakehouse</span>
+      <p class="endpoint-summary">Fetch the Gold-layer composite readiness index for a candidate. Combines match scores, industry coverage, extraction confidence, and skill breadth into a single 0–100 score with tier (READY / DEVELOPING / EMERGING).</p>
+      <div class="schema-block">
+        <h4>CandidateReadiness formula</h4>
+        <div class="schema-field"><span class="sf-name">readiness_index</span><span class="sf-type">float 0–100</span><span class="sf-desc">40% match score + 30% industry coverage + 20% avg confidence + 10% skill breadth</span></div>
+        <div class="schema-field"><span class="sf-name">readiness_tier</span><span class="sf-type">string</span><span class="sf-desc">READY (≥70) · DEVELOPING (40–69) · EMERGING (&lt;40)</span></div>
+        <div class="schema-field"><span class="sf-name">best_industry</span><span class="sf-type">string</span><span class="sf-desc">Top industry from most recent match run</span></div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Registry -->
+    <div class="endpoint-block" id="registry">
+      <div class="endpoint-header">
+        <span class="method-badge badge-post">POST</span>
+        <span class="endpoint-path">/registry/evaluate</span>
+      </div>
+      <span class="tag-pill">model-registry</span>
+      <p class="endpoint-summary">Run F1 evaluation against the golden test set — no GCP write. Returns precision, recall, F1 score, per-example breakdown, and whether the model passes the <strong>F1 ≥ 0.85</strong> gate required for registration.</p>
+    </div>
+
+    <!-- Drift -->
+    <div class="endpoint-block" id="drift">
+      <div class="endpoint-header">
+        <span class="method-badge badge-get">GET</span>
+        <span class="endpoint-path">/monitoring/drift/recent</span>
+      </div>
+      <span class="tag-pill">drift-monitoring</span>
+      <p class="endpoint-summary">Returns the last N drift records from BigQuery. Each record includes unknown_skill_rate, avg_confidence, taxonomy_coverage, and whether the alert threshold was triggered (unknown_rate > 20%).</p>
+      <table class="param-table">
+        <thead><tr><th>Param</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td class="param-name">limit</td><td class="param-type">int</td><td>Max records to return (default: 10)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Health -->
+    <div class="endpoint-block" id="health">
+      <div class="endpoint-header">
+        <span class="method-badge badge-get">GET</span>
+        <span class="endpoint-path">/health</span>
+      </div>
+      <span class="tag-pill">ops</span>
+      <p class="endpoint-summary">Basic health check. Returns <code>{"status": "ok"}</code>. No GCP dependency — use this for Cloud Run health probes and load balancer checks.</p>
+    </div>
+
+  </main>
+
+  <footer>
+    <span>ReSkillio API Reference · <a href="https://github.com/vipul9811kumar/ReSkillio">GitHub</a></span>
+    <span>Interactive docs at <code style="color:var(--orange)">/docs</code> (Swagger) · <code style="color:var(--orange)">/redoc</code></span>
+  </footer>
+  </div>
+
+</div><!-- page-wrap -->
+
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReSkillio — System Architecture</title>
+  <style>
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --accent:   #58a6ff;
+      --green:    #3fb950;
+      --yellow:   #d29922;
+      --purple:   #bc8cff;
+      --orange:   #ffa657;
+      --red:      #f85149;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── Nav ─────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
+      display: flex; align-items: center; gap: 2rem;
+    }
+    nav .logo { font-weight: 700; font-size: 1.1rem; color: var(--accent); }
+    nav a { color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+    nav a:hover { color: var(--text); }
+    nav .pill {
+      margin-left: auto;
+      background: var(--accent);
+      color: var(--bg);
+      padding: 0.35rem 1rem;
+      border-radius: 2rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    /* ── Hero ────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      padding: 5rem 2rem 4rem;
+      background: linear-gradient(160deg, #0d1117 0%, #161b22 60%, #0d1117 100%);
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 640px;
+      margin: 1rem auto 2.5rem;
+    }
+    .hero-badges { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .badge {
+      padding: 0.3rem 0.9rem;
+      border-radius: 2rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .badge-blue   { border-color: var(--accent);  color: var(--accent); }
+    .badge-green  { border-color: var(--green);   color: var(--green); }
+    .badge-purple { border-color: var(--purple);  color: var(--purple); }
+    .badge-orange { border-color: var(--orange);  color: var(--orange); }
+
+    /* ── Layout ──────────────────────────────────────────── */
+    main { max-width: 1100px; margin: 0 auto; padding: 0 2rem 6rem; }
+    section { margin-top: 5rem; }
+    h2 {
+      font-size: 1.6rem; font-weight: 700;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.6rem;
+      margin-bottom: 2rem;
+    }
+    h3 { font-size: 1.1rem; font-weight: 600; color: var(--accent); margin-bottom: 0.75rem; }
+
+    /* ── Stage cards ─────────────────────────────────────── */
+    .stages { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+    .stage-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .stage-num {
+      font-size: 0.75rem; font-weight: 700;
+      color: var(--muted); text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 0.4rem;
+    }
+    .stage-card h3 { font-size: 1rem; margin-bottom: 0.4rem; }
+    .stage-card p { font-size: 0.85rem; color: var(--muted); }
+
+    /* ── Architecture diagram ────────────────────────────── */
+    .arch-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 2rem;
+      overflow-x: auto;
+    }
+    .arch-svg { width: 100%; max-width: 900px; display: block; margin: 0 auto; }
+
+    /* ── GCP table ───────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th {
+      text-align: left;
+      padding: 0.6rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-weight: 600;
+    }
+    td {
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #0f1318; }
+    code {
+      font-family: "SFMono-Regular", Consolas, monospace;
+      background: #1f2428;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.15rem 0.4rem;
+      font-size: 0.85em;
+      color: var(--orange);
+    }
+
+    /* ── Code block ──────────────────────────────────────── */
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      color: #adbac7;
+    }
+    pre .kw  { color: var(--purple); }
+    pre .str { color: var(--green); }
+    pre .cmt { color: var(--muted); }
+    pre .key { color: var(--accent); }
+    pre .num { color: var(--orange); }
+
+    /* ── Endpoints grid ──────────────────────────────────── */
+    .endpoints { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    @media (max-width: 700px) { .endpoints { grid-template-columns: 1fr; } }
+    .endpoint {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      display: flex; align-items: baseline; gap: 0.75rem;
+    }
+    .method {
+      font-size: 0.7rem; font-weight: 700;
+      padding: 0.2rem 0.5rem; border-radius: 4px;
+      font-family: monospace; white-space: nowrap;
+    }
+    .get  { background: #1a3a1e; color: var(--green); }
+    .post { background: #1a2e3a; color: var(--accent); }
+    .endpoint-path { font-family: monospace; font-size: 0.85rem; color: var(--text); }
+    .endpoint-desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* ── Lakehouse ───────────────────────────────────────── */
+    .layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    @media (max-width: 700px) { .layers { grid-template-columns: 1fr; } }
+    .layer {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .layer-bronze { border-top: 3px solid #cd7f32; }
+    .layer-silver { border-top: 3px solid #a8a9ad; }
+    .layer-gold   { border-top: 3px solid #ffd700; }
+    .layer ul { list-style: none; padding: 0; margin-top: 0.75rem; }
+    .layer li {
+      font-size: 0.82rem; color: var(--muted);
+      padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .layer li:last-child { border-bottom: none; }
+
+    /* ── Getting started ─────────────────────────────────── */
+    .steps { display: grid; gap: 1rem; }
+    .step {
+      display: flex; gap: 1rem; align-items: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .step-num {
+      background: var(--accent);
+      color: var(--bg);
+      width: 28px; height: 28px; min-width: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700;
+    }
+    .step-content h3 { color: var(--text); font-size: 0.95rem; margin-bottom: 0.3rem; }
+    .step-content p  { font-size: 0.85rem; color: var(--muted); }
+
+    /* ── Footer ──────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────── -->
+<nav>
+  <a class="logo" href="index.html" style="font-weight:800;font-size:1.1rem;color:var(--accent);text-decoration:none">ReSkillio</a>
+  <a href="index.html">Home</a>
+  <a href="architecture.html" style="color:var(--text)">Architecture</a>
+  <a href="api.html">API Docs</a>
+  <a href="index.html#market">Market</a>
+  <a class="pill" href="https://github.com/vipul9811kumar/ReSkillio">GitHub →</a>
+</nav>
+
+<!-- ── Hero ─────────────────────────────────────────────── -->
+<header class="hero">
+  <h1>ReSkillio</h1>
+  <p>AI-powered career rebound platform — resume in, career intelligence out. Skill extraction, gap analysis, industry fit, Gemini narrative, and a 90-day reskilling roadmap in a single API call.</p>
+  <div class="hero-badges">
+    <span class="badge badge-blue">FastAPI</span>
+    <span class="badge badge-blue">Google Cloud</span>
+    <span class="badge badge-green">spaCy NLP</span>
+    <span class="badge badge-purple">LangGraph</span>
+    <span class="badge badge-purple">CrewAI</span>
+    <span class="badge badge-orange">BigQuery ML</span>
+    <span class="badge badge-orange">Vertex AI Gemini</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Pipeline stages ──────────────────────────────────── -->
+  <section id="pipeline">
+    <h2>Five-Stage Pipeline</h2>
+    <div class="stages">
+      <div class="stage-card">
+        <div class="stage-num">Stage 1</div>
+        <h3>Skill Extraction</h3>
+        <p>spaCy PhraseMatcher + NER pulls 200+ skills from resume text and persists to BigQuery.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-num">Stage 2</div>
+        <h3>Gap Analysis</h3>
+        <p>Exact match + semantic similarity via Vertex AI embeddings. Gap score 0–100 with transferable skills.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-num">Stage 3</div>
+        <h3>Industry Match</h3>
+        <p>BQML cosine distance against 8 industry centroid vectors. Ranked fit scores in-database.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-num">Stage 4</div>
+        <h3>Gemini Narrative</h3>
+        <p>RAG-grounded 3-sentence career story from Gemini 2.5 Flash — no hallucinations, facts only.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-num">Stage 5 · opt-in</div>
+        <h3>90-Day Pathway</h3>
+        <p>CrewAI two-agent crew researches real courses (DuckDuckGo) and builds a phased reskilling roadmap.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Architecture ─────────────────────────────────────── -->
+  <section id="architecture">
+    <h2>System Architecture</h2>
+    <div class="arch-box">
+      <svg class="arch-svg" viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="13">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/>
+          </marker>
+        </defs>
+
+        <!-- Client -->
+        <rect x="340" y="10" width="220" height="50" rx="8" fill="#1a2e3a" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="450" y="30" text-anchor="middle" fill="#58a6ff" font-weight="bold">Client / Demo UI</text>
+        <text x="450" y="50" text-anchor="middle" fill="#8b949e" font-size="11">curl · Postman · Streamlit</text>
+
+        <!-- Arrow down to API -->
+        <line x1="450" y1="60" x2="450" y2="95" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="460" y="82" fill="#8b949e" font-size="11">POST /analyze</text>
+
+        <!-- FastAPI -->
+        <rect x="250" y="95" width="400" height="55" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+        <text x="450" y="118" text-anchor="middle" fill="#e6edf3" font-weight="bold">FastAPI  (Cloud Run)</text>
+        <text x="450" y="140" text-anchor="middle" fill="#8b949e" font-size="11">16 routers · /analyze · /extract · /gap · /narrative · /pathway · ...</text>
+
+        <!-- Arrow to pipeline -->
+        <line x1="450" y1="150" x2="450" y2="185" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Pipeline box -->
+        <rect x="100" y="185" width="700" height="145" rx="8" fill="#0f1318" stroke="#30363d" stroke-width="1"/>
+        <text x="450" y="205" text-anchor="middle" fill="#8b949e" font-size="11">analyze_pipeline.py</text>
+
+        <!-- Stage boxes -->
+        <rect x="120" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#3fb950" stroke-width="1"/>
+        <text x="175" y="238" text-anchor="middle" fill="#3fb950" font-weight="bold" font-size="12">Stage 1</text>
+        <text x="175" y="256" text-anchor="middle" fill="#8b949e" font-size="10">spaCy Extract</text>
+
+        <rect x="250" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#58a6ff" stroke-width="1"/>
+        <text x="305" y="238" text-anchor="middle" fill="#58a6ff" font-weight="bold" font-size="12">Stage 2</text>
+        <text x="305" y="256" text-anchor="middle" fill="#8b949e" font-size="10">Gap Analysis</text>
+
+        <rect x="380" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#ffa657" stroke-width="1"/>
+        <text x="435" y="238" text-anchor="middle" fill="#ffa657" font-weight="bold" font-size="12">Stage 3</text>
+        <text x="435" y="256" text-anchor="middle" fill="#8b949e" font-size="10">Industry Match</text>
+
+        <rect x="510" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#bc8cff" stroke-width="1"/>
+        <text x="565" y="238" text-anchor="middle" fill="#bc8cff" font-weight="bold" font-size="12">Stage 4</text>
+        <text x="565" y="256" text-anchor="middle" fill="#8b949e" font-size="10">Gemini Narrative</text>
+
+        <rect x="640" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#d29922" stroke-width="1"/>
+        <text x="695" y="238" text-anchor="middle" fill="#d29922" font-weight="bold" font-size="12">Stage 5</text>
+        <text x="695" y="256" text-anchor="middle" fill="#8b949e" font-size="10">CrewAI Pathway</text>
+
+        <!-- Flow arrows between stages -->
+        <line x1="230" y1="242" x2="248" y2="242" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="360" y1="242" x2="378" y2="242" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="490" y1="242" x2="508" y2="242" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="620" y1="242" x2="638" y2="242" stroke="#30363d" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Stage labels -->
+        <text x="450" y="310" text-anchor="middle" fill="#8b949e" font-size="10">Each stage: fail-safe · per-stage timing · success/error flag</text>
+
+        <!-- Arrow down to GCP services row -->
+        <line x1="180" y1="330" x2="180" y2="370" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="310" y1="330" x2="310" y2="370" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="440" y1="330" x2="440" y2="370" stroke="#ffa657" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="570" y1="330" x2="570" y2="370" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="700" y1="330" x2="700" y2="370" stroke="#d29922" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- GCP service boxes -->
+        <rect x="100" y="370" width="160" height="60" rx="6" fill="#1a2a1e" stroke="#3fb950" stroke-width="1"/>
+        <text x="180" y="393" text-anchor="middle" fill="#3fb950" font-weight="bold" font-size="12">BigQuery</text>
+        <text x="180" y="410" text-anchor="middle" fill="#8b949e" font-size="10">skill_extractions</text>
+        <text x="180" y="425" text-anchor="middle" fill="#8b949e" font-size="10">candidate_profiles</text>
+
+        <rect x="275" y="370" width="160" height="60" rx="6" fill="#1a2e3a" stroke="#58a6ff" stroke-width="1"/>
+        <text x="355" y="393" text-anchor="middle" fill="#58a6ff" font-weight="bold" font-size="12">Vertex AI Embeddings</text>
+        <text x="355" y="410" text-anchor="middle" fill="#8b949e" font-size="10">text-embedding-004</text>
+        <text x="355" y="425" text-anchor="middle" fill="#8b949e" font-size="10">768-dim · COSINE</text>
+
+        <rect x="450" y="370" width="160" height="60" rx="6" fill="#2a1e0a" stroke="#ffa657" stroke-width="1"/>
+        <text x="530" y="393" text-anchor="middle" fill="#ffa657" font-weight="bold" font-size="12">BigQuery ML</text>
+        <text x="530" y="410" text-anchor="middle" fill="#8b949e" font-size="10">industry_vectors</text>
+        <text x="530" y="425" text-anchor="middle" fill="#8b949e" font-size="10">ML.DISTANCE · 8 industries</text>
+
+        <rect x="625" y="370" width="160" height="60" rx="6" fill="#1e1a2e" stroke="#bc8cff" stroke-width="1"/>
+        <text x="705" y="393" text-anchor="middle" fill="#bc8cff" font-weight="bold" font-size="12">Gemini 2.5 Flash</text>
+        <text x="705" y="410" text-anchor="middle" fill="#8b949e" font-size="10">RAG narrative</text>
+        <text x="705" y="425" text-anchor="middle" fill="#8b949e" font-size="10">Vertex AI · Studio</text>
+
+        <!-- CI/CD side note -->
+        <rect x="10" y="95" width="175" height="90" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1" stroke-dasharray="4"/>
+        <text x="97" y="115" text-anchor="middle" fill="#8b949e" font-size="11" font-weight="bold">CI/CD</text>
+        <text x="97" y="133" text-anchor="middle" fill="#8b949e" font-size="10">taxonomy.json → GCS</text>
+        <text x="97" y="149" text-anchor="middle" fill="#8b949e" font-size="10">→ Cloud Build</text>
+        <text x="97" y="165" text-anchor="middle" fill="#8b949e" font-size="10">→ F1≥0.85 → Registry</text>
+
+        <!-- Monitoring side note -->
+        <rect x="715" y="95" width="175" height="70" rx="6" fill="#161b22" stroke="#30363d" stroke-width="1" stroke-dasharray="4"/>
+        <text x="803" y="115" text-anchor="middle" fill="#8b949e" font-size="11" font-weight="bold">Cloud Monitoring</text>
+        <text x="803" y="133" text-anchor="middle" fill="#8b949e" font-size="10">unknown_skill_rate</text>
+        <text x="803" y="149" text-anchor="middle" fill="#8b949e" font-size="10">avg_confidence · alert &gt;20%</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ── GCP Service Map ───────────────────────────────────── -->
+  <section id="gcp">
+    <h2>GCP Service Map</h2>
+    <table>
+      <thead>
+        <tr><th>Service</th><th>Used for</th><th>Resource</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>BigQuery</td><td>Skill storage, profiles, embeddings, JD catalog, industry vectors, drift metrics</td><td><code>reskillio.*</code></td></tr>
+        <tr><td>BigQuery ML</td><td>Cosine distance against 8 industry centroid vectors — scoring in-database</td><td><code>industry_vectors</code></td></tr>
+        <tr><td>BigQuery Lakehouse</td><td>Medallion Bronze/Silver/Gold layers for analytics & auditability</td><td><code>reskillio_bronze/silver/gold.*</code></td></tr>
+        <tr><td>Vertex AI Embeddings</td><td>768-dim skill vectors for gap analysis + industry matching</td><td><code>text-embedding-004</code></td></tr>
+        <tr><td>Vertex AI Gemini</td><td>RAG-grounded career narrative generation</td><td><code>gemini-2.5-flash</code></td></tr>
+        <tr><td>Vertex AI Model Registry</td><td>Versioned spaCy skill extractor with F1 gating</td><td><code>reskillio-skill-extractor</code></td></tr>
+        <tr><td>Vertex AI Pipelines (KFP)</td><td>Orchestrated PDF ingestion: load → extract → embed</td><td><code>reskillio-ingestion-pipeline</code></td></tr>
+        <tr><td>Cloud Storage</td><td>Model artifacts, taxonomy JSON, pipeline root</td><td><code>{project}-models</code></td></tr>
+        <tr><td>Cloud Build</td><td>CI/CD retraining on taxonomy.json change in GCS</td><td>Pub/Sub trigger</td></tr>
+        <tr><td>Cloud Monitoring</td><td>Drift metrics + alert policy (unknown_rate &gt; 20%)</td><td>3 custom metric descriptors</td></tr>
+        <tr><td>Cloud Run</td><td>FastAPI API hosting</td><td><code>reskillio-api</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ── API Reference ─────────────────────────────────────── -->
+  <section id="api">
+    <h2>API Reference</h2>
+
+    <h3 style="color: var(--text); font-size: 1rem; margin-bottom: 1rem;">
+      Demo endpoint — <code>POST /analyze</code>
+    </h3>
+    <pre><span class="cmt"># PDF upload</span>
+curl -X POST http://localhost:<span class="num">8000</span>/analyze \
+  -F <span class="str">"resume=@resume.pdf"</span> \
+  -F <span class="str">"target_role=Senior Data Engineer"</span> \
+  -F <span class="str">"jd_text=We need Python, BigQuery, Airflow, dbt..."</span> \
+  -F <span class="str">"candidate_id=demo-001"</span>
+
+<span class="cmt"># Plain text (no PDF needed)</span>
+curl -X POST http://localhost:<span class="num">8000</span>/analyze \
+  -F <span class="str">"resume_text=Experienced data engineer with Python and BigQuery..."</span> \
+  -F <span class="str">"target_role=Senior Data Engineer"</span>
+
+<span class="cmt"># With 90-day pathway (~45s extra)</span>
+curl -X POST http://localhost:<span class="num">8000</span>/analyze \
+  -F <span class="str">"resume=@resume.pdf"</span> \
+  -F <span class="str">"target_role=Senior Data Engineer"</span> \
+  -F <span class="str">"include_pathway=true"</span></pre>
+
+    <h3 style="margin-top: 2rem;">All Endpoints</h3>
+    <div class="endpoints">
+      <div>
+        <div class="endpoint">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/analyze</div>
+            <div class="endpoint-desc">Full 5-stage career-rebound analysis</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/extract</div>
+            <div class="endpoint-desc">Extract skills from raw text</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/resume/upload</div>
+            <div class="endpoint-desc">PDF upload — section-aware extraction</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/candidate/{id}/profile</div>
+            <div class="endpoint-desc">Aggregated skill profile</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/jd</div>
+            <div class="endpoint-desc">Ingest job description</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/gap</div>
+            <div class="endpoint-desc">Gap analysis vs stored JD</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/industry/match/{id}</div>
+            <div class="endpoint-desc">Industry fit scores (8 industries)</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/narrative</div>
+            <div class="endpoint-desc">Gemini RAG career narrative</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="endpoint">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/agent/extract</div>
+            <div class="endpoint-desc">LangGraph stateful skill extractor</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/market/analyze</div>
+            <div class="endpoint-desc">CrewAI real-time skill demand</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/pathway/plan</div>
+            <div class="endpoint-desc">CrewAI 90-day reskilling roadmap</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/embeddings/candidate/{id}</div>
+            <div class="endpoint-desc">Embed candidate skills</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/registry/versions</div>
+            <div class="endpoint-desc">List Vertex AI model versions</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/monitoring/drift/recent</div>
+            <div class="endpoint-desc">Recent drift records</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/lakehouse/status</div>
+            <div class="endpoint-desc">Row counts across Bronze/Silver/Gold</div>
+          </div>
+        </div>
+        <div class="endpoint" style="margin-top:0.75rem">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/health</div>
+            <div class="endpoint-desc">Health check</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Sample output ─────────────────────────────────────── -->
+  <section id="sample">
+    <h2>Sample Output</h2>
+    <pre><span class="cmt">// POST /analyze response (truncated)</span>
+{
+  <span class="key">"candidate_id"</span>:   <span class="str">"demo-001"</span>,
+  <span class="key">"target_role"</span>:    <span class="str">"Senior Data Engineer"</span>,
+  <span class="key">"skill_count"</span>:    <span class="num">47</span>,
+  <span class="key">"top_skills"</span>: [
+    { <span class="key">"name"</span>: <span class="str">"Python"</span>,   <span class="key">"category"</span>: <span class="str">"technical"</span>, <span class="key">"confidence"</span>: <span class="num">0.97</span> },
+    { <span class="key">"name"</span>: <span class="str">"BigQuery"</span>, <span class="key">"category"</span>: <span class="str">"tool"</span>,      <span class="key">"confidence"</span>: <span class="num">0.95</span> }
+  ],
+  <span class="key">"gap"</span>: {
+    <span class="key">"gap_score"</span>: <span class="num">72.4</span>,
+    <span class="key">"matched_skills"</span>:      [<span class="str">"Python"</span>, <span class="str">"SQL"</span>, <span class="str">"BigQuery"</span>, <span class="str">"Spark"</span>, <span class="str">"dbt"</span>],
+    <span class="key">"missing_skills"</span>:      [<span class="str">"Kafka"</span>, <span class="str">"Terraform"</span>],
+    <span class="key">"transferable_skills"</span>: [{ <span class="key">"jd_skill"</span>: <span class="str">"Airflow"</span>, <span class="key">"candidate_skill"</span>: <span class="str">"Luigi"</span>, <span class="key">"similarity"</span>: <span class="num">0.81</span> }],
+    <span class="key">"recommendation"</span>:  <span class="str">"Strong match. Bridge Kafka and Terraform to close remaining gaps."</span>
+  },
+  <span class="key">"industry_match"</span>: {
+    <span class="key">"top_industry"</span>: <span class="str">"data_ai"</span>,
+    <span class="key">"scores"</span>: [
+      { <span class="key">"rank"</span>: <span class="num">1</span>, <span class="key">"industry"</span>: <span class="str">"data_ai"</span>,     <span class="key">"match_score"</span>: <span class="num">88.3</span> },
+      { <span class="key">"rank"</span>: <span class="num">2</span>, <span class="key">"industry"</span>: <span class="str">"cloud_devops"</span>, <span class="key">"match_score"</span>: <span class="num">71.1</span> }
+    ]
+  },
+  <span class="key">"narrative"</span>: <span class="str">"A data-first engineer with a strong foundation in Python and BigQuery,
+   your transferable workflow orchestration experience positions you well for
+   this role. Rounding out Kafka and Terraform would make you a top candidate."</span>,
+  <span class="key">"stages"</span>: {
+    <span class="key">"extract"</span>:   { <span class="key">"success"</span>: <span class="kw">true</span>,  <span class="key">"duration_ms"</span>: <span class="num">342</span>  },
+    <span class="key">"gap"</span>:       { <span class="key">"success"</span>: <span class="kw">true</span>,  <span class="key">"duration_ms"</span>: <span class="num">1820</span> },
+    <span class="key">"industry"</span>:  { <span class="key">"success"</span>: <span class="kw">true</span>,  <span class="key">"duration_ms"</span>: <span class="num">510</span>  },
+    <span class="key">"narrative"</span>: { <span class="key">"success"</span>: <span class="kw">true</span>,  <span class="key">"duration_ms"</span>: <span class="num">3102</span> },
+    <span class="key">"pathway"</span>:   { <span class="key">"success"</span>: <span class="kw">true</span>,  <span class="key">"duration_ms"</span>: <span class="num">0</span>,    <span class="key">"error"</span>: <span class="str">"skipped"</span> }
+  },
+  <span class="key">"total_duration_ms"</span>: <span class="num">5892</span>
+}</pre>
+  </section>
+
+  <!-- ── Lakehouse ─────────────────────────────────────────── -->
+  <section id="lakehouse">
+    <h2>BigQuery Medallion Lakehouse</h2>
+    <div class="layers">
+      <div class="layer layer-bronze">
+        <h3 style="color:#cd7f32">Bronze — Raw Ingestion</h3>
+        <ul>
+          <li>raw_resume_ingestion</li>
+          <li>raw_jd_ingestion</li>
+        </ul>
+        <p style="font-size:0.82rem;color:var(--muted);margin-top:0.75rem">Append-only. Every source document preserved as-is.</p>
+      </div>
+      <div class="layer layer-silver">
+        <h3 style="color:#a8a9ad">Silver — Validated</h3>
+        <ul>
+          <li>candidate_skills</li>
+          <li>jd_skill_profiles</li>
+          <li>ingestion_log</li>
+        </ul>
+        <p style="font-size:0.82rem;color:var(--muted);margin-top:0.75rem">Deduplicated, validated, enriched via MERGE SQL.</p>
+      </div>
+      <div class="layer layer-gold">
+        <h3 style="color:#ffd700">Gold — Analytics</h3>
+        <ul>
+          <li>match_scores</li>
+          <li>industry_rankings</li>
+          <li>candidate_readiness</li>
+        </ul>
+        <p style="font-size:0.82rem;color:var(--muted);margin-top:0.75rem">Computed scores. Readiness index = 40% match + 30% industry + 20% confidence + 10% breadth.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Getting Started ───────────────────────────────────── -->
+  <section id="getting-started">
+    <h2>Getting Started</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Clone &amp; install</h3>
+          <pre style="margin-top:0.5rem">git clone https://github.com/vipul9811kumar/ReSkillio.git
+cd ReSkillio
+pip install -r requirements.txt
+python -m spacy download en_core_web_lg</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Configure GCP</h3>
+          <pre style="margin-top:0.5rem">cp .env.example .env
+# Set GCP_PROJECT_ID and GOOGLE_APPLICATION_CREDENTIALS</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Bootstrap GCP resources</h3>
+          <pre style="margin-top:0.5rem">python scripts/setup_gcp.py
+python scripts/build_industry_vectors.py</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Start the API</h3>
+          <pre style="margin-top:0.5rem">uvicorn reskillio.api.main:app --reload --port 8000
+# Docs at http://localhost:8000/docs</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h3>Run the demo</h3>
+          <pre style="margin-top:0.5rem">curl -X POST http://localhost:8000/analyze \
+  -F "resume=@data/raw/sample_resume.pdf" \
+  -F "target_role=Senior Data Engineer"</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Built by <a href="https://github.com/vipul9811kumar">vipul9811kumar</a> ·
+  Powered by Google Cloud · spaCy · CrewAI · LangGraph ·
+  <a href="https://github.com/vipul9811kumar/ReSkillio">View on GitHub</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,275 @@
+# PIPELINE DEFINITION
+# Name: reskillio-ingestion-pipeline
+# Description: ReSkillio end-to-end resume ingestion: PDF → section parse → skill extraction → embedding storage.
+# Inputs:
+#    candidate_id: str
+#    gcs_pdf_uri: str
+#    project_id: str
+#    region: str [Default: 'us-central1']
+components:
+  comp-extract-skills:
+    executorLabel: exec-extract-skills
+    inputDefinitions:
+      artifacts:
+        sections:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        candidate_id:
+          parameterType: STRING
+        project_id:
+          parameterType: STRING
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+  comp-load-document:
+    executorLabel: exec-load-document
+    inputDefinitions:
+      parameters:
+        candidate_id:
+          parameterType: STRING
+        gcs_uri:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        sections:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-store-embeddings:
+    executorLabel: exec-store-embeddings
+    inputDefinitions:
+      parameters:
+        candidate_id:
+          parameterType: STRING
+        project_id:
+          parameterType: STRING
+        region:
+          parameterType: STRING
+        skill_count:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+deploymentSpec:
+  executors:
+    exec-extract-skills:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - extract_skills
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.8.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef extract_skills(\n    sections: Input[Dataset],\n    candidate_id:\
+          \ str,\n    project_id: str,\n) -> int:\n    \"\"\"\n    Run spaCy skill\
+          \ extraction across all sections, persist to BigQuery, and\n    refresh\
+          \ the candidate profile.\n\n    Returns\n    -------\n    int \u2014 total\
+          \ unique skills extracted and stored.\n    \"\"\"\n    import json\n   \
+          \ from reskillio.models.skill import ExtractionResult\n    from reskillio.nlp.skill_extractor\
+          \ import SkillExtractor, _deduplicate\n    from reskillio.storage.bigquery_store\
+          \ import BigQuerySkillStore\n    from reskillio.storage.profile_store import\
+          \ CandidateProfileStore\n\n    with open(sections.path) as f:\n        sections_data:\
+          \ list[dict] = json.load(f)\n\n    extractor = SkillExtractor()\n    all_skills\
+          \ = []\n    full_text_parts = []\n\n    for sec in sections_data:\n    \
+          \    text = sec[\"text\"].strip()\n        if not text:\n            continue\n\
+          \        full_text_parts.append(text)\n        result = extractor.extract(text)\n\
+          \        all_skills.extend(result.skills)\n\n    deduped = _deduplicate(all_skills)\n\
+          \n    bq_store = BigQuerySkillStore(project_id=project_id)\n    extraction\
+          \ = ExtractionResult(\n        input_text=\"\\n\\n\".join(full_text_parts),\n\
+          \        skills=deduped,\n        model_used=\"en_core_web_lg\",\n    )\n\
+          \    bq_store.store_extraction(extraction, candidate_id=candidate_id)\n\n\
+          \    profile_store = CandidateProfileStore(project_id=project_id)\n    profile_store.upsert_profile(candidate_id)\n\
+          \n    print(\n        f\"extract_skills: candidate={candidate_id!r}  \"\n\
+          \        f\"sections={len(sections_data)}  unique_skills={len(deduped)}\"\
+          \n    )\n    return len(deduped)\n\n"
+        image: gcr.io/reskillio-dev-2026/reskillio-pipeline:latest
+    exec-load-document:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - load_document
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.8.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef load_document(\n    gcs_uri: str,\n    candidate_id: str,\n \
+          \   sections: Output[Dataset],\n) -> None:\n    \"\"\"\n    Download a PDF\
+          \ from GCS, extract text, split into labelled sections.\n\n    Writes a\
+          \ JSON array of {section_type, heading, text} to the sections\n    artifact\
+          \ \u2014 the contract between this component and extract_skills.\n    \"\
+          \"\"\n    import json\n    from google.cloud import storage\n    from reskillio.ingestion.pdf_reader\
+          \ import extract_text_from_pdf\n    from reskillio.ingestion.section_parser\
+          \ import parse_sections\n\n    assert gcs_uri.startswith(\"gs://\"), f\"\
+          Expected gs:// URI, got: {gcs_uri}\"\n    without_prefix = gcs_uri[5:]\n\
+          \    bucket_name, _, blob_name = without_prefix.partition(\"/\")\n\n   \
+          \ gcs = storage.Client()\n    pdf_bytes = gcs.bucket(bucket_name).blob(blob_name).download_as_bytes()\n\
+          \n    raw_text = extract_text_from_pdf(pdf_bytes)\n\n    parsed = parse_sections(raw_text)\n\
+          \    sections_data = [\n        {\n            \"section_type\": st.value,\n\
+          \            \"heading\": heading,\n            \"text\": text,\n      \
+          \  }\n        for st, heading, text in parsed\n        if text.strip()\n\
+          \    ]\n\n    with open(sections.path, \"w\") as f:\n        json.dump(sections_data,\
+          \ f, indent=2)\n\n    print(\n        f\"load_document: candidate={candidate_id!r}\
+          \  \"\n        f\"chars={len(raw_text)}  sections={len(sections_data)}\"\
+          \n    )\n\n"
+        image: gcr.io/reskillio-dev-2026/reskillio-pipeline:latest
+    exec-store-embeddings:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - store_embeddings
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.8.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef store_embeddings(\n    candidate_id: str,\n    project_id: str,\n\
+          \    region: str,\n    skill_count: int,  # data-dependency pin: waits for\
+          \ extract_skills to finish\n) -> int:\n    \"\"\"\n    Embed all candidate\
+          \ profile skills not yet in the catalog, upsert to BQ.\n\n    Delegates\
+          \ entirely to run_embedding_pipeline, which reads the already-\n    refreshed\
+          \ candidate_profiles row written by extract_skills.\n\n    Returns\n   \
+          \ -------\n    int \u2014 number of new embeddings inserted this run.\n\
+          \    \"\"\"\n    from reskillio.pipelines.embedding_pipeline import run_embedding_pipeline\n\
+          \n    result = run_embedding_pipeline(\n        candidate_id=candidate_id,\n\
+          \        project_id=project_id,\n        region=region,\n    )\n\n    print(\n\
+          \        f\"store_embeddings: candidate={candidate_id!r}  \"\n        f\"\
+          found={result['skills_found']}  \"\n        f\"embedded={result['skills_embedded']}\
+          \  \"\n        f\"skipped={result['skills_skipped']}\"\n    )\n    return\
+          \ result[\"skills_embedded\"]\n\n"
+        image: gcr.io/reskillio-dev-2026/reskillio-pipeline:latest
+pipelineInfo:
+  description: "ReSkillio end-to-end resume ingestion: PDF \u2192 section parse \u2192\
+    \ skill extraction \u2192 embedding storage."
+  name: reskillio-ingestion-pipeline
+root:
+  dag:
+    tasks:
+      extract-skills:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-extract-skills
+        dependentTasks:
+        - load-document
+        inputs:
+          artifacts:
+            sections:
+              taskOutputArtifact:
+                outputArtifactKey: sections
+                producerTask: load-document
+          parameters:
+            candidate_id:
+              componentInputParameter: candidate_id
+            project_id:
+              componentInputParameter: project_id
+        taskInfo:
+          name: extract-skills
+      load-document:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-load-document
+        inputs:
+          parameters:
+            candidate_id:
+              componentInputParameter: candidate_id
+            gcs_uri:
+              componentInputParameter: gcs_pdf_uri
+        taskInfo:
+          name: load-document
+      store-embeddings:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-store-embeddings
+        dependentTasks:
+        - extract-skills
+        inputs:
+          parameters:
+            candidate_id:
+              componentInputParameter: candidate_id
+            project_id:
+              componentInputParameter: project_id
+            region:
+              componentInputParameter: region
+            skill_count:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: extract-skills
+        taskInfo:
+          name: store-embeddings
+  inputDefinitions:
+    parameters:
+      candidate_id:
+        description: Unique candidate identifier used across all BQ tables.
+        parameterType: STRING
+      gcs_pdf_uri:
+        description: 'GCS path to the candidate''s PDF resume, e.g.
+
+          gs://reskillio-dev-2026-artifacts/resumes/candidate-vk-001.pdf'
+        parameterType: STRING
+      project_id:
+        description: GCP project ID (e.g. reskillio-dev-2026).
+        parameterType: STRING
+      region:
+        defaultValue: us-central1
+        description: 'Vertex AI region for on-the-fly embedding (default: us-central1).'
+        isOptional: true
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.8.0

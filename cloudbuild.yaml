@@ -1,0 +1,108 @@
+# F15 — ReSkillio CI/CD Retraining Pipeline
+#
+# Triggered by Pub/Sub notification when taxonomy/taxonomy.json is uploaded
+# or modified in the GCS artifacts bucket.
+#
+# Pipeline steps
+# --------------
+# 1. install-deps    — pip install from requirements.txt
+# 2. install-spacy   — download spaCy language model
+# 3. retrain         — evaluate new taxonomy → register in Vertex AI if F1 ≥ 0.85
+#
+# Substitutions (configured in the Cloud Build Pub/Sub trigger)
+# -------------
+#   _TAXONOMY_GCS_PATH  — full gs:// URI of taxonomy.json
+#   _ARTIFACT_BUCKET    — GCS bucket for model artifacts
+#   _REGION             — GCP region (default: us-central1)
+#   _SPACY_MODEL        — spaCy model name (default: en_core_web_lg)
+#
+# IAM required on the Cloud Build service account
+# ------------------------------------------------
+#   roles/storage.objectViewer      (read taxonomy from GCS)
+#   roles/storage.objectCreator     (write model artifacts to GCS)
+#   roles/aiplatform.user           (Vertex AI Model Registry)
+#   roles/bigquery.dataViewer       (optional: read existing versions)
+#
+# Exit codes
+# ----------
+#   0  — F1 passed gate, new version registered
+#   1  — F1 below gate threshold (build marked FAILURE — no registration)
+#   2  — Unexpected error (auth, GCS unavailable, etc.)
+
+steps:
+  # -----------------------------------------------------------------------
+  # Step 1: Install Python dependencies
+  # -----------------------------------------------------------------------
+  - name: 'python:3.11-slim'
+    id: install-deps
+    entrypoint: pip
+    args:
+      - install
+      - --quiet
+      - --no-cache-dir
+      - -r
+      - requirements.txt
+
+  # -----------------------------------------------------------------------
+  # Step 2: Download spaCy language model
+  # The model is ~600 MB — Cloud Build caches the pip/spacy directories
+  # in the default /workspace volume across steps.
+  # -----------------------------------------------------------------------
+  - name: 'python:3.11-slim'
+    id: install-spacy-model
+    entrypoint: python
+    args:
+      - -m
+      - spacy
+      - download
+      - '${_SPACY_MODEL}'
+    waitFor:
+      - install-deps
+
+  # -----------------------------------------------------------------------
+  # Step 3: Run retraining pipeline
+  #
+  # Downloads taxonomy.json from GCS, rebuilds PhraseMatcher, runs the
+  # golden-set evaluation, and registers in Vertex AI if F1 ≥ 0.85.
+  #
+  # Non-zero exit → Cloud Build marks the build FAILURE and the old
+  # model version remains active in the registry.
+  # -----------------------------------------------------------------------
+  - name: 'python:3.11-slim'
+    id: retrain-and-register
+    entrypoint: python
+    args:
+      - scripts/retrain.py
+      - --taxonomy-gcs
+      - '${_TAXONOMY_GCS_PATH}'
+      - --project
+      - '$PROJECT_ID'
+      - --bucket
+      - '${_ARTIFACT_BUCKET}'
+      - --region
+      - '${_REGION}'
+      - --spacy-model
+      - '${_SPACY_MODEL}'
+    waitFor:
+      - install-spacy-model
+
+# ---------------------------------------------------------------------------
+# Default substitution values
+# Override these in the Cloud Build trigger configuration.
+# ---------------------------------------------------------------------------
+substitutions:
+  _TAXONOMY_GCS_PATH: 'gs://reskillio-dev-2026-models/taxonomy/taxonomy.json'
+  _ARTIFACT_BUCKET:   'reskillio-dev-2026-models'
+  _REGION:            'us-central1'
+  _SPACY_MODEL:       'en_core_web_lg'
+
+options:
+  # spaCy model loading benefits from extra CPUs.
+  machineType: 'E2_HIGHCPU_8'
+  # Send logs to Cloud Logging instead of GCS (faster, no bucket needed).
+  logging: CLOUD_LOGGING_ONLY
+  # Fail the build immediately if any step exits non-zero.
+  # This ensures a gate failure blocks Vertex AI registration.
+  # (default behaviour — listed for clarity)
+
+timeout: '1800s'  # 30-minute hard cap (spaCy download + evaluation ≈ 10 min)

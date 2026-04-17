@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReSkillio â Start Your Career Rebound</title>
+<meta name="description" content="Upload your resume. Discover your transferable skills, find your best-fit industries, close your gaps, and get a 90-day reskilling plan â in under 2 minutes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Tokens ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --teal:        #1D9E75;
+  --teal-50:     #E1F5EE;
+  --teal-100:    #9FE1CB;
+  --teal-600:    #0F6E56;
+  --teal-800:    #085041;
+
+  --blue:        #378ADD;
+  --blue-50:     #E6F1FB;
+  --blue-100:    #B5D4F4;
+  --blue-600:    #185FA5;
+  --blue-800:    #0C447C;
+
+  --amber:       #BA7517;
+  --amber-50:    #FAEEDA;
+  --amber-100:   #FAC775;
+  --amber-800:   #633806;
+
+  --red-50:      #FCEBEB;
+  --red-400:     #E24B4A;
+  --red-800:     #791F1F;
+
+  --green-50:    #EAF3DE;
+  --green-400:   #639922;
+  --green-800:   #27500A;
+
+  --gray-50:     #F1EFE8;
+  --gray-100:    #D3D1C7;
+  --gray-400:    #888780;
+  --gray-600:    #5F5E5A;
+  --gray-800:    #444441;
+  --gray-900:    #2C2C2A;
+
+  --ink:         #1a1a18;
+  --surface:     #ffffff;
+  --surface-2:   #f8f7f4;
+  --surface-3:   #f1f0eb;
+  --border:      rgba(44,44,42,0.12);
+  --border-md:   rgba(44,44,42,0.22);
+
+  --font-sans:   'DM Sans', sans-serif;
+  --font-serif:  'DM Serif Display', serif;
+  --font-mono:   'DM Mono', monospace;
+
+  --r-sm:  6px;
+  --r-md:  10px;
+  --r-lg:  16px;
+  --r-xl:  24px;
+
+  --max:   720px;
+  --nav-h: 60px;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--surface);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── Nav ──────────────────────────────────────────────────────── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+}
+
+.nav-inner {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-logo {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+.nav-logo span { color: var(--teal); }
+
+.nav-links {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+  margin-left: auto;
+}
+.nav-links a {
+  font-size: 13px;
+  color: var(--gray-600);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.nav-links a:hover { color: var(--ink); }
+.nav-links a.active { color: var(--teal); font-weight: 500; }
+
+.nav-gh {
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: var(--r-md);
+  border: 0.5px solid var(--border-md);
+  color: var(--gray-800);
+  text-decoration: none;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.nav-gh:hover { background: var(--surface-2); }
+
+/* ── Page wrapper ──────────────────────────────────────────────── */
+.page {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+/* ── Hero ──────────────────────────────────────────────────────── */
+.hero {
+  text-align: center;
+  padding: 16px 0 48px;
+}
+
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal-600);
+  background: var(--teal-50);
+  border: 0.5px solid var(--teal-100);
+  border-radius: 99px;
+  padding: 4px 12px;
+  margin-bottom: 20px;
+}
+.hero-tag::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(32px, 5vw, 46px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+  color: var(--ink);
+}
+.hero h1 em {
+  font-style: italic;
+  color: var(--teal);
+}
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--gray-600);
+  line-height: 1.65;
+  max-width: 520px;
+  margin: 0 auto 28px;
+}
+
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.hs-item {
+  text-align: center;
+}
+.hs-num {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--teal);
+  display: block;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.hs-label {
+  font-size: 11px;
+  color: var(--gray-400);
+  line-height: 1.3;
+}
+
+/* ── Stepper ──────────────────────────────────────────────────── */
+.stepper-wrap {
+  margin-bottom: 36px;
+}
+
+.stepper {
+  display: flex;
+  gap: 0;
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.st-item {
+  flex: 1;
+  padding: 10px 6px 9px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--gray-400);
+  border-right: 0.5px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+  line-height: 1.3;
+}
+.st-item:last-child { border-right: none; }
+.st-item .st-n {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  margin-bottom: 3px;
+  opacity: 0.6;
+  font-weight: 500;
+}
+.st-item.done {
+  color: var(--teal-600);
+  background: var(--teal-50);
+}
+.st-item.active {
+  color: var(--teal-800);
+  background: var(--teal-50);
+  font-weight: 500;
+  border-bottom: 2px solid var(--teal);
+}
+
+/* ── Screens ──────────────────────────────────────────────────── */
+.screen { display: none; animation: fadeUp 0.3s ease both; }
+.screen.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Cards ──────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 24px 28px;
+  margin-bottom: 16px;
+}
+.card-sm {
+  background: var(--surface-2);
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  border: 0.5px solid var(--border);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.card-sub {
+  font-size: 13px;
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* ── Section heads ──────────────────────────────────────────────── */
+.sh {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin: 20px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 0.5px solid var(--border);
+}
+.sh:first-of-type { margin-top: 0; }
+
+/* ── Upload zone ──────────────────────────────────────────────── */
+.upload-zone {
+  border: 1.5px dashed var(--border-md);
+  border-radius: var(--r-lg);
+  padding: 36px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 20px;
+  position: relative;
+}
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: var(--teal);
+  background: var(--teal-50);
+}
+
+.upload-icon-ring {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: var(--blue-50);
+  border: 0.5px solid var(--blue-100);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+}
+
+.uz-title {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.uz-hint {
+  font-size: 12px;
+  color: var(--gray-400);
+}
+
+.file-badge {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  background: var(--teal-50);
+  border: 0.5px solid var(--teal-100);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  color: var(--teal-800);
+  margin-bottom: 20px;
+}
+.file-badge svg { flex-shrink: 0; }
+.file-badge .fb-name { font-weight: 500; }
+.file-badge .fb-status {
+  margin-left: auto;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* ── Form fields ──────────────────────────────────────────────── */
+label.fl {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-600);
+  margin-bottom: 6px;
+}
+label.fl span {
+  font-weight: 400;
+  opacity: 0.7;
+  font-size: 11px;
+}
+
+input[type="text"] {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 0.5px solid var(--border-md);
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color 0.15s;
+  outline: none;
+}
+input[type="text"]:focus { border-color: var(--teal); }
+input[type="text"]::placeholder { color: var(--gray-400); font-size: 13px; }
+
+.field-note {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+textarea {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 0.5px solid var(--border-md);
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+  outline: none;
+}
+textarea:focus { border-color: var(--teal); }
+textarea::placeholder { color: var(--gray-400); font-size: 12px; }
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+.btn-primary {
+  display: block;
+  width: 100%;
+  padding: 14px 20px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: var(--r-md);
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+.btn-primary:hover { opacity: 0.88; }
+.btn-primary:active { transform: scale(0.99); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-block;
+  padding: 8px 16px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  border-radius: var(--r-md);
+  border: 0.5px solid var(--border-md);
+  background: transparent;
+  color: var(--gray-800);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-secondary:hover { background: var(--surface-2); }
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+/* ── Progress screen ──────────────────────────────────────────── */
+.prog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.prog-title { font-size: 18px; font-weight: 500; letter-spacing: -0.02em; }
+.prog-timer { font-family: var(--font-mono); font-size: 14px; color: var(--gray-400); }
+
+.prog-sub { font-size: 13px; color: var(--gray-600); margin-bottom: 24px; line-height: 1.5; }
+
+.prog-bar-bg {
+  height: 3px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+.prog-bar-fill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+
+.prog-steps { display: flex; flex-direction: column; gap: 14px; }
+
+.prog-row { display: flex; align-items: center; gap: 14px; }
+
+.prog-dot {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  transition: background 0.3s, border-color 0.3s;
+}
+.pd-wait  { background: var(--surface-3); border: 0.5px solid var(--border); }
+.pd-active{ background: var(--blue-50); border: 0.5px solid var(--blue-100); }
+.pd-done  { background: var(--teal-50); border: 0.5px solid var(--teal-100); }
+
+.pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+.tick { color: var(--teal); font-size: 12px; font-weight: 500; }
+
+.pr-label { font-size: 14px; transition: color 0.3s; }
+.pr-label.wait   { color: var(--gray-400); }
+.pr-label.running{ color: var(--ink); font-weight: 500; }
+.pr-label.done   { color: var(--gray-600); }
+
+.pr-time { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--gray-400); }
+
+/* ── Skill pills ──────────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.stat-box {
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  padding: 14px 12px;
+  text-align: center;
+  border: 0.5px solid var(--border);
+}
+.stat-num {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.sn-teal { color: var(--teal); }
+.sn-blue { color: var(--blue); }
+.stat-lab { font-size: 11px; color: var(--gray-400); line-height: 1.3; }
+
+.skill-grid { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 4px; }
+
+.pill {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 99px;
+  border: 0.5px solid;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+.p-tech { background: var(--blue-50); color: var(--blue-800); border-color: var(--blue-100); }
+.p-soft { background: var(--teal-50); color: var(--teal-800); border-color: var(--teal-100); }
+.p-tool { background: var(--amber-50); color: var(--amber-800); border-color: var(--amber-100); }
+.p-cert { background: var(--green-50); color: var(--green-800); border-color: #C0DD97; }
+.conf-high { opacity: 1; }
+.conf-med  { opacity: 0.7; }
+.conf-low  { opacity: 0.45; }
+
+.legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; }
+.leg-i { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--gray-400); }
+.leg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); }
+
+/* ── Industry bars ──────────────────────────────────────────────── */
+.ind-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+.ind-row { display: flex; align-items: center; gap: 12px; }
+
+.ind-name {
+  font-size: 13px;
+  color: var(--gray-800);
+  width: 168px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ind-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 99px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ib-top  { background: var(--teal-50); color: var(--teal-800); border: 0.5px solid var(--teal-100); }
+
+.ind-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.ind-bar-f {
+  height: 100%;
+  border-radius: 4px;
+  width: 0;
+  transition: width 0.9s cubic-bezier(0.4,0,0.2,1);
+}
+.ibc-strong { background: var(--teal); }
+.ibc-mid    { background: var(--amber); }
+.ibc-low    { background: var(--gray-100); }
+
+.ind-score {
+  font-size: 13px;
+  font-weight: 500;
+  width: 38px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.is-strong { color: var(--teal); }
+.is-mid    { color: var(--amber); }
+.is-low    { color: var(--gray-400); }
+
+.roles-callout {
+  background: var(--teal-50);
+  border: 0.5px solid var(--teal-100);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--teal-800);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.roles-callout strong { font-weight: 500; }
+
+/* ── Gap analysis ──────────────────────────────────────────────── */
+.gap-score-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 20px;
+  background: var(--surface-2);
+  border-radius: var(--r-lg);
+  margin-bottom: 20px;
+  border: 0.5px solid var(--border);
+}
+.gsh-num {
+  font-family: var(--font-serif);
+  font-size: 44px;
+  color: var(--teal);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.gsh-den { font-size: 16px; color: var(--gray-400); }
+.gsh-text { font-size: 13px; color: var(--gray-600); line-height: 1.65; }
+
+.gap-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
+.gc-head {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 10px;
+}
+.gap-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: var(--r-md);
+  margin-bottom: 5px;
+}
+.gi-have { background: var(--teal-50); color: var(--teal-800); }
+.gi-need { background: var(--red-50); color: var(--red-800); }
+.gi-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.gd-h { background: var(--teal); }
+.gd-n { background: var(--red-400); }
+
+.transfer-box {
+  background: var(--amber-50);
+  border: 0.5px solid var(--amber-100);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--amber-800);
+  line-height: 1.6;
+}
+.transfer-box strong { font-weight: 500; }
+
+/* ── Narrative ──────────────────────────────────────────────────── */
+.narrative-block {
+  background: var(--surface-2);
+  border-left: 3px solid var(--teal);
+  border-radius: 0 var(--r-lg) var(--r-lg) 0;
+  padding: 20px 22px;
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.grounded-note {
+  font-size: 12px;
+  color: var(--gray-400);
+  line-height: 1.6;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  margin-bottom: 16px;
+  border: 0.5px solid var(--border);
+}
+
+/* ── Reskilling plan ──────────────────────────────────────────── */
+.plan-item {
+  display: grid;
+  grid-template-columns: 88px minmax(0,1fr);
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.plan-item:last-child { border-bottom: none; }
+
+.pi-weeks {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 2px;
+}
+.pi-skill {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: 5px;
+}
+.pi-desc {
+  font-size: 13px;
+  color: var(--gray-600);
+  line-height: 1.6;
+  margin-bottom: 9px;
+}
+.pi-course {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: var(--r-sm);
+  background: var(--blue-50);
+  color: var(--blue-800);
+  border: 0.5px solid var(--blue-100);
+  margin-bottom: 6px;
+}
+.pi-milestone {
+  font-size: 12px;
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+.momentum-callout {
+  background: var(--teal-50);
+  border: 0.5px solid var(--teal-100);
+  border-radius: var(--r-lg);
+  padding: 16px 20px;
+  font-size: 13px;
+  color: var(--teal-800);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+/* ── Download / finish ──────────────────────────────────────────── */
+.finish-hero {
+  text-align: center;
+  padding: 24px 0 28px;
+}
+.fh-word {
+  font-family: var(--font-serif);
+  font-size: 52px;
+  color: var(--teal);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.fh-sub { font-size: 15px; color: var(--gray-600); }
+
+.dl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.dl-card {
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 18px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.15s;
+}
+.dl-card:hover {
+  border-color: var(--teal-100);
+  background: var(--teal-50);
+}
+.dlc-ring {
+  width: 36px; height: 36px;
+  border-radius: var(--r-md);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+.dlc-title { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+.dlc-sub   { font-size: 12px; color: var(--gray-400); }
+
+.return-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--gray-400);
+  line-height: 1.6;
+  padding: 16px 20px;
+  border: 0.5px dashed var(--border-md);
+  border-radius: var(--r-lg);
+  margin-bottom: 20px;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+footer {
+  border-top: 0.5px solid var(--border);
+  padding: 32px 24px;
+  margin-top: 60px;
+}
+.footer-inner {
+  max-width: var(--max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.footer-logo { font-size: 14px; font-weight: 500; color: var(--ink); }
+.footer-logo span { color: var(--teal); }
+.footer-links { display: flex; gap: 20px; }
+.footer-links a { font-size: 12px; color: var(--gray-400); text-decoration: none; transition: color 0.15s; }
+.footer-links a:hover { color: var(--ink); }
+.footer-copy { font-size: 11px; color: var(--gray-400); }
+
+/* ── Utility ──────────────────────────────────────────────────── */
+.spacer { height: 16px; }
+.mt-16 { margin-top: 16px; }
+.mt-20 { margin-top: 20px; }
+.hidden { display: none !important; }
+
+@media (max-width: 560px) {
+  .page { padding: 32px 16px 60px; }
+  .hero h1 { font-size: 28px; }
+  .stat-grid { grid-template-columns: repeat(2,1fr); }
+  .gap-cols  { grid-template-columns: 1fr; }
+  .dl-grid   { grid-template-columns: 1fr; }
+  .st-item   { font-size: 9.5px; padding: 8px 3px; }
+  .ind-name  { width: 130px; font-size: 12px; }
+  nav .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ──────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">Reskil<span>lio</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="api.html">API Docs</a></li>
+      <li><a href="app.html" class="active">Try it</a></li>
+    </ul>
+    <a class="nav-gh" href="https://github.com/vipul9811kumar/ReSkillio" target="_blank" rel="noopener">GitHub &rarr;</a>
+  </div>
+</nav>
+
+<!-- ── Page ──────────────────────────────────────────────────────── -->
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-tag">Career rebound &middot; AI-powered</div>
+    <h1>Turn your past into<br><em>your next career</em></h1>
+    <p class="hero-sub">Upload your resume. ReSkillio finds your transferable skills, shows where you fit best across 8 industries, closes your gaps, and hands you a 90-day plan &mdash; in under 2 minutes.</p>
+    <div class="hero-stats">
+      <div class="hs-item"><span class="hs-num">47</span><span class="hs-label">avg skills found<br>per resume</span></div>
+      <div class="hs-item"><span class="hs-num">&lt;2 min</span><span class="hs-label">from upload<br>to full plan</span></div>
+      <div class="hs-item"><span class="hs-num">8</span><span class="hs-label">industries<br>scored</span></div>
+      <div class="hs-item"><span class="hs-num">90</span><span class="hs-label">day reskilling<br>roadmap</span></div>
+    </div>
+  </div>
+
+  <!-- Stepper -->
+  <div class="stepper-wrap">
+    <div class="stepper" id="stepper">
+      <div class="st-item active" data-step="0"><span class="st-n">01</span>Upload</div>
+      <div class="st-item" data-step="1"><span class="st-n">02</span>Analyzing</div>
+      <div class="st-item" data-step="2"><span class="st-n">03</span>Skills</div>
+      <div class="st-item" data-step="3"><span class="st-n">04</span>Industry</div>
+      <div class="st-item" data-step="4"><span class="st-n">05</span>Gap</div>
+      <div class="st-item" data-step="5"><span class="st-n">06</span>Narrative</div>
+      <div class="st-item" data-step="6"><span class="st-n">07</span>Plan</div>
+      <div class="st-item" data-step="7"><span class="st-n">08</span>Download</div>
+    </div>
+  </div>
+
+  <!-- ── S0 Upload ──────────────────────────────────────────────── -->
+  <div class="screen active" id="s0">
+    <div class="card">
+      <div class="card-title">Upload your resume</div>
+      <div class="card-sub">Drop any format &mdash; PDF or Word. No account needed. Your data is processed securely and never shared.</div>
+
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-in').click()">
+        <div class="upload-icon-ring">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <div class="uz-title">Drop your resume here</div>
+        <div class="uz-hint">PDF or DOCX &middot; up to 10 MB &middot; any format</div>
+      </div>
+      <input type="file" id="file-in" accept=".pdf,.docx" style="display:none">
+
+      <div class="file-badge" id="file-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span class="fb-name" id="fb-name">resume.pdf</span>
+        <span class="fb-status">ready to analyze</span>
+      </div>
+
+      <label class="fl" style="margin-top:4px">
+        Target role <span>(optional &mdash; leave blank to explore all options)</span>
+      </label>
+      <input type="text" id="target-role" placeholder="e.g. Operations Analyst, Data Analyst, Supply Chain Manager&hellip;">
+      <p class="field-note">Not sure yet? Skip this &mdash; ReSkillio will show you where you fit best across 8 industries.</p>
+    </div>
+
+    <div class="card-sm">
+      <p style="font-size:13px;color:var(--gray-600);line-height:1.65">ReSkillio reads your <em>entire</em> career history &mdash; not just your job titles. It finds the skills hidden inside your responsibilities, projects, and achievements that you may not even realise you have.</p>
+    </div>
+
+    <button class="btn-primary" id="start-btn" onclick="startAnalysis()">Analyze my career &rarr;</button>
+  </div>
+
+  <!-- ── S1 Progress ──────────────────────────────────────────────── -->
+  <div class="screen" id="s1">
+    <div class="card">
+      <div class="prog-header">
+        <div class="prog-title">Reading your career history</div>
+        <div class="prog-timer" id="timer">0.0s</div>
+      </div>
+      <p class="prog-sub">5 AI stages running in sequence. Each one is fail-safe &mdash; a slower stage never blocks results already produced.</p>
+
+      <div class="prog-bar-bg"><div class="prog-bar-fill" id="prog-fill"></div></div>
+
+      <div class="prog-steps">
+        <div class="prog-row">
+          <div class="prog-dot pd-wait" id="pd0"></div>
+          <span class="pr-label wait" id="pl0">Parsing resume &mdash; sections, roles, dates</span>
+          <span class="pr-time" id="pt0"></span>
+        </div>
+        <div class="prog-row">
+          <div class="prog-dot pd-wait" id="pd1"></div>
+          <span class="pr-label wait" id="pl1">Extracting skills &mdash; 3-pass NLP (PhraseMatcher &rarr; noun chunks &rarr; NER)</span>
+          <span class="pr-time" id="pt1"></span>
+        </div>
+        <div class="prog-row">
+          <div class="prog-dot pd-wait" id="pd2"></div>
+          <span class="pr-label wait" id="pl2">Embedding skills into 768-dim semantic space (Vertex AI)</span>
+          <span class="pr-time" id="pt2"></span>
+        </div>
+        <div class="prog-row">
+          <div class="prog-dot pd-wait" id="pd3"></div>
+          <span class="pr-label wait" id="pl3">Scoring against 8 industry vectors &mdash; BigQuery ML cosine distance</span>
+          <span class="pr-time" id="pt3"></span>
+        </div>
+        <div class="prog-row">
+          <div class="prog-dot pd-wait" id="pd4"></div>
+          <span class="pr-label wait" id="pl4">Writing your career narrative &mdash; Gemini 2.5 Flash + RAG grounding</span>
+          <span class="pr-time" id="pt4"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── S2 Skills ──────────────────────────────────────────────── -->
+  <div class="screen" id="s2">
+    <div class="card">
+      <div class="card-title">Your skill profile</div>
+      <div class="card-sub">47 skills found across 11 years of career history &mdash; including skills you may not have thought to put on your resume.</div>
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num sn-teal">47</div><div class="stat-lab">skills found</div></div>
+        <div class="stat-box"><div class="stat-num sn-blue">18</div><div class="stat-lab">technical</div></div>
+        <div class="stat-box"><div class="stat-num sn-teal">14</div><div class="stat-lab">leadership</div></div>
+        <div class="stat-box"><div class="stat-num sn-blue">15</div><div class="stat-lab">domain &amp; tools</div></div>
+      </div>
+
+      <div class="sh">Technical &amp; analytical</div>
+      <div class="skill-grid">
+        <span class="pill p-tech conf-high">Process optimization</span>
+        <span class="pill p-tech conf-high">Supply chain management</span>
+        <span class="pill p-tech conf-high">Data analysis</span>
+        <span class="pill p-tech conf-high">KPI reporting</span>
+        <span class="pill p-tech conf-med">SQL</span>
+        <span class="pill p-tech conf-med">Inventory forecasting</span>
+        <span class="pill p-tech conf-low">Demand planning</span>
+      </div>
+
+      <div class="sh">Tools &amp; platforms</div>
+      <div class="skill-grid">
+        <span class="pill p-tool conf-high">SAP ERP</span>
+        <span class="pill p-tool conf-high">WMS systems</span>
+        <span class="pill p-tool conf-med">Excel / Google Sheets</span>
+        <span class="pill p-tool conf-med">Tableau (basic)</span>
+        <span class="pill p-tool conf-low">Power BI</span>
+      </div>
+
+      <div class="sh">Leadership &amp; soft skills</div>
+      <div class="skill-grid">
+        <span class="pill p-soft conf-high">Team leadership (40 people)</span>
+        <span class="pill p-soft conf-high">Vendor negotiation</span>
+        <span class="pill p-soft conf-high">Cross-functional collaboration</span>
+        <span class="pill p-soft conf-med">Budget management</span>
+        <span class="pill p-soft conf-med">Risk management</span>
+        <span class="pill p-soft conf-med">Change management</span>
+        <span class="pill p-soft conf-low">Stakeholder communication</span>
+      </div>
+
+      <div class="legend-row">
+        <div class="leg-i"><div class="leg-dot" style="opacity:1"></div>Strongly evidenced</div>
+        <div class="leg-i"><div class="leg-dot" style="opacity:0.6"></div>Evidenced</div>
+        <div class="leg-i"><div class="leg-dot" style="opacity:0.35"></div>Inferred from context</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="goStep(3)">See where you fit best &rarr;</button>
+  </div>
+
+  <!-- ── S3 Industry ──────────────────────────────────────────────── -->
+  <div class="screen" id="s3">
+    <div class="card">
+      <div class="card-title">Your industry fit scores</div>
+      <div class="card-sub">Your skills were scored against 8 industries using BigQuery ML cosine distance &mdash; computed in-database against pre-built industry centroid vectors. These are the markets where you are <em>already</em> most competitive, before any reskilling.</div>
+
+      <div class="ind-list" id="ind-list">
+        <div class="ind-row">
+          <span class="ind-name">Operations &amp; analytics <span class="ind-badge ib-top">best fit</span></span>
+          <div class="ind-bar-bg"><div class="ind-bar-f ibc-strong" data-w="71.2"></div></div>
+          <span class="ind-score is-strong">71.2</span>
+        </div>
+        <div class="ind-row">
+          <span class="ind-name">Supply chain tech</span>
+          <div class="ind-bar-bg"><div class="ind-bar-f ibc-strong" data-w="68.4"></div></div>
+          <span class="ind-score is-strong">68.4</span>
+        </div>
+        <div class="ind-row">
+          <span class="ind-name">FinTech / risk ops</span>
+          <div class="ind-bar-bg"><div class="ind-bar-f ibc-mid" data-w="54.1"></div></div>
+          <span class="ind-score is-mid">54.1</span>
+        </div>
+        <div class="ind-row">
+          <span class="ind-name">HealthTech operations</span>
+          <div class="ind-bar-bg"><div class="ind-bar-f ibc-mid" data-w="47.3"></div></div>
+          <span class="ind-score is-mid">47.3</span>
+        </div>
+        <div class="ind-row">
+          <span class="ind-name">eCommerce &amp; retail ops</span>
+          <div class="ind-bar-bg"><div class="ind-bar-f ibc-low" data-w="38.9"></div></div>
+          <span class="ind-score is-low">38.9</span>
+        </div>
+        <div class="ind-row">
+          <span class="ind-name">Cybersecurity</span>
+          <div class="ind-bar-bg"><div class="ind-bar-f ibc-low" data-w="29.4"></div></div>
+          <span class="ind-score is-low">29.4</span>
+        </div>
+        <div class="ind-row">
+          <span class="ind-name">Software engineering</span>
+          <div class="ind-bar-bg"><div class="ind-bar-f ibc-low" data-w="22.1"></div></div>
+          <span class="ind-score is-low">22.1</span>
+        </div>
+        <div class="ind-row">
+          <span class="ind-name">Data &amp; AI (deep tech)</span>
+          <div class="ind-bar-bg"><div class="ind-bar-f ibc-low" data-w="18.6"></div></div>
+          <span class="ind-score is-low">18.6</span>
+        </div>
+      </div>
+
+      <div class="roles-callout">
+        <strong>Top suggested roles for you:</strong> Operations Analyst &middot; Supply Chain Data Analyst &middot; Logistics Technology Consultant &middot; Vendor Operations Manager &middot; Process Improvement Specialist
+      </div>
+
+      <p style="font-size:12px;color:var(--gray-400);line-height:1.6">A low score is not a failure &mdash; it is guidance on where <em>not</em> to spend energy. Focus your search on the top 2 industries where your existing skills are already most valuable.</p>
+    </div>
+    <button class="btn-primary" onclick="goStep(4)">Check your fit for a specific role &rarr;</button>
+  </div>
+
+  <!-- ── S4 Gap ──────────────────────────────────────────────────── -->
+  <div class="screen" id="s4">
+    <div class="card">
+      <div class="card-title">Gap analysis</div>
+      <div class="card-sub">Paste a job description to see exactly where you stand &mdash; what you already have, what is worth closing, and which of your existing skills transfer in ways you may not expect.</div>
+      <label class="fl">Job description</label>
+      <textarea id="jd-text" placeholder="Paste the job description here&hellip;&#10;&#10;Example: We're looking for an Operations Analyst to join our logistics intelligence team. You'll analyse freight data using Python and Tableau, build KPI dashboards, and drive efficiency improvements across our supply chain operations. Strong process improvement background required."></textarea>
+      <button class="btn-secondary mt-16" style="width:100%;text-align:center" onclick="runGap()">Analyze this role &rarr;</button>
+    </div>
+
+    <div class="card hidden" id="gap-result">
+      <div class="gap-score-hero">
+        <div>
+          <span class="gsh-num">74</span>
+          <span class="gsh-den">/100</span>
+        </div>
+        <p class="gsh-text">Strong match &mdash; you already have most of what this role needs. Just 3 skills to bridge before you are a compelling candidate.</p>
+      </div>
+
+      <div class="gap-cols">
+        <div>
+          <div class="gc-head">You already have</div>
+          <div class="gap-item gi-have"><div class="gi-dot gd-h"></div>Process optimization</div>
+          <div class="gap-item gi-have"><div class="gi-dot gd-h"></div>Data analysis</div>
+          <div class="gap-item gi-have"><div class="gi-dot gd-h"></div>KPI reporting</div>
+          <div class="gap-item gi-have"><div class="gi-dot gd-h"></div>Vendor negotiation</div>
+          <div class="gap-item gi-have"><div class="gi-dot gd-h"></div>SQL (basic)</div>
+          <div class="gap-item gi-have"><div class="gi-dot gd-h"></div>Supply chain domain</div>
+        </div>
+        <div>
+          <div class="gc-head">Skills to develop</div>
+          <div class="gap-item gi-need"><div class="gi-dot gd-n"></div>Python (data scripts)</div>
+          <div class="gap-item gi-need"><div class="gi-dot gd-n"></div>Tableau / Power BI</div>
+          <div class="gap-item gi-need"><div class="gi-dot gd-n"></div>A/B testing basics</div>
+        </div>
+      </div>
+
+      <div class="transfer-box">
+        <strong>Transferable match detected:</strong> your WMS systems experience maps to their &ldquo;data pipeline familiarity&rdquo; requirement &mdash; semantic similarity 0.78. Mention this explicitly in your cover letter; most candidates won&rsquo;t make this connection.
+      </div>
+    </div>
+
+    <button class="btn-primary hidden mt-16" id="gap-next" onclick="goStep(5)">Read your career story &rarr;</button>
+  </div>
+
+  <!-- ── S5 Narrative ──────────────────────────────────────────── -->
+  <div class="screen" id="s5">
+    <div class="card">
+      <div class="card-title">Your career narrative</div>
+      <div class="card-sub">Generated by Gemini 2.5 Flash, grounded entirely in facts retrieved from your skill profile and gap analysis. No generic language. No hallucination.</div>
+
+      <div class="narrative-block" id="narrative-text">
+        A data-driven operations leader with 11 years managing high-velocity logistics at scale, your foundation in process optimization, KPI-led decision making, and cross-functional team leadership directly translates to Operations Analyst roles in logistics technology. Your hands-on experience building warehouse tracking systems and managing $200M in annual freight positions you as someone who understands the operational reality behind the data &mdash; a rare combination that analytics teams actively seek. Closing the gap on Python and Tableau will make you a compelling candidate within 60&ndash;90 days.
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="copyNarrative()">Copy to clipboard</button>
+        <button class="btn-secondary">Use as LinkedIn summary</button>
+        <button class="btn-secondary">Use as cover letter opener</button>
+      </div>
+    </div>
+
+    <div class="grounded-note">
+      This narrative was built only from facts in your resume and your BigQuery skill profile. The model was given a strict system instruction: do not invent or infer &mdash; only use retrieved context. You can use this text directly.
+    </div>
+
+    <button class="btn-primary" onclick="goStep(6)">See your 90-day plan &rarr;</button>
+  </div>
+
+  <!-- ── S6 Plan ──────────────────────────────────────────────── -->
+  <div class="screen" id="s6">
+    <div class="card">
+      <div class="card-title">Your 90-day reskilling plan</div>
+      <div class="card-sub">Built around your 3 skill gaps by a two-agent CrewAI crew &mdash; one agent researches real courses (Coursera, Udemy, YouTube), one synthesises them into a phased roadmap. Designed for 6&ndash;8 hours per week alongside active job searching.</div>
+
+      <div class="plan-item">
+        <div class="pi-weeks">Weeks 1&ndash;4</div>
+        <div>
+          <div class="pi-skill">Python for data analysis</div>
+          <div class="pi-desc">Focus on pandas, data cleaning, and basic operational scripting. Use your own freight data as the practice dataset &mdash; your domain knowledge is the advantage, not the code.</div>
+          <div class="pi-course">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Coursera: Python for Everybody &mdash; University of Michigan
+          </div>
+          <div class="pi-milestone">Milestone: clean and visualise a real dataset from your previous role &mdash; this becomes a portfolio piece</div>
+        </div>
+      </div>
+
+      <div class="plan-item">
+        <div class="pi-weeks">Weeks 5&ndash;8</div>
+        <div>
+          <div class="pi-skill">Tableau fundamentals</div>
+          <div class="pi-desc">Build operational KPI dashboards. You already know what the metrics mean &mdash; now learn to present them visually. Your Operations Analyst target role lists this as a required skill.</div>
+          <div class="pi-course">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Udemy: Tableau A-Z &mdash; Kirill Eremenko
+          </div>
+          <div class="pi-milestone">Milestone: recreate your old KPI dashboard in Tableau &mdash; screenshot for LinkedIn and portfolio</div>
+        </div>
+      </div>
+
+      <div class="plan-item">
+        <div class="pi-weeks">Weeks 9&ndash;12</div>
+        <div>
+          <div class="pi-skill">A/B testing &amp; analytics basics</div>
+          <div class="pi-desc">Close the final gap and prepare to speak confidently about experimentation in interviews. 2&ndash;3 hours of study &mdash; not a full course. Your process improvement background makes this intuitive.</div>
+          <div class="pi-course">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Coursera: A/B Testing for Business Analysts &mdash; Google
+          </div>
+          <div class="pi-milestone">Milestone: apply for 3 Operations Analyst roles &mdash; you are ready</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="momentum-callout">
+      You are not starting from zero. You are layering three targeted skills on top of 11 years of deep operational expertise. That combination is uncommon and genuinely sought after &mdash; the courses are the credential. The knowledge is already yours.
+    </div>
+
+    <button class="btn-primary" onclick="goStep(7)">Get your full report &rarr;</button>
+  </div>
+
+  <!-- ── S7 Download ──────────────────────────────────────────── -->
+  <div class="screen" id="s7">
+    <div class="card">
+      <div class="finish-hero">
+        <div class="fh-word">Done.</div>
+        <p class="fh-sub">From displaced to job-ready in under 2 minutes.</p>
+      </div>
+
+      <div class="stat-grid" style="margin-bottom:24px">
+        <div class="stat-box"><div class="stat-num sn-teal">47</div><div class="stat-lab">skills found</div></div>
+        <div class="stat-box"><div class="stat-num sn-blue">74/100</div><div class="stat-lab">role match score</div></div>
+        <div class="stat-box"><div class="stat-num sn-teal">3</div><div class="stat-lab">skills to bridge</div></div>
+        <div class="stat-box"><div class="stat-num sn-blue">90</div><div class="stat-lab">days to ready</div></div>
+      </div>
+
+      <div class="sh">Download your career package</div>
+      <div class="dl-grid">
+        <div class="dl-card" onclick="fakeDl('Skills-first resume')">
+          <div class="dlc-ring" style="background:var(--blue-50)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <div class="dlc-title">Skills-first resume</div>
+          <div class="dlc-sub">Rewritten to lead with transferable skills, not job titles</div>
+        </div>
+        <div class="dl-card" onclick="fakeDl('90-day roadmap PDF')">
+          <div class="dlc-ring" style="background:var(--teal-50)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="dlc-title">90-day roadmap PDF</div>
+          <div class="dlc-sub">Week-by-week plan with all course links included</div>
+        </div>
+        <div class="dl-card" onclick="copyNarrative()">
+          <div class="dlc-ring" style="background:var(--amber-50)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </div>
+          <div class="dlc-title">Career narrative</div>
+          <div class="dlc-sub">Copy-ready for LinkedIn, cover letters, and interviews</div>
+        </div>
+        <div class="dl-card" onclick="fakeDl('Full skill report')">
+          <div class="dlc-ring" style="background:var(--green-50)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green-400)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="dlc-title">Full skill report</div>
+          <div class="dlc-sub">All 47 skills with confidence scores and source evidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="return-note">
+      Found a new job posting? Come back and paste it in &mdash; your skill profile is saved to BigQuery. The gap analysis runs in under 10 seconds on return visits.
+    </div>
+
+    <button class="btn-primary" onclick="goStep(0)" style="background:transparent;color:var(--teal);border:1px solid var(--teal-100)">Start a new analysis</button>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ── Footer ──────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Reskil<span>lio</span></div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="api.html">API Docs</a>
+      <a href="https://github.com/vipul9811kumar/ReSkillio" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <div class="footer-copy">&copy; 2026 Vipul Kumar &middot; Built on Google Cloud &middot; spaCy &middot; CrewAI &middot; Gemini</div>
+  </div>
+</footer>
+
+<script>
+/* ── State ──────────────────────────────────────────────────────── */
+let currentStep = 0;
+let timerInterval = null;
+let timerStart = 0;
+
+/* ── File upload ──────────────────────────────────────────────── */
+const fileIn = document.getElementById('file-in');
+const uz = document.getElementById('upload-zone');
+const fb = document.getElementById('file-badge');
+
+fileIn.addEventListener('change', function() {
+  if (this.files && this.files[0]) showFile(this.files[0].name);
+});
+
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('dragover'); });
+uz.addEventListener('dragleave', () => uz.classList.remove('dragover'));
+uz.addEventListener('drop', e => {
+  e.preventDefault();
+  uz.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) showFile(f.name);
+});
+
+function showFile(name) {
+  document.getElementById('fb-name').textContent = name;
+  fb.style.display = 'flex';
+  uz.style.display = 'none';
+}
+
+/* ── Step navigation ──────────────────────────────────────────── */
+function goStep(n) {
+  document.querySelectorAll('.screen').forEach((s, i) => {
+    s.classList.toggle('active', i === n);
+  });
+  document.querySelectorAll('.st-item').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i === n) s.classList.add('active');
+    else if (i < n) s.classList.add('done');
+  });
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (n === 3) {
+    setTimeout(animateBars, 200);
+  }
+}
+
+/* ── Analysis simulation ──────────────────────────────────────── */
+function startAnalysis() {
+  goStep(1);
+  startTimer();
+
+  const stages = [
+    { label: 'Parsing resume \u2014 sections, roles, dates',                            time: '0.3s', pct: 18 },
+    { label: 'Extracting skills \u2014 3-pass NLP (PhraseMatcher \u2192 noun chunks \u2192 NER)', time: '1.2s', pct: 36 },
+    { label: 'Embedding skills into 768-dim semantic space (Vertex AI)',                time: '0.5s', pct: 54 },
+    { label: 'Scoring against 8 industry vectors \u2014 BigQuery ML cosine distance',   time: '0.8s', pct: 72 },
+    { label: 'Writing your career narrative \u2014 Gemini 2.5 Flash + RAG grounding',   time: '3.1s', pct: 100 },
+  ];
+  const starts = [300, 800, 1700, 2400, 3100];
+  const ends   = [700, 1600, 2300, 3000, 4500];
+  const fill   = document.getElementById('prog-fill');
+
+  stages.forEach((st, i) => {
+    setTimeout(() => {
+      document.getElementById('pd' + i).className = 'prog-dot pd-active';
+      document.getElementById('pd' + i).innerHTML = '<div class="pulse"></div>';
+      const el = document.getElementById('pl' + i);
+      el.className = 'pr-label running';
+      el.textContent = st.label;
+      fill.style.width = st.pct + '%';
+    }, starts[i]);
+
+    setTimeout(() => {
+      document.getElementById('pd' + i).className = 'prog-dot pd-done';
+      document.getElementById('pd' + i).innerHTML = '<span class="tick">\u2713</span>';
+      document.getElementById('pl' + i).className = 'pr-label done';
+      document.getElementById('pt' + i).textContent = st.time;
+      if (i === stages.length - 1) {
+        stopTimer();
+        setTimeout(() => goStep(2), 600);
+      }
+    }, ends[i]);
+  });
+}
+
+/* ── Timer ──────────────────────────────────────────────────────── */
+function startTimer() {
+  timerStart = Date.now();
+  const el = document.getElementById('timer');
+  timerInterval = setInterval(() => {
+    const s = ((Date.now() - timerStart) / 1000).toFixed(1);
+    el.textContent = s + 's';
+  }, 100);
+}
+function stopTimer() {
+  clearInterval(timerInterval);
+}
+
+/* ── Industry bars ──────────────────────────────────────────────── */
+function animateBars() {
+  document.querySelectorAll('.ind-bar-f').forEach(b => {
+    const w = b.dataset.w || 0;
+    b.style.width = '0%';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => { b.style.width = parseFloat(w) + '%'; });
+    });
+  });
+}
+
+/* ── Gap analysis ──────────────────────────────────────────────── */
+function runGap() {
+  const jd = document.getElementById('jd-text').value.trim();
+  const gr = document.getElementById('gap-result');
+  const nb = document.getElementById('gap-next');
+  gr.classList.remove('hidden');
+  nb.classList.remove('hidden');
+  if (jd.length > 10) {
+    gr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+/* ── Copy narrative ──────────────────────────────────────────────── */
+function copyNarrative() {
+  const t = document.getElementById('narrative-text');
+  if (t && navigator.clipboard) {
+    navigator.clipboard.writeText(t.innerText.trim())
+      .then(() => alert('Narrative copied to clipboard.'))
+      .catch(() => {});
+  }
+}
+
+/* ── Fake download ──────────────────────────────────────────────── */
+function fakeDl(name) {
+  alert('In the live version, this downloads: ' + name + '.\n\nConnect the /analyze API endpoint to generate real outputs.');
+}
+
+/* ── Init bar widths to 0 so animation works on revisit ─────────── */
+document.querySelectorAll('.ind-bar-f').forEach(b => { b.style.width = '0%'; });
+</script>
+
+</body>
+</html>

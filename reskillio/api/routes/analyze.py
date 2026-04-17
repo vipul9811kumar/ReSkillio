@@ -68,7 +68,10 @@ async def analyze(
 
     # ── Core params ───────────────────────────────────────────────────────
     candidate_id: Annotated[Optional[str], Form(description="Candidate ID (auto-generated if omitted)")] = None,
-    target_role:  Annotated[str,           Form(description="Target job title, e.g. 'Senior Data Engineer'")] = ...,
+    target_role:  Annotated[Optional[str], Form(description="Target job title (optional — ReSkillio will infer best fit if omitted)")] = None,
+
+    # ── Free-text context (optional — surfaces traits the resume suppresses) ─
+    context_text: Annotated[Optional[str], Form(description="Candidate's own words: what problems they loved, what their manager would say they're great at")] = None,
 
     # ── JD (optional — enables gap analysis) ─────────────────────────────
     jd_text:  Annotated[Optional[str], Form(description="Job description text for gap analysis")] = None,
@@ -126,12 +129,14 @@ async def analyze(
             "Provide either a resume PDF file (resume=) or plain text (resume_text=).",
         )
 
-    # ── Resolve candidate_id ──────────────────────────────────────────────
-    cid = (candidate_id or "").strip() or f"demo-{uuid.uuid4().hex[:8]}"
+    # ── Resolve candidate_id and target_role ─────────────────────────────
+    cid         = (candidate_id or "").strip() or f"demo-{uuid.uuid4().hex[:8]}"
+    role_str    = (target_role  or "").strip() or "Career Transition"
 
     logger.info(
         f"[analyze] Starting full analysis — "
-        f"candidate={cid} role='{target_role}' "
+        f"candidate={cid} role='{role_str}' "
+        f"context={'yes' if context_text else 'no'} "
         f"jd={'yes' if jd_text else 'no'} pathway={include_pathway}"
     )
 
@@ -142,7 +147,7 @@ async def analyze(
         result = run_full_analysis(
             resume_text=text,
             candidate_id=cid,
-            target_role=target_role,
+            target_role=role_str,
             project_id=settings.gcp_project_id,
             region=settings.gcp_region,
             jd_text=jd_text or None,
@@ -150,6 +155,7 @@ async def analyze(
             industry=industry or None,
             include_pathway=include_pathway,
             spacy_model=settings.spacy_model,
+            context_text=context_text or None,
         )
     except Exception as exc:
         logger.exception(f"[analyze] Orchestration error: {exc}")

@@ -30,6 +30,7 @@ from reskillio.models.industry import IndustryMatchResult
 from reskillio.models.jd import Industry
 from reskillio.models.narrative import NarrativeGrounding, NarrativeResult
 from reskillio.models.pathway import PathwayRoadmap
+from reskillio.models.trait import TraitProfile
 
 
 def _ms(start: float) -> int:
@@ -47,6 +48,7 @@ def run_full_analysis(
     industry:        Optional[str] = None,
     include_pathway: bool = False,
     spacy_model:     str = "en_core_web_lg",
+    context_text:    Optional[str] = None,
 ) -> AnalysisResult:
     """
     Orchestrate the full career-rebound pipeline for one candidate.
@@ -144,6 +146,30 @@ def run_full_analysis(
             stages=stages,
             total_duration_ms=_ms(wall_start),
         )
+
+    # ====================================================================
+    # Stage 1.5 — Trait inference (resume text + optional free-text context)
+    # ====================================================================
+    t = time.perf_counter()
+    trait_profile: Optional[TraitProfile] = None
+
+    try:
+        from reskillio.pipelines.trait_inference_pipeline import run_trait_inference
+
+        trait_profile = run_trait_inference(
+            resume_text=resume_text,
+            project_id=project_id,
+            region=region,
+            context_text=context_text,
+        )
+        stages["trait"] = StageResult(success=True, duration_ms=_ms(t))
+        logger.info(
+            f"[analyze] Stage 1.5 trait: archetype={trait_profile.archetype} "
+            f"in {_ms(t)} ms"
+        )
+    except Exception as exc:
+        stages["trait"] = StageResult(success=False, duration_ms=_ms(t), error=str(exc))
+        logger.warning(f"[analyze] Stage 1.5 trait FAILED: {exc}")
 
     # ====================================================================
     # Stage 2 — Gap analysis (only when JD text provided)
@@ -278,6 +304,7 @@ def run_full_analysis(
         analyzed_at=datetime.now(timezone.utc),
         skill_count=skill_count,
         top_skills=top_skills,
+        trait_profile=trait_profile,
         gap=gap,
         industry_match=industry_match,
         narrative=narrative_text,

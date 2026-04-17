@@ -17,6 +17,7 @@ from reskillio.models.gap import GapAnalysisResult
 from reskillio.models.industry import IndustryMatchResult
 from reskillio.models.narrative import NarrativeGrounding
 from reskillio.models.pathway import PathwayRoadmap
+from reskillio.models.trait import TraitProfile
 
 
 # ---------------------------------------------------------------------------
@@ -51,6 +52,9 @@ class AnalysisResult(BaseModel):
     # Stage 1 — Skill extraction
     skill_count: int
     top_skills:  list[SkillSummary]
+
+    # Stage 1.5 — Trait inference
+    trait_profile: Optional[TraitProfile] = None
 
     # Stage 2 — Gap analysis vs target JD / role
     gap: Optional[GapAnalysisResult] = None

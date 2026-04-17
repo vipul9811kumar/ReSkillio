@@ -845,6 +845,149 @@ footer {
 .footer-links a:hover { color: var(--ink); }
 .footer-copy { font-size: 11px; color: var(--gray-400); }
 
+/* ── Trait Profile ────────────────────────────────────────────── */
+.trait-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 24px 28px;
+  margin-bottom: 16px;
+}
+.archetype-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.archetype-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--teal-800);
+  background: var(--teal-50);
+  border: 0.5px solid var(--teal-100);
+  border-radius: 99px;
+  padding: 5px 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.archetype-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+.identity-statement {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--ink);
+  padding-top: 2px;
+}
+.trait-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.trait-box {
+  background: var(--surface-2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+}
+.tb-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 6px;
+}
+.tb-value { font-size: 13px; color: var(--ink); font-weight: 500; line-height: 1.4; }
+.tb-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tb-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: var(--teal-50);
+  color: var(--teal-800);
+  border: 0.5px solid var(--teal-100);
+}
+.hidden-strength-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--gray-600);
+  line-height: 1.55;
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.hidden-strength-item:last-child { border-bottom: none; }
+.hs-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--blue-600);
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.archetype-reason {
+  font-size: 12px;
+  color: var(--gray-400);
+  line-height: 1.65;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-radius: var(--r-md);
+  border: 0.5px solid var(--border);
+  margin-top: 16px;
+}
+
+/* ── Free-text context input ──────────────────────────────────── */
+.context-wrap {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 0.5px solid var(--border);
+}
+.context-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 3px;
+  display: block;
+}
+.context-hint {
+  font-size: 12px;
+  color: var(--gray-400);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+textarea#context-text {
+  width: 100%;
+  min-height: 88px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 0.5px solid var(--border-md);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface);
+  resize: vertical;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+}
+textarea#context-text:focus { outline: none; border-color: var(--teal-100); }
+textarea#context-text::placeholder { color: var(--gray-400); }
+
+@media (max-width: 560px) {
+  .trait-grid { grid-template-columns: 1fr 1fr; }
+  .archetype-hero { flex-direction: column; gap: 10px; }
+}
+
 /* ── Utility ──────────────────────────────────────────────────── */
 .spacer { height: 16px; }
 .mt-16 { margin-top: 16px; }
@@ -944,11 +1087,13 @@ footer {
       <p class="field-note">Not sure yet? Skip this &mdash; ReSkillio will show you where you fit best across 8 industries.</p>
     </div>
 
-    <div class="card-sm">
-      <p style="font-size:13px;color:var(--gray-600);line-height:1.65">ReSkillio reads your <em>entire</em> career history &mdash; not just your job titles. It finds the skills hidden inside your responsibilities, projects, and achievements that you may not even realise you have.</p>
+    <div class="context-wrap">
+      <label class="context-label" for="context-text">Anything your resume doesn&rsquo;t capture? <span style="font-weight:400;color:var(--gray-400)">(optional)</span></label>
+      <p class="context-hint">What problems did you love solving, or what would your manager say you&rsquo;re genuinely great at? 3&ndash;4 sentences is plenty &mdash; this helps us find the version of you that job titles miss.</p>
+      <textarea id="context-text" placeholder="e.g. I was always the person called when a project was in trouble. I built the cross-functional team that no one thought could work. I loved the moments when I could see a broken system and knew exactly how to fix it&hellip;"></textarea>
     </div>
 
-    <button class="btn-primary" id="start-btn" onclick="startAnalysis()">Analyze my career &rarr;</button>
+    <button class="btn-primary" id="start-btn" onclick="startAnalysis()" style="margin-top:20px">Analyze my career &rarr;</button>
   </div>
 
   <!-- ── S1 Progress ──────────────────────────────────────────────── -->
@@ -985,8 +1130,13 @@ footer {
         </div>
         <div class="prog-row">
           <div class="prog-dot pd-wait" id="pd4"></div>
-          <span class="pr-label wait" id="pl4">Writing your career narrative &mdash; Gemini 2.5 Flash + RAG grounding</span>
+          <span class="pr-label wait" id="pl4">Inferring your professional archetype &mdash; Gemini 2.5 Flash trait analysis</span>
           <span class="pr-time" id="pt4"></span>
+        </div>
+        <div class="prog-row">
+          <div class="prog-dot pd-wait" id="pd5"></div>
+          <span class="pr-label wait" id="pl5">Writing your career narrative &mdash; Gemini 2.5 Flash + RAG grounding</span>
+          <span class="pr-time" id="pt5"></span>
         </div>
       </div>
     </div>
@@ -1042,6 +1192,34 @@ footer {
         <div class="leg-i"><div class="leg-dot" style="opacity:0.35"></div>Inferred from context</div>
       </div>
     </div>
+    <!-- Trait profile card (rendered by renderTrait) -->
+    <div class="trait-card hidden" id="trait-card">
+      <div class="archetype-hero">
+        <span class="archetype-badge" id="archetype-badge">—</span>
+        <div class="identity-statement" id="identity-statement"></div>
+      </div>
+
+      <div class="trait-grid">
+        <div class="trait-box">
+          <div class="tb-label">Work values</div>
+          <div class="tb-chips" id="work-values"></div>
+        </div>
+        <div class="trait-box">
+          <div class="tb-label">Decision style</div>
+          <div class="tb-value" id="decision-style">—</div>
+        </div>
+        <div class="trait-box">
+          <div class="tb-label">Best fit stage</div>
+          <div class="tb-value" id="ideal-stage">—</div>
+        </div>
+      </div>
+
+      <div class="sh">Strengths your resume doesn&rsquo;t show</div>
+      <div id="hidden-strengths"></div>
+
+      <div class="archetype-reason" id="archetype-reason"></div>
+    </div>
+
     <button class="btn-primary" onclick="goStep(3)">See where you fit best &rarr;</button>
   </div>
 
@@ -1362,11 +1540,12 @@ const STAGE_LABELS = [
   'Extracting skills \u2014 3-pass NLP (PhraseMatcher \u2192 noun chunks \u2192 NER)',
   'Embedding skills into 768-dim semantic space (Vertex AI)',
   'Scoring against 8 industry vectors \u2014 BigQuery ML cosine distance',
+  'Inferring your professional archetype \u2014 Gemini 2.5 Flash trait analysis',
   'Writing your career narrative \u2014 Gemini 2.5 Flash + RAG grounding',
 ];
-const STAGE_KEYS  = ['extract', 'extract', 'industry', 'industry', 'narrative'];
-const STAGE_PCT   = [18, 36, 54, 72, 100];
-const STAGE_STARTS= [300, 900, 1800, 2700, 3600];
+const STAGE_KEYS  = ['extract', 'extract', 'industry', 'industry', 'trait', 'narrative'];
+const STAGE_PCT   = [15, 30, 48, 65, 82, 100];
+const STAGE_STARTS= [300, 800, 1600, 2500, 3400, 4300];
 
 let progressTimers = [];
 
@@ -1398,6 +1577,7 @@ function finaliseProgress(stages) {
     stages.extract   ? stages.extract.duration_ms   : null,
     stages.industry  ? stages.industry.duration_ms  : null,
     stages.industry  ? stages.industry.duration_ms  : null,
+    stages.trait     ? stages.trait.duration_ms     : null,
     stages.narrative ? stages.narrative.duration_ms : null,
   ];
 
@@ -1421,7 +1601,10 @@ async function startAnalysis() {
 
   const formData = new FormData();
   formData.append('resume', resumeFile);
-  formData.append('target_role', document.getElementById('target-role').value.trim() || 'Career Transition');
+  const targetRole = document.getElementById('target-role').value.trim();
+  if (targetRole) formData.append('target_role', targetRole);
+  const contextText = document.getElementById('context-text').value.trim();
+  if (contextText) formData.append('context_text', contextText);
 
   try {
     const res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData });
@@ -1442,6 +1625,7 @@ async function startAnalysis() {
   stopTimer();
 
   renderSkills(analysisData);
+  renderTrait(analysisData);
   renderIndustry(analysisData);
   renderNarrative(analysisData);
   renderSummary(analysisData);
@@ -1495,6 +1679,36 @@ function renderSkills(data) {
     <div class="leg-i"><div class="leg-dot" style="opacity:0.35"></div>Inferred from context</div>
   `;
   container.appendChild(legend);
+}
+
+/* ── Render: Trait Profile (S2) ───────────────────────────────── */
+function renderTrait(data) {
+  const t = data?.trait_profile;
+  if (!t) return;
+
+  document.getElementById('archetype-badge').textContent   = t.archetype;
+  document.getElementById('identity-statement').textContent = t.identity_statement;
+  document.getElementById('decision-style').textContent    = t.decision_style;
+  document.getElementById('ideal-stage').textContent       = t.ideal_stage;
+  document.getElementById('archetype-reason').textContent  = t.archetype_reason;
+
+  const valuesEl = document.getElementById('work-values');
+  valuesEl.innerHTML = '';
+  (t.work_values || []).forEach(v => {
+    const sp = document.createElement('span');
+    sp.className = 'tb-chip';
+    sp.textContent = v;
+    valuesEl.appendChild(sp);
+  });
+
+  const strengthsEl = document.getElementById('hidden-strengths');
+  strengthsEl.innerHTML = '';
+  (t.hidden_strengths || []).forEach(s => {
+    strengthsEl.innerHTML +=
+      `<div class="hidden-strength-item"><div class="hs-dot"></div><span>${s}</span></div>`;
+  });
+
+  document.getElementById('trait-card').classList.remove('hidden');
 }
 
 /* ── Render: Industry (S3) ─────────────────────────────────────── */

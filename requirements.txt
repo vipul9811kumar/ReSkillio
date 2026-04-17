@@ -1,33 +1,29 @@
 # --- NLP core ---
-spacy==3.7.4
-https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.7.1/en_core_web_lg-3.7.1.tar.gz
+spacy==3.8.14
+https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0.tar.gz
 
-# --- LangChain ecosystem ---
-langchain==0.2.16
-langchain-google-vertexai==1.0.6
-langchain-community==0.2.16
+# --- LangChain / LangGraph ecosystem ---
+langchain-core>=1.2.0
+langgraph>=1.1.0
 
 # --- CrewAI market analyst agent ---
-crewai>=1.0.0
-litellm>=1.0.0
-ddgs>=1.0.0
-
-# --- LangGraph agent ---
-langgraph>=1.0.0
+crewai>=1.14.0
+litellm>=1.83.0
+ddgs>=9.0.0
 
 # --- Gemini AI Studio (generative narrative) ---
 google-genai>=1.0.0
 
 # --- GCP / Vertex AI ---
-google-cloud-aiplatform==1.62.0
-google-cloud-bigquery==3.25.0
-google-cloud-storage==2.18.2
+google-cloud-aiplatform>=1.62.0
+google-cloud-bigquery>=3.25.0
+google-cloud-storage>=2.18.0
 google-cloud-monitoring>=2.0.0
 google-auth>=2.32.0
 
 # --- API layer ---
-fastapi==0.110.3
-uvicorn[standard]>=0.30.0
+fastapi>=0.136.0
+uvicorn[standard]>=0.44.0
 python-multipart>=0.0.9
 
 # --- PDF ingestion ---

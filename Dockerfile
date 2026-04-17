@@ -21,4 +21,5 @@ RUN pip install --no-cache-dir -e .
 
 ENV PYTHONPATH=/app
 
-# KFP components run as the default user — no CMD needed
+EXPOSE 8080
+CMD ["uvicorn", "reskillio.api.main:app", "--host", "0.0.0.0", "--port", "8080"]

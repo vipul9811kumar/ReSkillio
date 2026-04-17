@@ -1242,28 +1242,28 @@ footer {
 
       <div class="sh">Download your career package</div>
       <div class="dl-grid">
-        <div class="dl-card" onclick="fakeDl('Skills-first resume')">
+        <div class="dl-card" onclick="alert('Skills-first resume rewrite coming in a future update \u2014 download your skill report below for now.')">
           <div class="dlc-ring" style="background:var(--blue-50)">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#378ADD" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           </div>
           <div class="dlc-title">Skills-first resume</div>
           <div class="dlc-sub">Rewritten to lead with transferable skills, not job titles</div>
         </div>
-        <div class="dl-card" onclick="fakeDl('90-day roadmap PDF')">
+        <div class="dl-card" onclick="alert('90-day roadmap PDF requires include_pathway=true \u2014 coming in a future update.')">
           <div class="dlc-ring" style="background:var(--teal-50)">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           </div>
           <div class="dlc-title">90-day roadmap PDF</div>
           <div class="dlc-sub">Week-by-week plan with all course links included</div>
         </div>
-        <div class="dl-card" onclick="copyNarrative()">
+        <div class="dl-card" onclick="dlNarrative()">
           <div class="dlc-ring" style="background:var(--amber-50)">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           </div>
           <div class="dlc-title">Career narrative</div>
           <div class="dlc-sub">Copy-ready for LinkedIn, cover letters, and interviews</div>
         </div>
-        <div class="dl-card" onclick="fakeDl('Full skill report')">
+        <div class="dl-card" onclick="dlSkillReport()">
           <div class="dlc-ring" style="background:var(--green-50)">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green-400)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           </div>
@@ -1297,10 +1297,15 @@ footer {
 </footer>
 
 <script>
+/* ── Config ─────────────────────────────────────────────────────── */
+const API_BASE = 'https://reskillio-REPLACE_ME.a.run.app'; // swap after Cloud Run deploy
+
 /* ── State ──────────────────────────────────────────────────────── */
 let currentStep = 0;
 let timerInterval = null;
 let timerStart = 0;
+let analysisData = null;   // holds the full /analyze JSON response
+let resumeFile = null;     // holds the uploaded File object
 
 /* ── File upload ──────────────────────────────────────────────── */
 const fileIn = document.getElementById('file-in');
@@ -1308,7 +1313,7 @@ const uz = document.getElementById('upload-zone');
 const fb = document.getElementById('file-badge');
 
 fileIn.addEventListener('change', function() {
-  if (this.files && this.files[0]) showFile(this.files[0].name);
+  if (this.files && this.files[0]) { resumeFile = this.files[0]; showFile(resumeFile.name); }
 });
 
 uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('dragover'); });
@@ -1317,7 +1322,7 @@ uz.addEventListener('drop', e => {
   e.preventDefault();
   uz.classList.remove('dragover');
   const f = e.dataTransfer.files[0];
-  if (f) showFile(f.name);
+  if (f) { resumeFile = f; showFile(f.name); }
 });
 
 function showFile(name) {
@@ -1338,49 +1343,7 @@ function goStep(n) {
   });
   currentStep = n;
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  if (n === 3) {
-    setTimeout(animateBars, 200);
-  }
-}
-
-/* ── Analysis simulation ──────────────────────────────────────── */
-function startAnalysis() {
-  goStep(1);
-  startTimer();
-
-  const stages = [
-    { label: 'Parsing resume \u2014 sections, roles, dates',                            time: '0.3s', pct: 18 },
-    { label: 'Extracting skills \u2014 3-pass NLP (PhraseMatcher \u2192 noun chunks \u2192 NER)', time: '1.2s', pct: 36 },
-    { label: 'Embedding skills into 768-dim semantic space (Vertex AI)',                time: '0.5s', pct: 54 },
-    { label: 'Scoring against 8 industry vectors \u2014 BigQuery ML cosine distance',   time: '0.8s', pct: 72 },
-    { label: 'Writing your career narrative \u2014 Gemini 2.5 Flash + RAG grounding',   time: '3.1s', pct: 100 },
-  ];
-  const starts = [300, 800, 1700, 2400, 3100];
-  const ends   = [700, 1600, 2300, 3000, 4500];
-  const fill   = document.getElementById('prog-fill');
-
-  stages.forEach((st, i) => {
-    setTimeout(() => {
-      document.getElementById('pd' + i).className = 'prog-dot pd-active';
-      document.getElementById('pd' + i).innerHTML = '<div class="pulse"></div>';
-      const el = document.getElementById('pl' + i);
-      el.className = 'pr-label running';
-      el.textContent = st.label;
-      fill.style.width = st.pct + '%';
-    }, starts[i]);
-
-    setTimeout(() => {
-      document.getElementById('pd' + i).className = 'prog-dot pd-done';
-      document.getElementById('pd' + i).innerHTML = '<span class="tick">\u2713</span>';
-      document.getElementById('pl' + i).className = 'pr-label done';
-      document.getElementById('pt' + i).textContent = st.time;
-      if (i === stages.length - 1) {
-        stopTimer();
-        setTimeout(() => goStep(2), 600);
-      }
-    }, ends[i]);
-  });
+  if (n === 3) setTimeout(animateBars, 200);
 }
 
 /* ── Timer ──────────────────────────────────────────────────────── */
@@ -1388,15 +1351,207 @@ function startTimer() {
   timerStart = Date.now();
   const el = document.getElementById('timer');
   timerInterval = setInterval(() => {
-    const s = ((Date.now() - timerStart) / 1000).toFixed(1);
-    el.textContent = s + 's';
+    el.textContent = ((Date.now() - timerStart) / 1000).toFixed(1) + 's';
   }, 100);
 }
-function stopTimer() {
-  clearInterval(timerInterval);
+function stopTimer() { clearInterval(timerInterval); }
+
+/* ── Progress animation (runs while API call is in-flight) ───── */
+const STAGE_LABELS = [
+  'Parsing resume \u2014 sections, roles, dates',
+  'Extracting skills \u2014 3-pass NLP (PhraseMatcher \u2192 noun chunks \u2192 NER)',
+  'Embedding skills into 768-dim semantic space (Vertex AI)',
+  'Scoring against 8 industry vectors \u2014 BigQuery ML cosine distance',
+  'Writing your career narrative \u2014 Gemini 2.5 Flash + RAG grounding',
+];
+const STAGE_KEYS  = ['extract', 'extract', 'industry', 'industry', 'narrative'];
+const STAGE_PCT   = [18, 36, 54, 72, 100];
+const STAGE_STARTS= [300, 900, 1800, 2700, 3600];
+
+let progressTimers = [];
+
+function startProgressAnimation() {
+  const fill = document.getElementById('prog-fill');
+  progressTimers.forEach(clearTimeout);
+  progressTimers = [];
+
+  STAGE_LABELS.forEach((label, i) => {
+    const t = setTimeout(() => {
+      document.getElementById('pd' + i).className = 'prog-dot pd-active';
+      document.getElementById('pd' + i).innerHTML = '<div class="pulse"></div>';
+      const el = document.getElementById('pl' + i);
+      el.className = 'pr-label running';
+      el.textContent = label;
+      fill.style.width = STAGE_PCT[i] + '%';
+    }, STAGE_STARTS[i]);
+    progressTimers.push(t);
+  });
 }
 
-/* ── Industry bars ──────────────────────────────────────────────── */
+function finaliseProgress(stages) {
+  const fill = document.getElementById('prog-fill');
+  fill.style.width = '100%';
+
+  // Map API stage durations onto the 5 display rows
+  const durations = [
+    stages.extract   ? stages.extract.duration_ms   : null,
+    stages.extract   ? stages.extract.duration_ms   : null,
+    stages.industry  ? stages.industry.duration_ms  : null,
+    stages.industry  ? stages.industry.duration_ms  : null,
+    stages.narrative ? stages.narrative.duration_ms : null,
+  ];
+
+  STAGE_LABELS.forEach((_, i) => {
+    document.getElementById('pd' + i).className = 'prog-dot pd-done';
+    document.getElementById('pd' + i).innerHTML = '<span class="tick">\u2713</span>';
+    document.getElementById('pl' + i).className = 'pr-label done';
+    if (durations[i] != null) {
+      document.getElementById('pt' + i).textContent = (durations[i] / 1000).toFixed(1) + 's';
+    }
+  });
+}
+
+/* ── Main analysis call ────────────────────────────────────────── */
+async function startAnalysis() {
+  if (!resumeFile) { alert('Please upload your resume first.'); return; }
+
+  goStep(1);
+  startTimer();
+  startProgressAnimation();
+
+  const formData = new FormData();
+  formData.append('resume', resumeFile);
+  formData.append('target_role', document.getElementById('target-role').value.trim() || 'Career Transition');
+
+  try {
+    const res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    analysisData = await res.json();
+  } catch (e) {
+    stopTimer();
+    alert('Analysis failed: ' + e.message + '\n\nMake sure the API server is running.');
+    goStep(0);
+    return;
+  }
+
+  progressTimers.forEach(clearTimeout);
+  finaliseProgress(analysisData.stages);
+  stopTimer();
+
+  renderSkills(analysisData);
+  renderIndustry(analysisData);
+  renderNarrative(analysisData);
+  renderSummary(analysisData);
+
+  setTimeout(() => goStep(2), 700);
+}
+
+/* ── Render: Skills (S2) ───────────────────────────────────────── */
+function renderSkills(data) {
+  const skills = data.top_skills || [];
+
+  document.querySelector('#s2 .stat-grid').innerHTML = `
+    <div class="stat-box"><div class="stat-num sn-teal">${data.skill_count}</div><div class="stat-lab">skills found</div></div>
+    <div class="stat-box"><div class="stat-num sn-blue">${skills.filter(s=>s.category==='technical').length}</div><div class="stat-lab">technical</div></div>
+    <div class="stat-box"><div class="stat-num sn-teal">${skills.filter(s=>s.category==='soft').length}</div><div class="stat-lab">leadership</div></div>
+    <div class="stat-box"><div class="stat-num sn-blue">${skills.filter(s=>s.category==='tool').length}</div><div class="stat-lab">domain &amp; tools</div></div>
+  `;
+
+  const catMap = { technical: 'p-tech', soft: 'p-soft', tool: 'p-tool' };
+  const grouped = {};
+  skills.forEach(s => { (grouped[s.category] = grouped[s.category] || []).push(s); });
+
+  const headMap = { technical: 'Technical &amp; analytical', soft: 'Leadership &amp; soft skills', tool: 'Tools &amp; platforms' };
+  const container = document.querySelector('#s2 .card');
+
+  // Remove old dynamic skill sections
+  container.querySelectorAll('.sh, .skill-grid, .legend-row').forEach(el => el.remove());
+
+  Object.entries(grouped).forEach(([cat, list]) => {
+    const sh = document.createElement('div');
+    sh.className = 'sh';
+    sh.innerHTML = headMap[cat] || cat;
+    container.appendChild(sh);
+
+    const grid = document.createElement('div');
+    grid.className = 'skill-grid';
+    list.forEach(s => {
+      const sp = document.createElement('span');
+      sp.className = `pill ${catMap[s.category] || 'p-tech'} conf-high`;
+      sp.textContent = s.name;
+      grid.appendChild(sp);
+    });
+    container.appendChild(grid);
+  });
+
+  const legend = document.createElement('div');
+  legend.className = 'legend-row';
+  legend.innerHTML = `
+    <div class="leg-i"><div class="leg-dot" style="opacity:1"></div>Strongly evidenced</div>
+    <div class="leg-i"><div class="leg-dot" style="opacity:0.6"></div>Evidenced</div>
+    <div class="leg-i"><div class="leg-dot" style="opacity:0.35"></div>Inferred from context</div>
+  `;
+  container.appendChild(legend);
+}
+
+/* ── Render: Industry (S3) ─────────────────────────────────────── */
+function renderIndustry(data) {
+  const match = data.industry_match;
+  if (!match || !match.scores) return;
+
+  const maxScore = match.scores[0].match_score;
+  const list = document.getElementById('ind-list');
+  list.innerHTML = '';
+
+  match.scores.forEach((s, i) => {
+    const pct = (s.match_score / maxScore) * 100;
+    const isStrong = s.match_score >= 99;
+    const isMid    = s.match_score >= 97 && !isStrong;
+    const barCls   = isStrong ? 'ibc-strong' : isMid ? 'ibc-mid' : 'ibc-low';
+    const scoreCls = isStrong ? 'is-strong'  : isMid ? 'is-mid'  : 'is-low';
+
+    const badge = i === 0 ? '<span class="ind-badge ib-top">best fit</span>' : '';
+    list.innerHTML += `
+      <div class="ind-row">
+        <span class="ind-name">${s.industry_label} ${badge}</span>
+        <div class="ind-bar-bg"><div class="ind-bar-f ${barCls}" data-w="${pct.toFixed(1)}" style="width:0%"></div></div>
+        <span class="ind-score ${scoreCls}">${s.match_score.toFixed(1)}</span>
+      </div>`;
+  });
+
+  // Suggested roles from grounding data
+  const titles = data.narrative_grounding?.sample_jd_titles || [];
+  if (titles.length) {
+    document.querySelector('#s3 .roles-callout').innerHTML =
+      `<strong>Top suggested roles for you:</strong> ${titles.join(' &middot; ')}`;
+  }
+}
+
+/* ── Render: Narrative (S5) ────────────────────────────────────── */
+function renderNarrative(data) {
+  if (data.narrative) {
+    document.getElementById('narrative-text').textContent = data.narrative;
+  }
+}
+
+/* ── Render: Summary (S7) ──────────────────────────────────────── */
+function renderSummary(data) {
+  const match = data.industry_match;
+  const topScore = match?.scores?.[0]?.match_score?.toFixed(1) ?? '—';
+  const totalMs  = data.total_duration_ms ? (data.total_duration_ms / 1000).toFixed(1) + 's' : '—';
+
+  document.querySelector('#s7 .stat-grid').innerHTML = `
+    <div class="stat-box"><div class="stat-num sn-teal">${data.skill_count}</div><div class="stat-lab">skills found</div></div>
+    <div class="stat-box"><div class="stat-num sn-blue">${topScore}</div><div class="stat-lab">top industry match</div></div>
+    <div class="stat-box"><div class="stat-num sn-teal">${match?.top_industry_label || '—'}</div><div class="stat-lab">best fit industry</div></div>
+    <div class="stat-box"><div class="stat-num sn-blue">${totalMs}</div><div class="stat-lab">analysis time</div></div>
+  `;
+}
+
+/* ── Industry bars animate ─────────────────────────────────────── */
 function animateBars() {
   document.querySelectorAll('.ind-bar-f').forEach(b => {
     const w = b.dataset.w || 0;
@@ -1407,16 +1562,64 @@ function animateBars() {
   });
 }
 
-/* ── Gap analysis ──────────────────────────────────────────────── */
-function runGap() {
+/* ── Gap analysis (re-calls /analyze with jd_text) ─────────────── */
+async function runGap() {
   const jd = document.getElementById('jd-text').value.trim();
+  if (!jd) { alert('Paste a job description first.'); return; }
+  if (!resumeFile) { alert('Resume not found — please start over.'); return; }
+
+  const btn = document.querySelector('#s4 .btn-secondary');
+  btn.textContent = 'Analyzing\u2026';
+  btn.disabled = true;
+
+  const formData = new FormData();
+  formData.append('resume', resumeFile);
+  formData.append('target_role', document.getElementById('target-role').value.trim() || 'Career Transition');
+  formData.append('jd_text', jd);
+
+  try {
+    const res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (data.gap) renderGap(data.gap);
+  } catch (e) {
+    alert('Gap analysis failed: ' + e.message);
+  } finally {
+    btn.textContent = 'Analyze this role \u2192';
+    btn.disabled = false;
+  }
+}
+
+function renderGap(gap) {
   const gr = document.getElementById('gap-result');
   const nb = document.getElementById('gap-next');
+
+  const score = gap.gap_score ?? gap.readiness_score ?? 74;
+  const have  = gap.matched_skills  || [];
+  const need  = gap.missing_skills  || [];
+
+  gr.querySelector('.gsh-num').textContent = score;
+  gr.querySelector('.gsh-text').textContent =
+    score >= 70
+      ? `Strong match \u2014 you already have most of what this role needs. ${need.length} skill${need.length !== 1 ? 's' : ''} to bridge.`
+      : `Moderate match \u2014 ${need.length} skill${need.length !== 1 ? 's' : ''} to develop before you\u2019re fully competitive.`;
+
+  const haveCol = gr.querySelector('.gap-cols > div:first-child');
+  haveCol.innerHTML = '<div class="gc-head">You already have</div>';
+  have.forEach(s => {
+    haveCol.innerHTML += `<div class="gap-item gi-have"><div class="gi-dot gd-h"></div>${s}</div>`;
+  });
+
+  const needCol = gr.querySelector('.gap-cols > div:last-child');
+  needCol.innerHTML = '<div class="gc-head">Skills to develop</div>';
+  need.forEach(s => {
+    needCol.innerHTML += `<div class="gap-item gi-need"><div class="gi-dot gd-n"></div>${s}</div>`;
+  });
+
   gr.classList.remove('hidden');
   nb.classList.remove('hidden');
-  if (jd.length > 10) {
-    gr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
+  gr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 /* ── Copy narrative ──────────────────────────────────────────────── */
@@ -1429,12 +1632,29 @@ function copyNarrative() {
   }
 }
 
-/* ── Fake download ──────────────────────────────────────────────── */
-function fakeDl(name) {
-  alert('In the live version, this downloads: ' + name + '.\n\nConnect the /analyze API endpoint to generate real outputs.');
+/* ── Download helpers ────────────────────────────────────────────── */
+function dlSkillReport() {
+  if (!analysisData) return;
+  const rows = (analysisData.top_skills || []).map(s =>
+    `${s.name},${s.category},${s.confidence}`
+  );
+  const csv = 'skill,category,confidence\n' + rows.join('\n');
+  triggerDownload('reskillio-skills.csv', 'text/csv', csv);
 }
 
-/* ── Init bar widths to 0 so animation works on revisit ─────────── */
+function dlNarrative() {
+  if (!analysisData?.narrative) return;
+  triggerDownload('reskillio-narrative.txt', 'text/plain', analysisData.narrative);
+}
+
+function triggerDownload(filename, mime, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  a.click();
+}
+
+/* ── Init ──────────────────────────────────────────────────────── */
 document.querySelectorAll('.ind-bar-f').forEach(b => { b.style.width = '0%'; });
 </script>
 

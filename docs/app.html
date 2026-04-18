@@ -717,6 +717,78 @@ textarea::placeholder { color: var(--gray-400); font-size: 12px; }
   50%       { opacity: 1;   transform: scale(1.3); }
 }
 
+/* ── Auto-gap (Step 4 enrichment) ─────────────────────────────── */
+.auto-gap-section {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 0.5px solid var(--border);
+}
+.auto-gap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.auto-gap-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.auto-gap-readiness {
+  font-size: 12px;
+  color: var(--gray-600);
+}
+.auto-gap-readiness strong { color: var(--teal); font-weight: 600; }
+.ag-role-row {
+  margin-bottom: 8px;
+}
+.ag-role-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 3px;
+}
+.ag-role-name { font-size: 12px; color: var(--ink); }
+.ag-role-pct  { font-size: 12px; font-weight: 500; color: var(--gray-600); }
+.ag-bar-bg {
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.ag-bar-f {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s ease;
+  background: var(--teal);
+}
+.ag-bar-f.ag-low    { background: var(--red-400); }
+.ag-bar-f.ag-medium { background: var(--amber); }
+.ag-bar-f.ag-high   { background: var(--teal); }
+.ag-top-missing {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--gray-600);
+  line-height: 1.6;
+}
+.ag-top-missing strong { color: var(--ink); font-weight: 500; }
+.auto-gap-enriching {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.auto-gap-enriching::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--teal-100);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
 /* ── Gap analysis ──────────────────────────────────────────────── */
 .gap-score-hero {
   display: flex;
@@ -1375,15 +1447,29 @@ textarea#context-text::placeholder { color: var(--gray-400); }
       <!-- shown while /enrich is still running -->
       <div class="market-enriching" id="market-enriching">Finding live hiring signals&hellip;</div>
     </div>
-    <button class="btn-primary" onclick="goStep(4)">Check your fit for a specific role &rarr;</button>
+    <button class="btn-primary" onclick="goStep(4)">See your role readiness &rarr;</button>
   </div>
 
   <!-- ── S4 Gap ──────────────────────────────────────────────────── -->
   <div class="screen" id="s4">
     <div class="card">
-      <div class="card-title">Gap analysis</div>
-      <div class="card-sub">Paste a job description to see exactly where you stand &mdash; what you already have, what is worth closing, and which of your existing skills transfer in ways you may not expect.</div>
-      <label class="fl">Job description</label>
+      <div class="card-title">Your role readiness</div>
+
+      <!-- Auto-gap — injected by Step 4 enrichment; hidden until ready -->
+      <div class="auto-gap-section hidden" id="auto-gap-section">
+        <div class="auto-gap-header">
+          <span class="auto-gap-title">Live readiness scores</span>
+          <span class="auto-gap-readiness">Overall: <strong id="ag-overall">—</strong></span>
+        </div>
+        <div id="ag-roles-list"></div>
+        <div class="ag-top-missing hidden" id="ag-top-missing"></div>
+      </div>
+
+      <!-- shown while /enrich is still running -->
+      <div class="auto-gap-enriching" id="auto-gap-enriching">Calculating your readiness for live roles&hellip;</div>
+
+      <div class="card-sub" style="margin-top:4px">Paste a specific job description to go deeper &mdash; or skip straight to your career story.</div>
+      <label class="fl">Job description <span style="color:var(--gray-400);font-weight:400">(optional)</span></label>
       <textarea id="jd-text" placeholder="Paste the job description here&hellip;&#10;&#10;Example: We're looking for an Operations Analyst to join our logistics intelligence team. You'll analyse freight data using Python and Tableau, build KPI dashboards, and drive efficiency improvements across our supply chain operations. Strong process improvement background required."></textarea>
       <button class="btn-secondary mt-16" style="width:100%;text-align:center" onclick="runGap()">Analyze this role &rarr;</button>
     </div>
@@ -2018,11 +2104,55 @@ async function fetchEnrichment(candidateId, targetRole, contextText) {
   }
 }
 
+/* ── Render: Auto-gap (S4 enrichment) ──────────────────────────── */
+function renderAutoGap(ag) {
+  if (!ag || !ag.role_gaps || ag.role_gaps.length === 0) return;
+
+  // Hide enriching indicator
+  const enriching = document.getElementById('auto-gap-enriching');
+  if (enriching) enriching.style.display = 'none';
+
+  // Overall readiness
+  const overall = document.getElementById('ag-overall');
+  if (overall) overall.textContent = (ag.overall_readiness || 0).toFixed(0) + '%';
+
+  // Role readiness bars
+  const list = document.getElementById('ag-roles-list');
+  if (list) {
+    list.innerHTML = '';
+    ag.role_gaps.forEach(rg => {
+      const pct = Math.min(100, rg.gap_score || 0);
+      const cls = pct >= 65 ? 'ag-high' : pct >= 40 ? 'ag-medium' : 'ag-low';
+      list.innerHTML += `
+        <div class="ag-role-row">
+          <div class="ag-role-label">
+            <span class="ag-role-name">${rg.role_title}</span>
+            <span class="ag-role-pct">${pct.toFixed(0)}%</span>
+          </div>
+          <div class="ag-bar-bg">
+            <div class="ag-bar-f ${cls}" style="width:${pct}%"></div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // Top skills to add
+  const missingEl = document.getElementById('ag-top-missing');
+  if (missingEl && ag.top_skills_to_add && ag.top_skills_to_add.length) {
+    missingEl.innerHTML = `<strong>Most-wanted skills across these roles:</strong> ${ag.top_skills_to_add.slice(0,6).join(' &middot; ')}`;
+    missingEl.classList.remove('hidden');
+  }
+
+  // Reveal section
+  const section = document.getElementById('auto-gap-section');
+  if (section) section.classList.remove('hidden');
+}
+
 /* Render enrichment data onto whichever screens are already visible. */
 function renderEnrichment(data) {
   if (!data) return;
   try { renderMarketPulse(data.market_pulse); } catch(e) { console.error('[renderMarketPulse]', e); }
-  // Step 4: renderAutoGap(data.auto_gap)
+  try { renderAutoGap(data.auto_gap);         } catch(e) { console.error('[renderAutoGap]', e); }
   // Step 5: renderSalaryIntel(data.salary_intel)
   // Step 6: renderCompanyRadar(data.company_radar)
 }

@@ -114,13 +114,31 @@ def run_enrichment(
         logger.warning(f"[enrich] Market pulse failed: {exc}")
 
     # ====================================================================
-    # Stage E2 — Auto-gap  (Step 4 — placeholder)
+    # Stage E2 — Auto-gap  (Step 4)
     # ====================================================================
     auto_gap: Optional[AutoGapResult] = None
-    # TODO Step 4: uses market_pulse.top_roles as synthetic JDs
-    stages["auto_gap"] = StageResult(
-        success=True, duration_ms=0, error="pending — Step 4 not yet built"
-    )
+    t = time.perf_counter()
+    if market_pulse and market_pulse.top_roles:
+        try:
+            from reskillio.pipelines.auto_gap_pipeline import run_auto_gap
+            auto_gap = run_auto_gap(
+                top_roles=market_pulse.top_roles,
+                candidate_id=candidate_id,
+                project_id=project_id,
+                region=region,
+            )
+            stages["auto_gap"] = StageResult(success=True, duration_ms=_ms(t))
+            logger.info(
+                f"[enrich] Auto-gap done — readiness={auto_gap.overall_readiness:.1f}, "
+                f"top_missing={auto_gap.top_skills_to_add[:3]}"
+            )
+        except Exception as exc:
+            stages["auto_gap"] = StageResult(success=False, duration_ms=_ms(t), error=str(exc))
+            logger.warning(f"[enrich] Auto-gap failed: {exc}")
+    else:
+        stages["auto_gap"] = StageResult(
+            success=True, duration_ms=0, error="skipped — no market pulse roles"
+        )
 
     # ====================================================================
     # Stage E3 — Salary Intelligence  (Step 5 — placeholder)

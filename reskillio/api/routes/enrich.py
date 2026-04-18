@@ -47,21 +47,23 @@ async def enrich(
     candidate_id: Annotated[str,           Form(description="Candidate ID from the /analyze response")] = ...,
     target_role:  Annotated[Optional[str], Form(description="Target role from the /analyze call")] = None,
     context_text: Annotated[Optional[str], Form(description="Free-text context from the original upload")] = None,
+    ideal_stage:  Annotated[Optional[str], Form(description="Ideal company stage from trait profile (Startup/Growth-stage/Enterprise/Turnaround)")] = None,
 ) -> EnrichmentResult:
     """
     Background enrichment for a candidate already processed by /analyze.
 
     The candidate's skill profile is read from BigQuery — no resume re-upload needed.
-    All enrichment stages (MarketPulse, AutoGap, Salary, CompanyRadar) are optional
-    and added incrementally as Steps 3–6 are built.
+    Runs MarketPulse, AutoGap, SalaryIntel, and CompanyRadar stages.
+    All stages are fail-safe — a slow or failing stage never blocks earlier results.
     """
     settings = _require_gcp()
 
-    role_str = (target_role or "").strip() or "Career Transition"
+    role_str  = (target_role or "").strip() or "Career Transition"
+    stage_str = (ideal_stage or "").strip() or "Enterprise"
 
     logger.info(
         f"[enrich] Starting enrichment — "
-        f"candidate={candidate_id} role='{role_str}' "
+        f"candidate={candidate_id} role='{role_str}' stage='{stage_str}' "
         f"context={'yes' if context_text else 'no'}"
     )
 
@@ -74,6 +76,7 @@ async def enrich(
             project_id=settings.gcp_project_id,
             region=settings.gcp_region,
             context_text=context_text or None,
+            ideal_stage=stage_str,
         )
     except Exception as exc:
         logger.exception(f"[enrich] Pipeline error: {exc}")

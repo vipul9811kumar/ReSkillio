@@ -879,6 +879,64 @@ textarea::placeholder { color: var(--gray-400); font-size: 12px; }
   animation: pulse-dot 1.4s ease-in-out infinite;
 }
 
+/* ── Company Radar (Step 6 enrichment) ────────────────────────── */
+.company-radar-card { margin-top: 16px; }
+.cr-freshness {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.cr-freshness::before {
+  content: '●';
+  color: var(--teal);
+  font-size: 8px;
+}
+.cr-company-row {
+  padding: 12px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.cr-company-row:last-child { border-bottom: none; }
+.cr-company-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.cr-name { font-size: 14px; font-weight: 500; color: var(--ink); }
+.cr-size-badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 7px;
+  border-radius: 20px;
+  text-transform: capitalize;
+  letter-spacing: .03em;
+}
+.crb-startup    { background: var(--blue-50);  color: var(--blue-600);  }
+.crb-mid-size   { background: var(--amber-50); color: var(--amber-800); }
+.crb-enterprise { background: var(--gray-50);  color: var(--gray-600);  }
+.cr-industry    { font-size: 11px; color: var(--gray-400); margin-left: auto; }
+.cr-reason      { font-size: 12px; color: var(--gray-600); line-height: 1.55; }
+.cr-source      { font-size: 11px; color: var(--gray-400); margin-top: 3px; font-style: italic; }
+.company-radar-enriching {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.company-radar-enriching::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--teal-100);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
 /* ── Gap analysis ──────────────────────────────────────────────── */
 .gap-score-hero {
   display: flex;
@@ -1639,6 +1697,15 @@ textarea#context-text::placeholder { color: var(--gray-400); }
 
     <div class="salary-enriching" id="salary-enriching">Calculating your salary range&hellip;</div>
 
+    <!-- Company Radar — injected by Step 6 enrichment -->
+    <div class="card hidden company-radar-card" id="company-radar-card">
+      <div class="card-title">Companies to target</div>
+      <div class="cr-freshness" id="cr-freshness">Data searched today</div>
+      <div id="cr-companies-list"></div>
+    </div>
+
+    <div class="company-radar-enriching" id="company-radar-enriching">Finding employers actively hiring for your profile&hellip;</div>
+
     <button class="btn-primary" onclick="goStep(6)">See your 90-day plan &rarr;</button>
   </div>
 
@@ -1930,7 +1997,8 @@ async function startAnalysis() {
   try { renderSummary(analysisData);  } catch(e) { console.error('[renderSummary]', e); }
 
   // Fire Option B enrichment in the background — no await, never blocks the UI
-  fetchEnrichment(analysisData.candidate_id, _enrichTargetRole, contextText);
+  const idealStage = analysisData.trait_profile?.ideal_stage || 'Enterprise';
+  fetchEnrichment(analysisData.candidate_id, _enrichTargetRole, contextText, idealStage);
 
   setTimeout(() => goStep(2), 700);
 }
@@ -2191,13 +2259,14 @@ function copyNarrative() {
 }
 
 /* ── Option B — Background enrichment ──────────────────────────── */
-async function fetchEnrichment(candidateId, targetRole, contextText) {
+async function fetchEnrichment(candidateId, targetRole, contextText, idealStage) {
   if (!candidateId) return;
   try {
     const fd = new FormData();
     fd.append('candidate_id', candidateId);
     if (targetRole && targetRole !== 'Career Transition') fd.append('target_role', targetRole);
     if (contextText) fd.append('context_text', contextText);
+    if (idealStage)  fd.append('ideal_stage', idealStage);
 
     console.info('[enrich] Starting background enrichment for', candidateId);
     const res = await fetch(`${API_BASE}/enrich`, { method: 'POST', body: fd });
@@ -2305,13 +2374,51 @@ function renderSalaryIntel(si) {
   if (card) card.classList.remove('hidden');
 }
 
+/* ── Render: Company Radar (S5 enrichment) ─────────────────────── */
+function renderCompanyRadar(cr) {
+  if (!cr || !cr.companies || cr.companies.length === 0) return;
+
+  // Hide enriching indicator
+  const enriching = document.getElementById('company-radar-enriching');
+  if (enriching) enriching.style.display = 'none';
+
+  // Data freshness
+  const freshnessEl = document.getElementById('cr-freshness');
+  if (freshnessEl && cr.data_freshness) {
+    freshnessEl.textContent = 'Data searched ' + cr.data_freshness;
+  }
+
+  // Company rows
+  const list = document.getElementById('cr-companies-list');
+  if (list) {
+    list.innerHTML = '';
+    cr.companies.forEach(c => {
+      const sizeCls = 'crb-' + (c.size || 'enterprise').replace(/\s+/g, '-');
+      list.innerHTML += `
+        <div class="cr-company-row">
+          <div class="cr-company-header">
+            <span class="cr-name">${c.name}</span>
+            <span class="cr-size-badge ${sizeCls}">${c.size}</span>
+            <span class="cr-industry">${c.industry}</span>
+          </div>
+          <div class="cr-reason">${c.match_reason}</div>
+          <div class="cr-source">${c.source_note}</div>
+        </div>`;
+    });
+  }
+
+  // Reveal card
+  const card = document.getElementById('company-radar-card');
+  if (card) card.classList.remove('hidden');
+}
+
 /* Render enrichment data onto whichever screens are already visible. */
 function renderEnrichment(data) {
   if (!data) return;
   try { renderMarketPulse(data.market_pulse);   } catch(e) { console.error('[renderMarketPulse]', e); }
   try { renderAutoGap(data.auto_gap);           } catch(e) { console.error('[renderAutoGap]', e); }
   try { renderSalaryIntel(data.salary_intel);   } catch(e) { console.error('[renderSalaryIntel]', e); }
-  // Step 6: renderCompanyRadar(data.company_radar)
+  try { renderCompanyRadar(data.company_radar); } catch(e) { console.error('[renderCompanyRadar]', e); }
 }
 
 /* ── Download helpers ────────────────────────────────────────────── */

@@ -40,6 +40,7 @@ def run_enrichment(
     project_id:   str,
     region:       str = "us-central1",
     context_text: Optional[str] = None,
+    ideal_stage:  str = "Enterprise",
 ) -> EnrichmentResult:
     """
     Run the enrichment pipeline for a candidate whose skills are already
@@ -173,13 +174,36 @@ def run_enrichment(
         logger.warning(f"[enrich] Salary intel failed: {exc}")
 
     # ====================================================================
-    # Stage E4 — Company Radar  (Step 6 — placeholder)
+    # Stage E4 — Company Radar  (Step 6)
     # ====================================================================
     company_radar: Optional[CompanyRadarResult] = None
-    # TODO Step 6: from reskillio.agents.company_radar_agent import run_company_radar_agent
-    stages["company_radar"] = StageResult(
-        success=True, duration_ms=0, error="pending — Step 6 not yet built"
-    )
+    t = time.perf_counter()
+    try:
+        from reskillio.agents.company_radar_agent import run_company_radar_agent
+
+        top_role_titles = (
+            [r.title for r in market_pulse.top_roles]
+            if market_pulse and market_pulse.top_roles
+            else [target_role]
+        )
+
+        company_radar = run_company_radar_agent(
+            skill_names=skill_names,
+            industry=industry_label,
+            top_roles=top_role_titles,
+            ideal_stage=ideal_stage,
+            project_id=project_id,
+            region=region,
+        )
+        stages["company_radar"] = StageResult(success=True, duration_ms=_ms(t))
+        logger.info(
+            f"[enrich] Company radar done — "
+            f"{len(company_radar.companies)} employers, "
+            f"freshness={company_radar.data_freshness}"
+        )
+    except Exception as exc:
+        stages["company_radar"] = StageResult(success=False, duration_ms=_ms(t), error=str(exc))
+        logger.warning(f"[enrich] Company radar failed: {exc}")
 
     total_ms = _ms(wall_start)
     logger.info(f"[enrich] Complete: {total_ms} ms for candidate='{candidate_id}'")

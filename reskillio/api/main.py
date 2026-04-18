@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
-from reskillio.api.routes import extract, resume, candidate, embeddings, jd, gap, industry, narrative, agent, market, pathway, registry, monitoring, lakehouse, analyze, enrich
+from reskillio.api.routes import extract, resume, candidate, embeddings, jd, gap, industry, narrative, agent, market, pathway, registry, monitoring, lakehouse, analyze, enrich, prompt
 
 app = FastAPI(
     title="ReSkillio API",
@@ -41,6 +41,7 @@ app.include_router(monitoring.router)
 app.include_router(lakehouse.router)
 app.include_router(analyze.router)
 app.include_router(enrich.router)
+app.include_router(prompt.router)
 
 
 @app.get("/health", tags=["ops"])

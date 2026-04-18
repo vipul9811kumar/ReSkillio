@@ -881,6 +881,113 @@ textarea::placeholder { color: var(--gray-400); font-size: 13px; }
   animation: pulse-dot 1.4s ease-in-out infinite;
 }
 
+/* ── Conversational Prompt (Step 8) ───────────────────────────── */
+.prompt-card {
+  background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(99,102,241,0.08));
+  border: 1px solid rgba(99,102,241,0.22);
+  border-radius: var(--r-xl);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+.prompt-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #818cf8;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prompt-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #818cf8;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.prompt-question {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.5;
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+.prompt-textarea {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid rgba(99,102,241,0.25);
+  background: rgba(0,0,0,0.25);
+  color: var(--ink);
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.65;
+  transition: border-color 0.15s;
+  outline: none;
+  margin-bottom: 10px;
+}
+.prompt-textarea:focus { border-color: #818cf8; }
+.prompt-textarea::placeholder { color: var(--gray-400); font-size: 14px; }
+.prompt-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.prompt-submit {
+  padding: 9px 18px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--r-md);
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.prompt-submit:hover { opacity: 0.85; }
+.prompt-skip {
+  font-size: 12px;
+  color: var(--gray-400);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prompt-skip:hover { color: var(--gray-600); }
+.prompt-done {
+  font-size: 13px;
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prompt-loading {
+  font-size: 13px;
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+}
+.prompt-loading::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #818cf8;
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
 /* ── Company Radar (Step 6 enrichment) ────────────────────────── */
 .company-radar-card { margin-top: 16px; }
 .cr-freshness {
@@ -1525,6 +1632,25 @@ textarea#context-text::placeholder { color: var(--gray-400); }
       <div class="archetype-reason" id="archetype-reason"></div>
     </div>
 
+    <!-- Step 8 — Conversational prompt card (rendered after /prompt returns) -->
+    <div class="prompt-card hidden" id="prompt-card">
+      <div class="prompt-eyebrow">One question for you</div>
+      <div class="prompt-question" id="prompt-question">
+        <span class="prompt-loading">Personalising your question&hellip;</span>
+      </div>
+      <textarea
+        class="prompt-textarea"
+        id="prompt-answer"
+        placeholder="Share as much or as little as you like — your answer sharpens your market search&hellip;"
+        rows="3"
+      ></textarea>
+      <div class="prompt-row">
+        <button class="prompt-submit" onclick="submitPromptAnswer()">Refine my search &rarr;</button>
+        <button class="prompt-skip" onclick="skipPrompt()">Skip</button>
+        <span class="prompt-done hidden" id="prompt-done">&#10003; Search updated</span>
+      </div>
+    </div>
+
     <button class="btn-primary" onclick="goStep(3)">See where you fit best &rarr;</button>
   </div>
 
@@ -1846,6 +1972,7 @@ let analysisData = null;   // fast path — /analyze JSON response
 let enrichData   = null;   // slow path — /enrich JSON response (Option B)
 let resumeFile   = null;   // uploaded File object
 let _enrichTargetRole = 'Career Transition'; // saved for the /enrich call
+let _promptAnswer = '';   // candidate's answer to the Step 8 prompt question
 
 /* ── File upload ──────────────────────────────────────────────── */
 const fileIn = document.getElementById('file-in');
@@ -2000,6 +2127,9 @@ async function startAnalysis() {
   // Fire Option B enrichment in the background — no await, never blocks the UI
   const idealStage = analysisData.trait_profile?.ideal_stage || 'Enterprise';
   fetchEnrichment(analysisData.candidate_id, _enrichTargetRole, contextText, idealStage);
+
+  // Fire Step 8 prompt in background — shows question card on S2
+  fetchPrompt(analysisData);
 
   setTimeout(() => goStep(2), 700);
 }
@@ -2257,6 +2387,67 @@ function copyNarrative() {
       .then(() => alert('Narrative copied to clipboard.'))
       .catch(() => {});
   }
+}
+
+/* ── Step 8 — Conversational prompt ────────────────────────────── */
+async function fetchPrompt(data) {
+  if (!data || !data.candidate_id) return;
+  try {
+    // Show card with loading state while question is being generated
+    const card = document.getElementById('prompt-card');
+    if (card) card.classList.remove('hidden');
+
+    const fd = new FormData();
+    fd.append('candidate_id', data.candidate_id);
+    if (data.trait_profile?.archetype)          fd.append('archetype', data.trait_profile.archetype);
+    if (data.trait_profile?.identity_statement) fd.append('identity_statement', data.trait_profile.identity_statement);
+    if (data.industry_match?.scores?.[0]?.industry_label)
+      fd.append('industry', data.industry_match.scores[0].industry_label);
+
+    const res = await fetch(`${API_BASE}/prompt`, { method: 'POST', body: fd });
+    if (!res.ok) { hidePromptCard(); return; }
+
+    const result = await res.json();
+    const qEl = document.getElementById('prompt-question');
+    if (qEl && result.question) qEl.textContent = result.question;
+  } catch(e) {
+    console.warn('[prompt] Failed to fetch question:', e.message);
+    hidePromptCard();
+  }
+}
+
+function hidePromptCard() {
+  const card = document.getElementById('prompt-card');
+  if (card) card.classList.add('hidden');
+}
+
+function skipPrompt() {
+  hidePromptCard();
+}
+
+function submitPromptAnswer() {
+  const answer = (document.getElementById('prompt-answer')?.value || '').trim();
+  if (!answer) { skipPrompt(); return; }
+
+  _promptAnswer = answer;
+
+  // Re-fire enrichment with the answer as additional context
+  if (analysisData?.candidate_id) {
+    const idealStage = analysisData.trait_profile?.ideal_stage || 'Enterprise';
+    const baseContext = document.getElementById('context-text')?.value?.trim() || '';
+    const combined = baseContext ? `${baseContext}\n\n${answer}` : answer;
+    fetchEnrichment(analysisData.candidate_id, _enrichTargetRole, combined, idealStage);
+  }
+
+  // Show confirmation, hide input
+  document.getElementById('prompt-answer').style.display  = 'none';
+  document.querySelector('.prompt-row .prompt-submit').style.display = 'none';
+  document.querySelector('.prompt-row .prompt-skip').style.display   = 'none';
+  const done = document.getElementById('prompt-done');
+  if (done) done.classList.remove('hidden');
+
+  // Dismiss card after a moment
+  setTimeout(hidePromptCard, 2200);
 }
 
 /* ── Option B — Background enrichment ──────────────────────────── */

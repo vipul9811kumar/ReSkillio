@@ -1571,7 +1571,7 @@ function finaliseProgress(stages) {
   const fill = document.getElementById('prog-fill');
   fill.style.width = '100%';
 
-  // Map API stage durations onto the 5 display rows
+  // Map API stage durations onto the 6 display rows
   const durations = [
     stages.extract   ? stages.extract.duration_ms   : null,
     stages.extract   ? stages.extract.duration_ms   : null,
@@ -1582,12 +1582,12 @@ function finaliseProgress(stages) {
   ];
 
   STAGE_LABELS.forEach((_, i) => {
-    document.getElementById('pd' + i).className = 'prog-dot pd-done';
-    document.getElementById('pd' + i).innerHTML = '<span class="tick">\u2713</span>';
-    document.getElementById('pl' + i).className = 'pr-label done';
-    if (durations[i] != null) {
-      document.getElementById('pt' + i).textContent = (durations[i] / 1000).toFixed(1) + 's';
-    }
+    const pd = document.getElementById('pd' + i);
+    const pl = document.getElementById('pl' + i);
+    const pt = document.getElementById('pt' + i);
+    if (pd) { pd.className = 'prog-dot pd-done'; pd.innerHTML = '<span class="tick">\u2713</span>'; }
+    if (pl) { pl.className = 'pr-label done'; }
+    if (pt && durations[i] != null) { pt.textContent = (durations[i] / 1000).toFixed(1) + 's'; }
   });
 }
 
@@ -1595,16 +1595,17 @@ function finaliseProgress(stages) {
 async function startAnalysis() {
   if (!resumeFile) { alert('Please upload your resume first.'); return; }
 
-  goStep(1);
-  startTimer();
-  startProgressAnimation();
-
+  // Read form values before switching screens
   const formData = new FormData();
   formData.append('resume', resumeFile);
   const targetRole = document.getElementById('target-role').value.trim();
   if (targetRole) formData.append('target_role', targetRole);
   const contextText = document.getElementById('context-text').value.trim();
   if (contextText) formData.append('context_text', contextText);
+
+  goStep(1);
+  startTimer();
+  startProgressAnimation();
 
   try {
     const res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData });
@@ -1621,14 +1622,15 @@ async function startAnalysis() {
   }
 
   progressTimers.forEach(clearTimeout);
-  finaliseProgress(analysisData.stages);
+  try { finaliseProgress(analysisData.stages); } catch(e) { console.error('[finaliseProgress]', e); }
   stopTimer();
 
-  renderSkills(analysisData);
-  renderTrait(analysisData);
-  renderIndustry(analysisData);
-  renderNarrative(analysisData);
-  renderSummary(analysisData);
+  // Each render is isolated — one failure never blocks the step transition
+  try { renderSkills(analysisData);   } catch(e) { console.error('[renderSkills]', e); }
+  try { renderTrait(analysisData);    } catch(e) { console.error('[renderTrait]', e); }
+  try { renderIndustry(analysisData); } catch(e) { console.error('[renderIndustry]', e); }
+  try { renderNarrative(analysisData);} catch(e) { console.error('[renderNarrative]', e); }
+  try { renderSummary(analysisData);  } catch(e) { console.error('[renderSummary]', e); }
 
   setTimeout(() => goStep(2), 700);
 }
@@ -1714,7 +1716,7 @@ function renderTrait(data) {
 /* ── Render: Industry (S3) ─────────────────────────────────────── */
 function renderIndustry(data) {
   const match = data.industry_match;
-  if (!match || !match.scores) return;
+  if (!match || !match.scores || match.scores.length === 0) return;
 
   const maxScore = match.scores[0].match_score;
   const list = document.getElementById('ind-list');

@@ -290,7 +290,7 @@ def _enqueue_digest_tasks(candidate_ids: list[str], settings) -> int:
     run_url    = os.environ.get(
         "CLOUD_RUN_URL", "https://reskillio-10933517215.us-central1.run.app"
     )
-    sa_email   = f"reskillio-scheduler@{project}.iam.gserviceaccount.com"
+    sa_email   = f"reskillio-sa@{project}.iam.gserviceaccount.com"
     parent     = f"projects/{project}/locations/{region}/queues/{queue_name}"
 
     client  = tasks_v2.CloudTasksClient()

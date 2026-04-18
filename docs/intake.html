@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReSkillio — Your Career Intake</title>
+<meta name="description" content="5 questions. 5 minutes. Helps us find the right opportunities for where you are right now.">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --teal:       #0d9373;
+  --teal-50:    rgba(13,147,115,0.09);
+  --teal-100:   rgba(13,147,115,0.2);
+  --teal-600:   #0d9373;
+
+  --blue:       #2563eb;
+  --blue-50:    rgba(37,99,235,0.08);
+  --blue-100:   rgba(37,99,235,0.18);
+
+  --indigo:     #4f46e5;
+  --indigo-50:  rgba(79,70,229,0.08);
+  --indigo-100: rgba(79,70,229,0.2);
+
+  --gray-50:    #f8fafc;
+  --gray-100:   #f1f5f9;
+  --gray-200:   #e2e8f0;
+  --gray-400:   #64748b;
+  --gray-600:   #475569;
+  --gray-800:   #1e293b;
+
+  --ink:        #0f172a;
+  --surface:    #ffffff;
+  --border:     rgba(0,0,0,0.08);
+  --border-md:  rgba(0,0,0,0.14);
+
+  --font-sans:  -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono:  ui-monospace, "SF Mono", "Fira Code", monospace;
+
+  --r-sm:  6px;
+  --r-md:  10px;
+  --r-lg:  16px;
+  --r-xl:  22px;
+
+  --max:   640px;
+  --nav-h: 58px;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: #f0f4f8;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ── Nav ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  height: var(--nav-h);
+  display: flex; align-items: center;
+}
+.nav-inner {
+  max-width: var(--max);
+  margin: 0 auto; padding: 0 24px; width: 100%;
+  display: flex; align-items: center; gap: 16px;
+}
+.nav-logo {
+  font-size: 16px; font-weight: 800;
+  background: linear-gradient(90deg, #0d9373, #2563eb);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  text-decoration: none;
+}
+.nav-back {
+  margin-left: auto;
+  font-size: 14px; color: var(--gray-400);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.nav-back:hover { color: var(--ink); }
+
+/* ── Page ── */
+.page {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+}
+
+/* ── Hero ── */
+.intake-hero {
+  text-align: center;
+  padding: 8px 0 36px;
+}
+.intake-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--teal-600);
+  background: var(--teal-50); border: 0.5px solid var(--teal-100);
+  border-radius: 99px; padding: 4px 13px; margin-bottom: 18px;
+}
+.intake-eyebrow::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--teal);
+}
+.intake-hero h1 {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.15; margin-bottom: 14px; color: var(--ink);
+}
+.intake-hero h1 em {
+  font-style: normal;
+  background: linear-gradient(135deg, #0d9373, #2563eb);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.intake-hero p {
+  font-size: 17px; color: var(--gray-600);
+  line-height: 1.65; max-width: 460px; margin: 0 auto;
+}
+
+/* ── Progress dots ── */
+.progress-track {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; margin-bottom: 32px;
+}
+.prog-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--gray-200);
+  transition: background 0.3s, transform 0.3s;
+}
+.prog-dot.done    { background: var(--teal); }
+.prog-dot.active  { background: var(--indigo); transform: scale(1.5); }
+.prog-line {
+  width: 32px; height: 2px; border-radius: 1px;
+  background: var(--gray-200);
+  transition: background 0.4s;
+}
+.prog-line.done { background: var(--teal-100); }
+
+/* ── Chat window ── */
+.chat-window {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
+
+.chat-messages {
+  padding: 24px 24px 8px;
+  display: flex; flex-direction: column; gap: 16px;
+  min-height: 160px;
+}
+
+.msg {
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.msg.user { flex-direction: row-reverse; }
+
+.msg-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  flex-shrink: 0; display: flex; align-items: center;
+  justify-content: center; font-size: 14px;
+}
+.msg-avatar.coach {
+  background: linear-gradient(135deg, #0d9373, #2563eb);
+  color: #fff; font-weight: 700; font-size: 13px;
+}
+.msg-avatar.user-av {
+  background: var(--gray-100);
+  color: var(--gray-600); font-size: 16px;
+}
+
+.msg-bubble {
+  max-width: 82%;
+  padding: 13px 16px;
+  border-radius: var(--r-lg);
+  font-size: 16px; line-height: 1.65;
+}
+.msg.coach .msg-bubble {
+  background: var(--gray-50);
+  border: 0.5px solid var(--border);
+  color: var(--ink);
+  border-top-left-radius: 4px;
+}
+.msg.user .msg-bubble {
+  background: linear-gradient(135deg, #0d9373, #2563eb);
+  color: #fff;
+  border-top-right-radius: 4px;
+}
+
+.typing-indicator {
+  display: flex; gap: 4px; padding: 14px 16px;
+  background: var(--gray-50); border: 0.5px solid var(--border);
+  border-radius: var(--r-lg); border-top-left-radius: 4px;
+  width: fit-content;
+}
+.typing-indicator span {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--gray-400);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%           { transform: translateY(-5px); }
+}
+
+/* ── Suggestions ── */
+.suggestions {
+  padding: 0 24px 16px;
+  display: flex; flex-wrap: wrap; gap: 7px;
+}
+.suggestion-chip {
+  font-size: 14px; padding: 7px 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border-md);
+  background: var(--gray-50);
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  line-height: 1;
+}
+.suggestion-chip:hover {
+  border-color: var(--indigo);
+  background: var(--indigo-50);
+  color: var(--indigo);
+}
+
+/* ── Input area ── */
+.chat-input-area {
+  padding: 12px 16px 16px;
+  border-top: 0.5px solid var(--border);
+  display: flex; gap: 10px; align-items: flex-end;
+}
+.chat-input {
+  flex: 1;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  padding: 11px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-md);
+  background: var(--gray-50);
+  color: var(--ink);
+  resize: none;
+  min-height: 44px; max-height: 120px;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.chat-input:focus { border-color: var(--indigo); background: #fff; }
+.chat-input::placeholder { color: var(--gray-400); }
+.send-btn {
+  width: 44px; height: 44px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, #4f46e5, #2563eb);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.send-btn:hover { opacity: 0.88; }
+.send-btn:active { transform: scale(0.96); }
+.send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.send-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+/* ── Question label ── */
+.q-label {
+  text-align: center;
+  font-size: 13px; color: var(--gray-400);
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+/* ── Completion card ── */
+.completion-card {
+  display: none;
+  background: var(--surface);
+  border: 0.5px solid var(--teal-100);
+  border-radius: var(--r-xl);
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 2px 16px rgba(13,147,115,0.08);
+}
+.completion-card.visible { display: block; }
+.completion-icon {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--teal-50); border: 2px solid var(--teal-100);
+  margin: 0 auto 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.completion-title {
+  font-size: 24px; font-weight: 800; letter-spacing: -0.02em;
+  margin-bottom: 8px; color: var(--ink);
+}
+.completion-sub {
+  font-size: 17px; color: var(--gray-600);
+  line-height: 1.65; margin-bottom: 28px;
+}
+.persona-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 15px; font-weight: 600;
+  background: var(--indigo-50); border: 1px solid var(--indigo-100);
+  color: var(--indigo); border-radius: 99px;
+  padding: 8px 20px; margin-bottom: 28px;
+}
+.completion-actions {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.btn-primary {
+  display: block; width: 100%;
+  padding: 15px 20px; font-family: var(--font-sans);
+  font-size: 16px; font-weight: 600; border-radius: var(--r-md);
+  background: linear-gradient(135deg, #0d9373, #2563eb);
+  color: #fff; border: none; cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+  text-decoration: none; text-align: center; letter-spacing: -0.01em;
+}
+.btn-primary:hover { opacity: 0.9; box-shadow: 0 6px 20px rgba(13,147,115,0.25); transform: translateY(-1px); }
+.btn-secondary-link {
+  font-size: 15px; color: var(--gray-400); text-decoration: underline;
+  text-underline-offset: 3px; cursor: pointer;
+  background: none; border: none; padding: 6px 0;
+}
+.btn-secondary-link:hover { color: var(--ink); }
+
+/* ── Demo mode banner ── */
+.demo-banner {
+  background: var(--indigo-50); border: 1px solid var(--indigo-100);
+  border-radius: var(--r-md); padding: 10px 16px; margin-bottom: 20px;
+  font-size: 14px; color: var(--indigo); line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">ReSkillio</a>
+    <a href="app.html" class="nav-back">← Back to skills analysis</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="intake-hero">
+    <div class="intake-eyebrow">Personalised intake</div>
+    <h1>Let's understand<br><em>where you are right now</em></h1>
+    <p>5 questions. 5 minutes. So we can match opportunities to your real situation — not just your resume.</p>
+  </div>
+
+  <!-- Progress track -->
+  <div class="progress-track" id="progressTrack">
+    <div class="prog-dot active" id="dot1"></div>
+    <div class="prog-line" id="line1"></div>
+    <div class="prog-dot" id="dot2"></div>
+    <div class="prog-line" id="line2"></div>
+    <div class="prog-dot" id="dot3"></div>
+    <div class="prog-line" id="line3"></div>
+    <div class="prog-dot" id="dot4"></div>
+    <div class="prog-line" id="line4"></div>
+    <div class="prog-dot" id="dot5"></div>
+  </div>
+
+  <div class="q-label" id="qLabel">Question 1 of 5 — Financial runway</div>
+  <div class="demo-banner" id="demoBanner" style="display:none">
+    Running in demo mode — no API connection. Answers are simulated locally.
+  </div>
+
+  <!-- Chat window -->
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="suggestions" id="suggestions"></div>
+    <div class="chat-input-area">
+      <textarea class="chat-input" id="chatInput" rows="1"
+        placeholder="Type your answer, or pick an option above…"></textarea>
+      <button class="send-btn" id="sendBtn" title="Send">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Completion card -->
+  <div class="completion-card" id="completionCard">
+    <div class="completion-icon">✓</div>
+    <div class="completion-title">Intake complete</div>
+    <div class="completion-sub">
+      We've got what we need to sharpen your results.<br>
+      Your profile has been saved.
+    </div>
+    <div class="persona-badge" id="personaBadge">Builder · Remote-open · 6 months runway</div>
+    <div class="completion-actions">
+      <a href="app.html" class="btn-primary">View my enriched results →</a>
+      <button class="btn-secondary-link" onclick="window.location.reload()">Start over</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = 'https://reskillio-10933517215.us-central1.run.app';
+
+// Demo Q&A when API is unavailable
+const DEMO_FLOW = [
+  {
+    message: "Before we look at your skills and options, I want to understand your situation. How much runway do you have right now — how long before financial pressure becomes critical for you?",
+    suggestions: ["Less than 3 months — I need to move fast","3–6 months — some breathing room","6–12 months — comfortable pace","12+ months — no immediate pressure"],
+    theme: "Financial runway",
+  },
+  {
+    message: "Got it — that really helps frame things. Now — where are you open to working? Are you tied to a specific city, open to relocating, or happy working fully remote?",
+    suggestions: ["Local only — I can't relocate","Hybrid local — prefer local but flexible","Open to relocation for the right role","Fully remote — location doesn't matter","Global — I work anywhere"],
+    theme: "Geographic flexibility",
+  },
+  {
+    message: "Good. Let's talk about how you work best. When you've been at your best professionally — what role were you playing? Were you building something new, running complex systems, fixing broken situations, connecting people, advising decisions, or driving innovation?",
+    suggestions: ["Builder — I create things from scratch","Operator — I run and scale systems","Fixer — I turn around broken situations","Advisor — I guide key decisions","Connector — I build communities","Innovator — I challenge the status quo"],
+    theme: "Work identity",
+  },
+  {
+    message: "That's a strong identity. Now — think about the work that lit you up. Not the job title, but the actual day-to-day moments that made you feel most alive. What was happening in those moments?",
+    suggestions: ["Solving hard technical problems","Leading and developing people","Building something that didn't exist","Making a visible impact on customers","Navigating complexity and bringing order","Learning and mastering new domains"],
+    theme: "What energised you",
+  },
+  {
+    message: "Last question — if you could design your next chapter, what does it look like? What kind of problem do you want to work on? And are you open to fractional, consulting, or contract work, or are you focused on a full-time role?",
+    suggestions: ["Full-time role — I want stability","Open to contract or fractional alongside a search","Consulting is where I want to be","I'm genuinely open — tell me the best path"],
+    theme: "What next",
+  },
+];
+
+let sessionId   = null;
+let currentQ    = 1;
+let demoMode    = false;
+let demoStep    = 0;
+let isWaiting   = false;
+
+const candidateId = new URLSearchParams(location.search).get('candidate_id') || 'demo-user';
+
+const chatMessages = document.getElementById('chatMessages');
+const suggestionsEl = document.getElementById('suggestions');
+const chatInput    = document.getElementById('chatInput');
+const sendBtn      = document.getElementById('sendBtn');
+const qLabel       = document.getElementById('qLabel');
+const completionCard = document.getElementById('completionCard');
+const chatWindow   = document.getElementById('chatWindow');
+const demoBanner   = document.getElementById('demoBanner');
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function addMessage(role, text) {
+  const wrap = document.createElement('div');
+  wrap.className = `msg ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `msg-avatar ${role === 'coach' ? 'coach' : 'user-av'}`;
+  avatar.textContent = role === 'coach' ? 'R' : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = text;
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(bubble);
+  chatMessages.appendChild(wrap);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return bubble;
+}
+
+function showTyping() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg coach';
+  wrap.id = 'typingWrap';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar coach';
+  avatar.textContent = 'R';
+
+  const indicator = document.createElement('div');
+  indicator.className = 'typing-indicator';
+  indicator.innerHTML = '<span></span><span></span><span></span>';
+
+  wrap.appendChild(avatar);
+  wrap.appendChild(indicator);
+  chatMessages.appendChild(wrap);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingWrap');
+  if (el) el.remove();
+}
+
+function setSuggestions(chips) {
+  suggestionsEl.innerHTML = '';
+  chips.forEach(text => {
+    const btn = document.createElement('button');
+    btn.className = 'suggestion-chip';
+    btn.textContent = text;
+    btn.onclick = () => sendMessage(text);
+    suggestionsEl.appendChild(btn);
+  });
+}
+
+function updateProgress(qNum) {
+  for (let i = 1; i <= 5; i++) {
+    const dot = document.getElementById(`dot${i}`);
+    const line = document.getElementById(`line${i}`);
+    if (i < qNum) { dot.className = 'prog-dot done'; }
+    else if (i === qNum) { dot.className = 'prog-dot active'; }
+    else { dot.className = 'prog-dot'; }
+    if (line && i < qNum) { line.className = 'prog-line done'; }
+    else if (line) { line.className = 'prog-line'; }
+  }
+}
+
+function updateQLabel(qNum, theme) {
+  qLabel.textContent = qNum <= 5
+    ? `Question ${qNum} of 5 — ${theme}`
+    : 'Intake complete';
+}
+
+function showCompletion(profile) {
+  chatWindow.style.display = 'none';
+  suggestionsEl.style.display = 'none';
+  qLabel.textContent = 'Intake complete';
+  completionCard.classList.add('visible');
+
+  // Build persona badge from profile
+  const parts = [];
+  if (profile?.work_identity) parts.push(profile.work_identity);
+  if (profile?.geographic_flexibility) {
+    const geo = { fully_remote:'Remote', local_only:'Local', open_to_relocation:'Relocation-open', hybrid_local:'Hybrid', global:'Global' };
+    parts.push(geo[profile.geographic_flexibility] || profile.geographic_flexibility);
+  }
+  if (profile?.financial_runway) {
+    const rwy = { immediate:'Urgent', short:'6mo runway', moderate:'12mo runway', comfortable:'No pressure' };
+    parts.push(rwy[profile.financial_runway] || profile.financial_runway);
+  }
+  if (parts.length) {
+    document.getElementById('personaBadge').textContent = parts.join(' · ');
+  }
+}
+
+// ── API calls ─────────────────────────────────────────────────────────────────
+
+async function startIntake() {
+  try {
+    const res = await fetch(`${API}/intake/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidate_id: candidateId }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    sessionId = data.session_id;
+    addMessage('coach', data.message);
+    setSuggestions(data.suggestions || []);
+    updateQLabel(data.question_n, DEMO_FLOW[0].theme);
+  } catch (e) {
+    console.warn('API unavailable, switching to demo mode:', e);
+    demoMode = true;
+    demoBanner.style.display = 'block';
+    addMessage('coach', DEMO_FLOW[0].message);
+    setSuggestions(DEMO_FLOW[0].suggestions);
+    updateQLabel(1, DEMO_FLOW[0].theme);
+  }
+}
+
+async function sendMessage(text) {
+  if (isWaiting || !text.trim()) return;
+  isWaiting = true;
+  sendBtn.disabled = true;
+
+  const userText = text.trim();
+  chatInput.value = '';
+  autoResize();
+  addMessage('user', userText);
+  setSuggestions([]);
+  showTyping();
+
+  try {
+    if (demoMode) {
+      await new Promise(r => setTimeout(r, 900 + Math.random() * 600));
+      removeTyping();
+      demoStep++;
+      if (demoStep >= DEMO_FLOW.length) {
+        addMessage('coach', "That's everything I needed — thank you. Your intake profile is ready and will sharpen your search results.");
+        showCompletion(null);
+      } else {
+        const q = DEMO_FLOW[demoStep];
+        addMessage('coach', q.message);
+        setSuggestions(q.suggestions);
+        currentQ = demoStep + 1;
+        updateProgress(currentQ);
+        updateQLabel(currentQ, q.theme);
+      }
+    } else {
+      const res = await fetch(`${API}/intake/turn`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, message: userText }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      removeTyping();
+      addMessage('coach', data.reply);
+
+      if (data.completed) {
+        showCompletion(data.profile);
+      } else {
+        setSuggestions(data.suggestions || []);
+        currentQ = data.question_n;
+        updateProgress(currentQ);
+        const theme = DEMO_FLOW[currentQ - 1]?.theme || '';
+        updateQLabel(currentQ, theme);
+      }
+    }
+  } catch (e) {
+    removeTyping();
+    addMessage('coach', "Sorry, something went wrong. Please try again.");
+    console.error(e);
+  }
+
+  isWaiting = false;
+  sendBtn.disabled = false;
+  chatInput.focus();
+}
+
+// ── Input handling ───────────────────────────────────────────────────────────
+
+function autoResize() {
+  chatInput.style.height = 'auto';
+  chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+}
+
+chatInput.addEventListener('input', autoResize);
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage(chatInput.value);
+  }
+});
+sendBtn.addEventListener('click', () => sendMessage(chatInput.value));
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+
+updateProgress(1);
+startIntake();
+</script>
+</body>
+</html>

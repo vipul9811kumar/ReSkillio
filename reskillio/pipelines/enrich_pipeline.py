@@ -141,13 +141,36 @@ def run_enrichment(
         )
 
     # ====================================================================
-    # Stage E3 — Salary Intelligence  (Step 5 — placeholder)
+    # Stage E3 — Salary Intelligence  (Step 5)
     # ====================================================================
     salary_intel: Optional[SalaryIntelResult] = None
-    # TODO Step 5: from reskillio.pipelines.salary_intel_pipeline import run_salary_intel
-    stages["salary_intel"] = StageResult(
-        success=True, duration_ms=0, error="pending — Step 5 not yet built"
-    )
+    t = time.perf_counter()
+    try:
+        from reskillio.pipelines.salary_intel_pipeline import run_salary_intel
+
+        # Use top market role as target if candidate said "Career Transition"
+        effective_role = target_role
+        if (target_role == "Career Transition"
+                and market_pulse
+                and market_pulse.top_roles):
+            effective_role = market_pulse.top_roles[0].title
+
+        salary_intel = run_salary_intel(
+            skill_names=skill_names,
+            industry=industry_label,
+            target_role=effective_role,
+            project_id=project_id,
+            region=region,
+        )
+        stages["salary_intel"] = StageResult(success=True, duration_ms=_ms(t))
+        logger.info(
+            f"[enrich] Salary intel done — "
+            f"${salary_intel.floor_usd:,} / ${salary_intel.median_usd:,} / "
+            f"${salary_intel.ceiling_usd:,}"
+        )
+    except Exception as exc:
+        stages["salary_intel"] = StageResult(success=False, duration_ms=_ms(t), error=str(exc))
+        logger.warning(f"[enrich] Salary intel failed: {exc}")
 
     # ====================================================================
     # Stage E4 — Company Radar  (Step 6 — placeholder)

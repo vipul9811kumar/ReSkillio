@@ -789,6 +789,96 @@ textarea::placeholder { color: var(--gray-400); font-size: 12px; }
   animation: pulse-dot 1.4s ease-in-out infinite;
 }
 
+/* ── Salary Intelligence (Step 5 enrichment) ──────────────────── */
+.salary-card {
+  margin-top: 20px;
+  border-top: 0.5px solid var(--border);
+  padding-top: 18px;
+}
+.salary-band {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  margin-bottom: 6px;
+  height: 48px;
+}
+.sb-floor, .sb-ceiling {
+  flex: 1;
+  background: var(--surface-3);
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 11px;
+  color: var(--gray-600);
+  font-family: var(--font-mono);
+}
+.sb-ceiling {
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  justify-content: flex-end;
+}
+.sb-median {
+  flex: 0 0 auto;
+  background: var(--teal);
+  height: 48px;
+  border-radius: var(--r-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  color: #fff;
+  z-index: 1;
+}
+.sb-median-num { font-size: 18px; font-weight: 500; font-family: var(--font-mono); line-height: 1; }
+.sb-median-lbl { font-size: 10px; opacity: .8; margin-top: 2px; letter-spacing: .04em; }
+.salary-note {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.salary-drivers { display: flex; flex-direction: column; gap: 6px; }
+.salary-driver-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+}
+.sd-arrow {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 13px;
+  line-height: 1;
+}
+.sd-up   { color: var(--teal); }
+.sd-down { color: var(--red-400); }
+.sd-label { font-weight: 500; color: var(--ink); }
+.sd-delta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gray-600);
+  margin-left: 4px;
+}
+.sd-reason { color: var(--gray-600); margin-top: 1px; line-height: 1.5; }
+.salary-enriching {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.salary-enriching::before {
+  content: '';
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--teal-100);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
 /* ── Gap analysis ──────────────────────────────────────────────── */
 .gap-score-hero {
   display: flex;
@@ -1530,6 +1620,25 @@ textarea#context-text::placeholder { color: var(--gray-400); }
       This narrative was built only from facts in your resume and your BigQuery skill profile. The model was given a strict system instruction: do not invent or infer &mdash; only use retrieved context. You can use this text directly.
     </div>
 
+    <!-- Salary Intelligence — injected by Step 5 enrichment -->
+    <div class="card hidden" id="salary-card">
+      <div class="card-title">Your salary range</div>
+
+      <div class="salary-band">
+        <div class="sb-floor" id="sb-floor">$—</div>
+        <div class="sb-median">
+          <span class="sb-median-num" id="sb-median">$—</span>
+          <span class="sb-median-lbl">median</span>
+        </div>
+        <div class="sb-ceiling" id="sb-ceiling">$—</div>
+      </div>
+      <p class="salary-note" id="salary-note"></p>
+
+      <div class="salary-drivers" id="salary-drivers"></div>
+    </div>
+
+    <div class="salary-enriching" id="salary-enriching">Calculating your salary range&hellip;</div>
+
     <button class="btn-primary" onclick="goStep(6)">See your 90-day plan &rarr;</button>
   </div>
 
@@ -2148,12 +2257,60 @@ function renderAutoGap(ag) {
   if (section) section.classList.remove('hidden');
 }
 
+/* ── Render: Salary Intelligence (S5 enrichment) ───────────────── */
+function renderSalaryIntel(si) {
+  if (!si || !si.median_usd) return;
+
+  const fmt = n => '$' + Number(n).toLocaleString('en-US');
+
+  // Hide enriching indicator
+  const enriching = document.getElementById('salary-enriching');
+  if (enriching) enriching.style.display = 'none';
+
+  // Band numbers
+  const floorEl   = document.getElementById('sb-floor');
+  const medianEl  = document.getElementById('sb-median');
+  const ceilingEl = document.getElementById('sb-ceiling');
+  if (floorEl)   floorEl.textContent   = fmt(si.floor_usd);
+  if (medianEl)  medianEl.textContent  = fmt(si.median_usd);
+  if (ceilingEl) ceilingEl.textContent = fmt(si.ceiling_usd);
+
+  // Note
+  const noteEl = document.getElementById('salary-note');
+  if (noteEl) noteEl.textContent = si.note || '';
+
+  // Drivers
+  const driversEl = document.getElementById('salary-drivers');
+  if (driversEl && si.drivers && si.drivers.length) {
+    driversEl.innerHTML = '';
+    si.drivers.forEach(d => {
+      const isUp    = d.direction === 'up';
+      const arrow   = isUp ? '↑' : '↓';
+      const arrowCls = isUp ? 'sd-up' : 'sd-down';
+      const sign    = isUp ? '+' : '−';
+      driversEl.innerHTML += `
+        <div class="salary-driver-row">
+          <span class="sd-arrow ${arrowCls}">${arrow}</span>
+          <div>
+            <span class="sd-label">${d.label}</span>
+            <span class="sd-delta">${sign}$${Number(d.delta_usd).toLocaleString('en-US')}</span>
+            <div class="sd-reason">${d.reason}</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // Reveal card
+  const card = document.getElementById('salary-card');
+  if (card) card.classList.remove('hidden');
+}
+
 /* Render enrichment data onto whichever screens are already visible. */
 function renderEnrichment(data) {
   if (!data) return;
-  try { renderMarketPulse(data.market_pulse); } catch(e) { console.error('[renderMarketPulse]', e); }
-  try { renderAutoGap(data.auto_gap);         } catch(e) { console.error('[renderAutoGap]', e); }
-  // Step 5: renderSalaryIntel(data.salary_intel)
+  try { renderMarketPulse(data.market_pulse);   } catch(e) { console.error('[renderMarketPulse]', e); }
+  try { renderAutoGap(data.auto_gap);           } catch(e) { console.error('[renderAutoGap]', e); }
+  try { renderSalaryIntel(data.salary_intel);   } catch(e) { console.error('[renderSalaryIntel]', e); }
   // Step 6: renderCompanyRadar(data.company_radar)
 }
 

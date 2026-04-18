@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReSkillio — Weekly Companion</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --teal:       #0d9373; --teal-50:  rgba(13,147,115,0.09); --teal-100: rgba(13,147,115,0.2); --teal-600: #0d9373; --teal-800: #065f46;
+  --blue:       #2563eb; --blue-50:  rgba(37,99,235,0.08);  --blue-100: rgba(37,99,235,0.18); --blue-800: #1e3a8a;
+  --amber:      #d97706; --amber-50: rgba(217,119,6,0.09);  --amber-100: rgba(217,119,6,0.2); --amber-800: #92400e;
+  --red-50:     rgba(220,38,38,0.08); --red-800: #7f1d1d;
+  --green-50:   rgba(22,163,74,0.09); --green-800: #14532d;
+  --gray-50:    #f8fafc; --gray-100: #f1f5f9; --gray-200: #e2e8f0;
+  --gray-400:   #64748b; --gray-600: #475569; --gray-800: #1e293b;
+  --ink:        #0f172a; --surface:  #ffffff;
+  --border:     rgba(0,0,0,0.08); --border-md: rgba(0,0,0,0.14);
+  --font-sans:  -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-mono:  ui-monospace, "SF Mono", monospace;
+  --r-md: 10px; --r-lg: 16px; --r-xl: 20px;
+  --max: 640px; --nav-h: 58px;
+}
+html { font-size: 16px; }
+body { font-family: var(--font-sans); color: var(--ink); background: #f0f4f8; -webkit-font-smoothing: antialiased; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.92); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border); height: var(--nav-h);
+  display: flex; align-items: center;
+}
+.nav-inner { max-width: var(--max); margin: 0 auto; padding: 0 24px; width: 100%; display: flex; align-items: center; gap: 16px; }
+.nav-logo { font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #0d9373, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+.nav-back { margin-left: auto; font-size: 14px; color: var(--gray-400); text-decoration: none; transition: color .15s; }
+.nav-back:hover { color: var(--ink); }
+
+.page { max-width: var(--max); margin: 0 auto; padding: 32px 20px 80px; }
+
+/* ── Digest header ── */
+.dh { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r-xl); padding: 24px 24px 16px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+.dh-meta { font-size: 12px; color: var(--gray-400); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.dh-badge { font-size: 11px; padding: 3px 10px; border-radius: 99px; background: var(--teal-50); color: var(--teal-600); border: 0.5px solid var(--teal-100); font-weight: 500; }
+.dh-greeting { font-family: var(--font-serif); font-size: 24px; color: var(--ink); margin-bottom: 6px; }
+.dh-sub { font-size: 15px; color: var(--gray-600); line-height: 1.6; }
+
+/* ── Week tabs ── */
+.week-tabs { display: flex; gap: 0; margin-top: 18px; border: 0.5px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--gray-50); }
+.wtab { flex: 1; padding: 8px 4px; text-align: center; font-size: 12px; color: var(--gray-400); border-right: 0.5px solid var(--border); cursor: pointer; transition: background .15s; user-select: none; }
+.wtab:last-child { border-right: none; }
+.wtab.done { color: var(--teal-600); }
+.wtab.on { background: var(--surface); color: var(--ink); font-weight: 600; }
+
+/* ── Section ── */
+.section { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--r-xl); padding: 20px 24px; margin-bottom: 12px; box-shadow: 0 1px 8px rgba(0,0,0,0.04); }
+.sh { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 14px; }
+
+/* ── Stat row ── */
+.stat-row { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.stat-box { background: var(--gray-50); border-radius: var(--r-md); padding: 12px 8px; text-align: center; border: 0.5px solid var(--border); }
+.sb-num { font-family: var(--font-serif); font-size: 26px; font-weight: 400; line-height: 1; margin-bottom: 4px; }
+.sb-lab { font-size: 11px; color: var(--gray-400); line-height: 1.35; }
+.sn-teal { color: var(--teal); } .sn-blue { color: var(--blue); } .sn-amber { color: var(--amber); }
+
+/* ── Gap card ── */
+.gap-card { background: var(--gray-50); border-radius: var(--r-lg); padding: 16px; border: 0.5px solid var(--border); margin-bottom: 14px; }
+.gc-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.gc-score { font-family: var(--font-serif); font-size: 42px; color: var(--teal); }
+.gc-delta { font-size: 13px; font-weight: 600; color: var(--teal); padding: 2px 9px; border-radius: 6px; background: var(--teal-50); border: 0.5px solid var(--teal-100); }
+.gc-role { font-size: 12px; color: var(--gray-400); margin-left: auto; }
+.sparkline-wrap { height: 52px; position: relative; margin-bottom: 6px; }
+.sparkline-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--gray-400); font-family: var(--font-mono); }
+
+/* ── Skill delta ── */
+.skill-delta-list { display: flex; flex-direction: column; gap: 7px; }
+.sdl-item { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.sdl-name { flex: 1; color: var(--ink); }
+.sdl-bar-bg { width: 110px; height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+.sdl-bar-f { height: 100%; border-radius: 3px; transition: width .8s ease; }
+.sdl-pct { font-size: 12px; width: 34px; text-align: right; flex-shrink: 0; font-family: var(--font-mono); }
+.sdl-tag { font-size: 11px; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; font-weight: 500; }
+.tag-closing { background: var(--teal-50); color: var(--teal-600); }
+.tag-open    { background: var(--gray-100); color: var(--gray-600); }
+.tag-new     { background: var(--blue-50);  color: var(--blue-800); }
+
+/* ── Course list ── */
+.course-list { display: flex; flex-direction: column; gap: 8px; }
+.course-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--gray-50); border-radius: var(--r-md); border: 0.5px solid var(--border); }
+.ci-icon { width: 32px; height: 32px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+.ci-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+.ci-sub { font-size: 12px; color: var(--gray-400); }
+.ci-prog-wrap { margin-left: auto; text-align: right; flex-shrink: 0; }
+.ci-pct { font-size: 14px; font-weight: 600; font-family: var(--font-mono); }
+.ci-bar-bg { width: 60px; height: 4px; background: var(--gray-200); border-radius: 2px; overflow: hidden; margin-top: 4px; }
+.ci-bar-f { height: 100%; border-radius: 2px; }
+
+/* ── Applications ── */
+.apps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.app-card { border: 0.5px solid var(--border); border-radius: var(--r-md); padding: 12px 14px; background: var(--surface); }
+.apc-company { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.apc-role { font-size: 12px; color: var(--gray-400); margin-bottom: 7px; }
+.apc-status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 9px; border-radius: 99px; font-weight: 500; }
+.s-applied   { background: var(--blue-50);  color: #1e3a8a; }
+.s-interview { background: var(--teal-50);  color: var(--teal-600); }
+.s-rejected  { background: var(--red-50);   color: #7f1d1d; }
+.apc-date { font-size: 11px; color: var(--gray-400); margin-top: 5px; }
+
+/* ── Market ── */
+.market-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+.market-row:last-child { border-bottom: none; }
+.mr-ind { font-size: 14px; flex: 1; }
+.mr-bar-bg { width: 90px; height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; flex-shrink: 0; }
+.mr-bar-f { height: 100%; border-radius: 3px; }
+.mr-score { font-size: 13px; font-weight: 600; width: 38px; text-align: right; font-family: var(--font-mono); flex-shrink: 0; }
+.mr-delta { font-size: 11px; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; font-weight: 500; }
+.md-up { background: var(--teal-50); color: var(--teal-600); }
+.md-dn { background: var(--red-50);  color: #7f1d1d; }
+.md-flat { background: var(--gray-100); color: var(--gray-600); }
+
+.insight-block { border-left: 3px solid var(--teal); border-radius: 0 var(--r-md) var(--r-md) 0; background: var(--teal-50); padding: 14px 16px; margin-top: 16px; }
+.ib-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--teal-600); margin-bottom: 6px; }
+.ib-text { font-size: 15px; color: var(--teal-800); line-height: 1.65; font-family: var(--font-serif); }
+
+/* ── Gemini narrative ── */
+.narrative-text { font-family: var(--font-serif); font-size: 17px; line-height: 1.75; color: var(--ink); border-left: 3px solid var(--teal); padding-left: 16px; }
+
+/* ── Actions ── */
+.action-list { display: flex; flex-direction: column; gap: 7px; }
+.action-item { display: flex; align-items: flex-start; gap: 10px; padding: 11px 14px; border: 0.5px solid var(--border); border-radius: var(--r-md); cursor: pointer; transition: background .12s; }
+.action-item:hover { background: var(--gray-50); }
+.ai-check { width: 20px; height: 20px; border-radius: 5px; border: 1.5px solid var(--border-md); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: background .15s, border-color .15s; }
+.ai-check.done { background: var(--teal); border-color: var(--teal); }
+.ai-check.done::after { content: ''; width: 10px; height: 6px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translateY(-1px); display: block; }
+.ai-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.ai-sub { font-size: 13px; color: var(--gray-600); line-height: 1.45; }
+.ai-badge { font-size: 11px; padding: 2px 7px; border-radius: 4px; margin-left: auto; flex-shrink: 0; align-self: flex-start; font-weight: 500; }
+.ab-high { background: rgba(220,38,38,.08); color: #b91c1c; }
+.ab-med  { background: var(--blue-50); color: #1e3a8a; }
+.ab-low  { background: var(--gray-100); color: var(--gray-600); }
+
+/* ── Check-in log ── */
+.checkin-section { background: var(--gray-50); border: 0.5px solid var(--border); border-radius: var(--r-xl); padding: 20px 24px; margin-bottom: 12px; }
+.slider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.slider-label { font-size: 13px; color: var(--gray-600); margin-bottom: 6px; }
+.slider-val { font-size: 14px; color: var(--teal); font-weight: 600; margin-top: 4px; }
+input[type="range"] { width: 100%; accent-color: var(--teal); }
+.btn-primary { display: block; width: 100%; padding: 14px 20px; font-family: var(--font-sans); font-size: 16px; font-weight: 600; border-radius: var(--r-md); background: linear-gradient(135deg, #0d9373, #2563eb); color: #fff; border: none; cursor: pointer; transition: opacity .15s, transform .1s; text-align: center; }
+.btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+.save-success { display: none; text-align: center; font-size: 15px; color: var(--teal); font-weight: 500; padding: 10px; }
+
+@media (max-width: 520px) {
+  .stat-row { grid-template-columns: repeat(2,1fr); }
+  .apps-grid { grid-template-columns: 1fr; }
+  .slider-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo">ReSkillio</a>
+    <a href="app.html" class="nav-back">← Back to analysis</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="dh">
+    <div class="dh-meta">
+      <span id="digest-date">Monday, April 21, 2026 · Week 3 of your rebound</span>
+      <span class="dh-badge">Weekly digest</span>
+    </div>
+    <div class="dh-greeting" id="digest-greeting">Good morning, Marcus.</div>
+    <div class="dh-sub" id="digest-sub">Your gap score moved again this week. Here is what changed, what to do next, and one thing the market is doing that you should know about.</div>
+    <div class="week-tabs" id="week-tabs">
+      <div class="wtab done" onclick="setWeek(1)">Wk 1</div>
+      <div class="wtab done" onclick="setWeek(2)">Wk 2</div>
+      <div class="wtab on"   onclick="setWeek(3)">Wk 3</div>
+      <div class="wtab"      onclick="setWeek(4)">Wk 4</div>
+      <div class="wtab"      onclick="setWeek(5)">Wk 5</div>
+      <div class="wtab"      onclick="setWeek(6)">Wk 6</div>
+    </div>
+  </div>
+
+  <!-- At a glance -->
+  <div class="section">
+    <div class="sh">This week at a glance</div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="sb-num sn-teal" id="stat-gap">81</div><div class="sb-lab">Gap score<br>vs target role</div></div>
+      <div class="stat-box"><div class="sb-num sn-blue" id="stat-course">34%</div><div class="sb-lab">Course<br>completion</div></div>
+      <div class="stat-box"><div class="sb-num sn-amber" id="stat-apps">2</div><div class="sb-lab">Applications<br>sent</div></div>
+      <div class="stat-box"><div class="sb-num sn-teal" id="stat-interviews">1</div><div class="sb-lab">Interview<br>scheduled</div></div>
+    </div>
+  </div>
+
+  <!-- Gap score -->
+  <div class="section">
+    <div class="sh">Gap score — progress over 3 weeks</div>
+    <div class="gap-card">
+      <div class="gc-header">
+        <div class="gc-score" id="gc-score">81</div>
+        <div class="gc-delta" id="gc-delta">+7 this week</div>
+        <div class="gc-role" id="gc-role">vs Operations Analyst</div>
+      </div>
+      <div class="sparkline-wrap"><canvas id="sparkline" width="560" height="52"></canvas></div>
+      <div class="sparkline-labels">
+        <span>Week 1 · 67</span><span>Week 2 · 74</span><span>Week 3 · 81</span><span>Target · 90</span>
+      </div>
+    </div>
+    <div class="sh" style="margin-top:16px">Skills closing — week over week</div>
+    <div class="skill-delta-list" id="skill-delta-list">
+      <div class="sdl-item">
+        <span class="sdl-name">Python (data scripts)</span>
+        <div class="sdl-bar-bg"><div class="sdl-bar-f" style="width:34%;background:var(--teal)"></div></div>
+        <span class="sdl-pct" style="color:var(--teal)">34%</span>
+        <span class="sdl-tag tag-closing">closing</span>
+      </div>
+      <div class="sdl-item">
+        <span class="sdl-name">Tableau / Power BI</span>
+        <div class="sdl-bar-bg"><div class="sdl-bar-f" style="width:0%;background:var(--gray-400)"></div></div>
+        <span class="sdl-pct" style="color:var(--gray-400)">0%</span>
+        <span class="sdl-tag tag-open">not started</span>
+      </div>
+      <div class="sdl-item">
+        <span class="sdl-name">SQL (advanced)</span>
+        <div class="sdl-bar-bg"><div class="sdl-bar-f" style="width:60%;background:var(--blue)"></div></div>
+        <span class="sdl-pct" style="color:var(--blue)">60%</span>
+        <span class="sdl-tag tag-new">bonus skill</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Courses -->
+  <div class="section">
+    <div class="sh">Course progress</div>
+    <div class="course-list">
+      <div class="course-item">
+        <div class="ci-icon" style="background:var(--blue-50)">📘</div>
+        <div>
+          <div class="ci-title">Python for Everybody</div>
+          <div class="ci-sub">Coursera · University of Michigan · Week 2 of 6</div>
+        </div>
+        <div class="ci-prog-wrap">
+          <div class="ci-pct" style="color:var(--teal)">34%</div>
+          <div class="ci-bar-bg"><div class="ci-bar-f" style="width:34%;background:var(--teal)"></div></div>
+        </div>
+      </div>
+      <div class="course-item" style="opacity:.5">
+        <div class="ci-icon" style="background:var(--gray-100)">📊</div>
+        <div>
+          <div class="ci-title" style="color:var(--gray-400)">Tableau A-Z</div>
+          <div class="ci-sub">Udemy · Starts Week 5</div>
+        </div>
+        <div class="ci-prog-wrap">
+          <div class="ci-pct" style="color:var(--gray-400)">0%</div>
+          <div class="ci-bar-bg"><div class="ci-bar-f" style="width:0%;background:var(--gray-400)"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Applications -->
+  <div class="section">
+    <div class="sh">Applications</div>
+    <div class="apps-grid">
+      <div class="app-card">
+        <div class="apc-company">FleetIQ</div>
+        <div class="apc-role">Operations Analyst</div>
+        <div class="apc-status s-interview">● Interview Thu 10am</div>
+        <div class="apc-date">Applied Apr 14</div>
+      </div>
+      <div class="app-card">
+        <div class="apc-company">Convoy Logistics</div>
+        <div class="apc-role">Supply Chain Analyst</div>
+        <div class="apc-status s-applied">● Applied — waiting</div>
+        <div class="apc-date">Applied Apr 17</div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:var(--gray-600);line-height:1.6;padding:11px 14px;background:var(--gray-50);border-radius:var(--r-md);border:0.5px solid var(--border)">
+      Your interview on Thursday is with FleetIQ — the role where you scored 81/100. Your WMS-to-data-pipeline transferable skill is your strongest talking point.
+    </div>
+  </div>
+
+  <!-- Market -->
+  <div class="section">
+    <div class="sh">Market changes this week</div>
+    <div class="market-row">
+      <span class="mr-ind">Operations &amp; analytics</span>
+      <div class="mr-bar-bg"><div class="mr-bar-f" style="width:75%;background:var(--teal)"></div></div>
+      <span class="mr-score" style="color:var(--teal)">75.1</span>
+      <span class="mr-delta md-up">+3.9</span>
+    </div>
+    <div class="market-row">
+      <span class="mr-ind">Supply chain tech</span>
+      <div class="mr-bar-bg"><div class="mr-bar-f" style="width:70%;background:var(--teal)"></div></div>
+      <span class="mr-score" style="color:var(--teal)">70.2</span>
+      <span class="mr-delta md-up">+1.8</span>
+    </div>
+    <div class="market-row">
+      <span class="mr-ind">FinTech / risk ops</span>
+      <div class="mr-bar-bg"><div class="mr-bar-f" style="width:52%;background:var(--amber)"></div></div>
+      <span class="mr-score" style="color:var(--amber)">52.4</span>
+      <span class="mr-delta md-dn">−1.7</span>
+    </div>
+    <div class="market-row">
+      <span class="mr-ind">HealthTech operations</span>
+      <div class="mr-bar-bg"><div class="mr-bar-f" style="width:47%;background:var(--amber)"></div></div>
+      <span class="mr-score" style="color:var(--amber)">47.3</span>
+      <span class="mr-delta md-flat">flat</span>
+    </div>
+    <div class="insight-block">
+      <div class="ib-label">Market signal this week</div>
+      <div class="ib-text" id="market-signal">Demand for Operations Analysts in logistics tech rose 12% this week — driven by a wave of Series B companies hiring ahead of summer growth cycles. This is a good week to apply.</div>
+    </div>
+  </div>
+
+  <!-- Gemini narrative -->
+  <div class="section">
+    <div class="sh">Gemini's read on your week</div>
+    <div class="narrative-text" id="narrative-text">
+      You are ahead of pace. Most people in week 3 of a career transition are still exploring — you have a 34% Python completion, two applications out, and an interview on Thursday. The gap score moving from 74 to 81 in one week is meaningful: it means your learning is translating directly into role-fit. The one thing worth doing today: prepare three stories from your logistics experience that demonstrate data-driven decision making — that is what FleetIQ will probe for on Thursday.
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="section">
+    <div class="sh">Your actions this week</div>
+    <div class="action-list" id="action-list">
+      <div class="action-item" onclick="toggleCheck(this)">
+        <div class="ai-check done"></div>
+        <div><div class="ai-title">Complete Python module 2 — pandas basics</div><div class="ai-sub">3 hrs · Closes the Python gap by ~15 points</div></div>
+        <span class="ai-badge ab-high">high impact</span>
+      </div>
+      <div class="action-item" onclick="toggleCheck(this)">
+        <div class="ai-check"></div>
+        <div><div class="ai-title">Prepare 3 STAR stories for Thursday's FleetIQ interview</div><div class="ai-sub">Focus: data-driven decisions in logistics · 2 hrs</div></div>
+        <span class="ai-badge ab-high">Thursday</span>
+      </div>
+      <div class="action-item" onclick="toggleCheck(this)">
+        <div class="ai-check"></div>
+        <div><div class="ai-title">Apply to 2 more Operations Analyst roles</div><div class="ai-sub">Market momentum is up this week · 1 hr</div></div>
+        <span class="ai-badge ab-med">this week</span>
+      </div>
+      <div class="action-item" onclick="toggleCheck(this)">
+        <div class="ai-check"></div>
+        <div><div class="ai-title">Update LinkedIn headline with your new narrative</div><div class="ai-sub">ReSkillio generated an updated 2-line headline · 15 min</div></div>
+        <span class="ai-badge ab-low">15 min</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Check-in log -->
+  <div class="checkin-section">
+    <div class="sh">Log this week's activity</div>
+    <div class="slider-grid">
+      <div>
+        <div class="slider-label">Hours on courses this week</div>
+        <input type="range" min="0" max="20" value="4" step="1" id="hours-slider" oninput="document.getElementById('hours-val').textContent=this.value">
+        <div class="slider-val"><span id="hours-val">4</span> hrs logged</div>
+      </div>
+      <div>
+        <div class="slider-label">Applications sent this week</div>
+        <input type="range" min="0" max="10" value="2" step="1" id="apps-slider" oninput="document.getElementById('apps-val').textContent=this.value">
+        <div class="slider-val"><span id="apps-val">2</span> applications</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveCheckin()">Save check-in → see next week's plan</button>
+    <div class="save-success" id="save-success">✓ Check-in saved. Your next digest will be ready Monday morning.</div>
+  </div>
+
+</div>
+
+<script>
+const API = 'https://reskillio-10933517215.us-central1.run.app';
+const params = new URLSearchParams(location.search);
+const candidateId = params.get('candidate_id') || 'demo-user';
+
+const WEEKS = {
+  1: { gap: 67, delta: 'baseline', course: '12%', apps: 0, interviews: 0 },
+  2: { gap: 74, delta: '+7 wk 2',  course: '22%', apps: 1, interviews: 0 },
+  3: { gap: 81, delta: '+7 this week', course: '34%', apps: 2, interviews: 1 },
+  4: { gap: null }, 5: { gap: null }, 6: { gap: null },
+};
+
+function setWeek(n) {
+  document.querySelectorAll('.wtab').forEach((t, i) => t.classList.toggle('on', i === n - 1));
+  const w = WEEKS[n];
+  document.getElementById('stat-gap').textContent       = w.gap    ?? '—';
+  document.getElementById('stat-course').textContent    = w.course ?? '—';
+  document.getElementById('stat-apps').textContent      = w.apps   ?? '—';
+  document.getElementById('stat-interviews').textContent = w.interviews ?? '—';
+  document.getElementById('gc-score').textContent       = w.gap    ?? '—';
+  document.getElementById('gc-delta').textContent       = w.delta  ?? '—';
+}
+
+function toggleCheck(item) {
+  item.querySelector('.ai-check').classList.toggle('done');
+}
+
+async function saveCheckin() {
+  const hours = parseInt(document.getElementById('hours-slider').value);
+  const apps  = parseInt(document.getElementById('apps-slider').value);
+  try {
+    const res = await fetch(`${API}/companion/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        candidate_id: candidateId,
+        hours_on_courses: hours,
+        applications_sent: apps,
+      }),
+    });
+    if (res.ok) {
+      document.querySelector('.btn-primary').style.display = 'none';
+      document.getElementById('save-success').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('save-success').style.display = 'block';
+    document.getElementById('save-success').textContent = '✓ Check-in saved (demo mode).';
+  }
+}
+
+// Load real digest if available
+async function loadDigest() {
+  try {
+    const res = await fetch(`${API}/companion/${candidateId}/digest`);
+    if (!res.ok) return;
+    const d = await res.json();
+    if (d.gemini_narrative) document.getElementById('narrative-text').textContent = d.gemini_narrative;
+    if (d.market_signal)    document.getElementById('market-signal').textContent  = d.market_signal;
+    if (d.gap_score)        document.getElementById('gc-score').textContent       = Math.round(d.gap_score);
+    if (d.gap_score_delta !== undefined) {
+      const delta = d.gap_score_delta;
+      document.getElementById('gc-delta').textContent = (delta >= 0 ? '+' : '') + Math.round(delta) + ' this week';
+    }
+  } catch(e) { /* use static demo content */ }
+}
+
+// Sparkline
+window.addEventListener('load', () => {
+  const ctx = document.getElementById('sparkline').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Target'],
+      datasets: [
+        {
+          data: [67, 74, 81, 90],
+          borderColor: '#0d9373', borderWidth: 2,
+          pointBackgroundColor: ['#0d9373','#0d9373','#0d9373','rgba(0,0,0,0)'],
+          pointBorderColor:     ['#0d9373','#0d9373','#0d9373','rgba(13,147,115,.4)'],
+          pointBorderWidth: [0,0,0,1.5], pointRadius: [4,4,6,4],
+          tension: 0.35, fill: true,
+          backgroundColor: 'rgba(13,147,115,0.07)',
+        },
+        {
+          data: [null, null, 81, 90],
+          borderColor: 'rgba(13,147,115,.35)', borderWidth: 1.5,
+          borderDash: [4,4], pointRadius: 0, tension: 0.35, fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ` Gap score: ${ctx.parsed.y}` },
+          backgroundColor: '#fff', titleColor: '#0f172a', bodyColor: '#475569',
+          borderColor: 'rgba(0,0,0,0.1)', borderWidth: 1,
+        },
+      },
+      scales: { x: { display: false }, y: { display: false, min: 55, max: 95 } },
+    },
+  });
+  loadDigest();
+});
+</script>
+</body>
+</html>

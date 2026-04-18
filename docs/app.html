@@ -1233,6 +1233,46 @@ textarea::placeholder { color: var(--gray-400); font-size: 13px; }
   margin-bottom: 20px;
 }
 
+.companion-cta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #f0fdf8 0%, #eff6ff 100%);
+  border: 1px solid #a7f3d0;
+  border-radius: var(--r-lg);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+.companion-cta-icon {
+  flex-shrink: 0;
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+}
+.companion-cta-body { flex: 1; }
+.companion-cta-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.companion-cta-sub   { font-size: 13px; color: var(--gray-600); line-height: 1.55; }
+.companion-cta-btn {
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 10px 18px;
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  color: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.companion-cta-btn:hover { opacity: 0.88; }
+@media (max-width: 600px) {
+  .companion-cta { flex-direction: column; align-items: flex-start; }
+  .companion-cta-btn { width: 100%; text-align: center; }
+}
+
 /* ── Footer ──────────────────────────────────────────────────────── */
 footer {
   border-top: 0.5px solid var(--border);
@@ -1563,6 +1603,7 @@ textarea#context-text::placeholder { color: var(--gray-400); }
       <li><a href="architecture.html">Architecture</a></li>
       <li><a href="api.html">API Docs</a></li>
       <li><a href="app.html" class="active">Try it</a></li>
+      <li><a href="companion.html" id="nav-companion-link" style="display:none">My Weekly Digest</a></li>
     </ul>
     <a class="nav-gh" href="https://github.com/vipul9811kumar/ReSkillio" target="_blank" rel="noopener">GitHub &rarr;</a>
   </div>
@@ -2122,6 +2163,18 @@ textarea#context-text::placeholder { color: var(--gray-400); }
       </div>
     </div>
 
+    <!-- Companion CTA -->
+    <div class="companion-cta" id="companion-cta">
+      <div class="companion-cta-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+      </div>
+      <div class="companion-cta-body">
+        <div class="companion-cta-title">Track your progress week by week</div>
+        <div class="companion-cta-sub">Check in each Monday — your companion tracks gap score, course progress, and applications, then generates a personalised digest to keep you on track.</div>
+      </div>
+      <a class="companion-cta-btn" id="companion-cta-link" href="companion.html">Open my weekly digest &rarr;</a>
+    </div>
+
     <div class="return-note">
       Found a new job posting? Come back and paste it in &mdash; your skill profile is saved to BigQuery. The gap analysis runs in under 10 seconds on return visits.
     </div>
@@ -2656,6 +2709,13 @@ async function fetchPersonGap(data) {
   if (intakeLink) {
     intakeLink.href = `intake.html?candidate_id=${encodeURIComponent(data.candidate_id)}`;
   }
+
+  // Wire companion links with candidate_id
+  const companionUrl = `companion.html?candidate_id=${encodeURIComponent(data.candidate_id)}`;
+  const navCompanion = document.getElementById('nav-companion-link');
+  const ctaLink      = document.getElementById('companion-cta-link');
+  if (navCompanion) { navCompanion.href = companionUrl; navCompanion.style.display = ''; }
+  if (ctaLink)      { ctaLink.href = companionUrl; }
 
   const t = data.trait_profile || {};
   const industry = data.industry_match?.scores?.[0]?.industry_label || 'your field';

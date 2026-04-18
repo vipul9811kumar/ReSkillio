@@ -1482,8 +1482,10 @@ const API_BASE = 'https://reskillio-ffdt22ikva-uc.a.run.app';
 let currentStep = 0;
 let timerInterval = null;
 let timerStart = 0;
-let analysisData = null;   // holds the full /analyze JSON response
-let resumeFile = null;     // holds the uploaded File object
+let analysisData = null;   // fast path — /analyze JSON response
+let enrichData   = null;   // slow path — /enrich JSON response (Option B)
+let resumeFile   = null;   // uploaded File object
+let _enrichTargetRole = 'Career Transition'; // saved for the /enrich call
 
 /* ── File upload ──────────────────────────────────────────────── */
 const fileIn = document.getElementById('file-in');
@@ -1603,6 +1605,9 @@ async function startAnalysis() {
   const contextText = document.getElementById('context-text').value.trim();
   if (contextText) formData.append('context_text', contextText);
 
+  // Save for the background /enrich call
+  _enrichTargetRole = targetRole || 'Career Transition';
+
   goStep(1);
   startTimer();
   startProgressAnimation();
@@ -1631,6 +1636,9 @@ async function startAnalysis() {
   try { renderIndustry(analysisData); } catch(e) { console.error('[renderIndustry]', e); }
   try { renderNarrative(analysisData);} catch(e) { console.error('[renderNarrative]', e); }
   try { renderSummary(analysisData);  } catch(e) { console.error('[renderSummary]', e); }
+
+  // Fire Option B enrichment in the background — no await, never blocks the UI
+  fetchEnrichment(analysisData.candidate_id, _enrichTargetRole, contextText);
 
   setTimeout(() => goStep(2), 700);
 }
@@ -1846,6 +1854,40 @@ function copyNarrative() {
       .then(() => alert('Narrative copied to clipboard.'))
       .catch(() => {});
   }
+}
+
+/* ── Option B — Background enrichment ──────────────────────────── */
+async function fetchEnrichment(candidateId, targetRole, contextText) {
+  if (!candidateId) return;
+  try {
+    const fd = new FormData();
+    fd.append('candidate_id', candidateId);
+    if (targetRole && targetRole !== 'Career Transition') fd.append('target_role', targetRole);
+    if (contextText) fd.append('context_text', contextText);
+
+    console.info('[enrich] Starting background enrichment for', candidateId);
+    const res = await fetch(`${API_BASE}/enrich`, { method: 'POST', body: fd });
+    if (!res.ok) { console.warn('[enrich] Non-OK response:', res.status); return; }
+
+    enrichData = await res.json();
+    console.info('[enrich] Enrichment complete:', enrichData);
+
+    // If user has already navigated to a step that uses enrichment, refresh it
+    try { renderEnrichment(enrichData); } catch(e) { console.error('[renderEnrichment]', e); }
+  } catch(e) {
+    console.warn('[enrich] Background enrichment failed (non-blocking):', e.message);
+  }
+}
+
+/* Render enrichment data onto whichever screens are already visible.
+   Steps 3-6 will fill this in with real rendering logic. */
+function renderEnrichment(data) {
+  if (!data) return;
+  // Step 3 will add: renderMarketPulse(data.market_pulse)
+  // Step 4 will add: renderAutoGap(data.auto_gap)
+  // Step 5 will add: renderSalaryIntel(data.salary_intel)
+  // Step 6 will add: renderCompanyRadar(data.company_radar)
+  console.info('[enrich] renderEnrichment called — stages will be wired in Steps 3-6');
 }
 
 /* ── Download helpers ────────────────────────────────────────────── */

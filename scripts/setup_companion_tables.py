@@ -23,7 +23,16 @@ def main():
     run_url = os.environ.get("CLOUD_RUN_URL", "https://reskillio-10933517215.us-central1.run.app")
     sa      = f"reskillio-scheduler@{settings.gcp_project_id}.iam.gserviceaccount.com"
 
-    print("\n2. Cloud Scheduler job — run this command once:")
+    print("\n2. Cloud Tasks queue — run this command once:")
+    print(f"""
+   gcloud tasks queues create reskillio-digest-queue \\
+     --project={settings.gcp_project_id} \\
+     --location=us-central1 \\
+     --max-concurrent-dispatches=10 \\
+     --max-dispatches-per-second=2
+    """)
+
+    print("\n3. Cloud Scheduler job — run this command once:")
     print(f"""
    gcloud scheduler jobs create http reskillio-weekly-digest \\
      --project={settings.gcp_project_id} \\
@@ -36,7 +45,7 @@ def main():
      --description="Weekly digest trigger — every Monday 6am UTC"
     """)
 
-    print("3. BigQuery progress view — paste into BQ console:")
+    print("4. BigQuery progress view — paste into BQ console:")
     print(f"""
    CREATE OR REPLACE VIEW `{settings.gcp_project_id}.reskillio.companion_progress_view` AS
    SELECT

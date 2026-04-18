@@ -9,7 +9,9 @@ Weekly companion routes.
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import threading
 from datetime import date, datetime, timezone, timedelta
 from typing import Optional
@@ -118,15 +120,6 @@ async def get_history(candidate_id: str):
 @router.post(
     "/trigger-digests",
     summary="Cloud Scheduler webhook — triggers all Monday digests",
-    description=(
-        "Called by Cloud Scheduler every Monday at 06:00 UTC. Internal use only.\n\n"
-        "Deploy job:\n"
-        "gcloud scheduler jobs create http reskillio-weekly-digest \\\n"
-        "  --schedule='0 6 * * 1' \\\n"
-        "  --uri='https://YOUR_CLOUD_RUN_URL/companion/trigger-digests' \\\n"
-        "  --oidc-service-account-email=reskillio-scheduler@PROJECT.iam.gserviceaccount.com \\\n"
-        "  --location=us-central1"
-    ),
 )
 async def trigger_digests(
     x_cloudscheduler_jobname: Optional[str] = Header(default=None),
@@ -134,9 +127,77 @@ async def trigger_digests(
     if not x_cloudscheduler_jobname:
         raise HTTPException(status_code=403, detail="Not a scheduler request")
 
-    logger.info("[companion] Weekly digest trigger fired by Cloud Scheduler")
-    # TODO: query BQ for all active candidates due for a digest and fan out to Cloud Tasks
-    return {"status": "triggered", "message": "Digest generation queued for all active candidates"}
+    s         = _settings()
+    store     = _store()
+    week_start = _current_week_start().isoformat()
+
+    candidates = store.get_candidates_due_for_digest(week_start)
+    if not candidates:
+        logger.info("[companion] No candidates due for digest this week")
+        return {"status": "ok", "queued": 0}
+
+    queued = _enqueue_digest_tasks(candidates, s)
+    logger.info(f"[companion] Queued {queued} digest tasks for week {week_start}")
+    return {"status": "triggered", "queued": queued, "candidates": candidates}
+
+
+@router.post(
+    "/{candidate_id}/generate-digest",
+    summary="Cloud Tasks target — generate digest for one candidate",
+    include_in_schema=False,   # internal, not shown in docs
+)
+async def generate_digest_for_candidate(candidate_id: str):
+    """Called by Cloud Tasks for each candidate after trigger-digests fans out."""
+    try:
+        s     = _settings()
+        store = _store()
+
+        row = store.get_latest_checkin(candidate_id)
+        if not row:
+            raise HTTPException(status_code=404, detail="No checkin found")
+
+        from reskillio.companion.models import WeeklyCheckin as WC
+        checkin = WC(
+            candidate_id=candidate_id,
+            week_number=row["week_number"],
+            week_start=row["week_start"],
+            checked_in_at=row["checked_in_at"],
+            hours_on_courses=row.get("hours_on_courses", 0.0),
+            applications_sent=row.get("applications_sent", 0),
+            interviews_scheduled=row.get("interviews_scheduled", 0),
+            interviews_completed=row.get("interviews_completed", 0),
+            gap_score=row.get("gap_score"),
+            gap_score_delta=row.get("gap_score_delta"),
+        )
+
+        from reskillio.storage.profile_store import CandidateProfileStore
+        from reskillio.companion.digest_generator import get_generator
+
+        profile     = CandidateProfileStore(project_id=s.gcp_project_id).get_profile(candidate_id)
+        skill_names = [sk.skill_name for sk in profile.skills[:15]]
+
+        intake_profile = _fetch_intake_profile(candidate_id, s)
+        market_data    = _fetch_market_data(skill_names, intake_profile.get("top_industry", ""), s)
+        candidate_name = getattr(profile, "name", None) or "Candidate"
+        target_role    = " ".join(intake_profile.get("want_next", "").split()[:4]) or "your target role"
+
+        gen    = get_generator(project_id=s.gcp_project_id, region=s.gcp_region)
+        digest = gen.generate_digest(
+            checkin=checkin,
+            candidate_name=candidate_name,
+            target_role=target_role,
+            intake_profile=intake_profile,
+            gap_history=[],
+            market_data=market_data,
+            active_courses=[],
+            application_log=[],
+        )
+        store.mark_digest_generated(candidate_id, checkin.week_number, digest.digest_id)
+        return {"status": "ok", "digest_id": digest.digest_id}
+
+    except Exception as exc:
+        logger.exception(f"[companion/generate-digest] {candidate_id}: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 # ── Private helpers ───────────────────────────────────────────────────────────
@@ -216,6 +277,41 @@ def _fetch_market_data(skill_names: list[str], industry: str, settings) -> dict:
     except Exception as exc:
         logger.warning(f"[companion] Market data fetch failed: {exc}")
         return {"top_industry": industry, "open_roles_change_pct": 0}
+
+
+def _enqueue_digest_tasks(candidate_ids: list[str], settings) -> int:
+    """Create one Cloud Tasks task per candidate pointing at /companion/{id}/generate-digest."""
+    from google.cloud import tasks_v2
+    from google.protobuf import duration_pb2
+
+    project    = settings.gcp_project_id
+    region     = getattr(settings, "gcp_tasks_region", settings.gcp_region)
+    queue_name = getattr(settings, "companion_tasks_queue", "reskillio-digest-queue")
+    run_url    = os.environ.get(
+        "CLOUD_RUN_URL", "https://reskillio-10933517215.us-central1.run.app"
+    )
+    sa_email   = f"reskillio-scheduler@{project}.iam.gserviceaccount.com"
+    parent     = f"projects/{project}/locations/{region}/queues/{queue_name}"
+
+    client  = tasks_v2.CloudTasksClient()
+    queued  = 0
+    for cid in candidate_ids:
+        task = {
+            "http_request": {
+                "http_method": tasks_v2.HttpMethod.POST,
+                "url": f"{run_url}/companion/{cid}/generate-digest",
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({"candidate_id": cid}).encode(),
+                "oidc_token": {"service_account_email": sa_email},
+            },
+            "dispatch_deadline": duration_pb2.Duration(seconds=1800),  # 30 min per digest
+        }
+        try:
+            client.create_task(request={"parent": parent, "task": task})
+            queued += 1
+        except Exception as exc:
+            logger.error(f"[companion] Failed to enqueue task for {cid}: {exc}")
+    return queued
 
 
 def _trigger_digest_async(checkin: WeeklyCheckin, request: CheckinSubmitRequest, settings) -> str:

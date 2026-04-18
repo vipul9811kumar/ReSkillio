@@ -174,3 +174,39 @@ class CompanionStore:
     def next_week_number(self, candidate_id: str) -> int:
         checkins = self.get_checkins(candidate_id, limit=100)
         return (max((c["week_number"] for c in checkins), default=0) + 1)
+
+    def get_candidates_due_for_digest(self, week_start: str) -> list[str]:
+        """Return candidate_ids who checked in on week_start but have no digest yet."""
+        query = f"""
+            SELECT DISTINCT c.candidate_id
+            FROM `{self._table("weekly_checkins")}` c
+            WHERE c.week_start = @week_start
+              AND (c.digest_generated IS NULL OR c.digest_generated = FALSE)
+              AND NOT EXISTS (
+                SELECT 1 FROM `{self._table("companion_digests")}` d
+                WHERE d.candidate_id = c.candidate_id
+                  AND d.week_start = @week_start
+              )
+        """
+        cfg = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ScalarQueryParameter("week_start", "STRING", week_start)
+        ])
+        return [r["candidate_id"] for r in self.client.query(query, job_config=cfg).result()]
+
+    def mark_digest_generated(self, candidate_id: str, week_number: int, digest_id: str) -> None:
+        """DML UPDATE — marks the checkin row as having a digest."""
+        query = f"""
+            UPDATE `{self._table("weekly_checkins")}`
+            SET digest_generated = TRUE, digest_id = @digest_id
+            WHERE candidate_id = @cid AND week_number = @week_num
+        """
+        cfg = bigquery.QueryJobConfig(query_parameters=[
+            bigquery.ScalarQueryParameter("cid",        "STRING", candidate_id),
+            bigquery.ScalarQueryParameter("week_num",   "INT64",  week_number),
+            bigquery.ScalarQueryParameter("digest_id",  "STRING", digest_id),
+        ])
+        self.client.query(query, job_config=cfg).result()
+
+    def get_latest_checkin(self, candidate_id: str) -> Optional[dict]:
+        checkins = self.get_checkins(candidate_id, limit=1)
+        return checkins[0] if checkins else None

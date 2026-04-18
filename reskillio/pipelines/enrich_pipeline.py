@@ -91,13 +91,27 @@ def run_enrichment(
         logger.warning(f"[enrich] Profile lookup failed: {exc} — proceeding with empty profile")
 
     # ====================================================================
-    # Stage E1 — Market Pulse  (Step 3 — placeholder)
+    # Stage E1 — Market Pulse  (Step 3)
     # ====================================================================
     market_pulse: Optional[MarketPulseResult] = None
-    # TODO Step 3: from reskillio.agents.market_pulse_agent import run_market_pulse_agent
-    stages["market_pulse"] = StageResult(
-        success=True, duration_ms=0, error="pending — Step 3 not yet built"
-    )
+    t = time.perf_counter()
+    try:
+        from reskillio.agents.market_pulse_agent import run_market_pulse_agent
+        market_pulse = run_market_pulse_agent(
+            skill_names=skill_names,
+            industry=industry_label,
+            target_role=target_role,
+            project_id=project_id,
+            region=region,
+        )
+        stages["market_pulse"] = StageResult(success=True, duration_ms=_ms(t))
+        logger.info(
+            f"[enrich] Market pulse done — {len(market_pulse.top_roles)} roles, "
+            f"demand={market_pulse.overall_demand}"
+        )
+    except Exception as exc:
+        stages["market_pulse"] = StageResult(success=False, duration_ms=_ms(t), error=str(exc))
+        logger.warning(f"[enrich] Market pulse failed: {exc}")
 
     # ====================================================================
     # Stage E2 — Auto-gap  (Step 4 — placeholder)

@@ -92,6 +92,41 @@ All stages run in one `POST /analyze` call. Each stage is fail-safe — a downst
   └───────────────┘
 ```
 
+### Mermaid Diagram
+
+```mermaid
+flowchart TD
+    Client([Browser · reskillio.com]) -->|POST /analyze| API[FastAPI · Cloud Run]
+
+    API --> P1[Stage 1: spaCy Extraction]
+    P1 -->|skills + embeddings| BQ[(BigQuery\nskill_extractions\ncandidate_profiles)]
+    P1 --> P2[Stage 2: Gap Analysis]
+    P2 -->|embeddings| VA[Vertex AI\ntext-embedding-004]
+    P2 --> P3[Stage 3: Industry Match]
+    P3 -->|BQML cosine| IV[(industry_vectors\nBQML)]
+    P3 --> P4[Stage 4: Gemini Narrative]
+    P4 -->|RAG facts| GEM[Gemini 2.5 Flash\nVertex AI]
+
+    API -->|POST /intake/start\nPOST /intake/turn| INT[Intake Agent\nCrewAI · 5-turn conv]
+    INT -->|goals + prefs| BQ
+
+    API -->|POST /companion/checkin| CMP[Companion\nWeekly check-in]
+    CMP -->|digest fan-out| CT[Cloud Tasks\nreskillio-digest-queue]
+    CT -->|POST /companion/id/generate-digest| CMP
+    SCH[Cloud Scheduler\nMonday 06:00 UTC] -->|trigger-digests| API
+
+    API -->|POST /radar/search| RAD[Radar Agent\nCrewAI + DuckDuckGo]
+    RAD -->|match + pitch| BQ
+
+    API -->|POST /person-gap| PG[Person Gap Agent\ngemini-2.5-flash]
+    PG -->|intake profile| BQ
+
+    P1 -->|drift metrics| MON[Cloud Monitoring\nAlert Policy]
+    P1 -->|medallion| LH[Lakehouse\nBronze→Silver→Gold]
+
+    CB[Cloud Build\nCI/CD Trigger] -->|deploy| API
+```
+
 ---
 
 ## GCP Service Map

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opportunity Radar — ReSkillio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#1D9E75;--teal-50:#E1F5EE;--teal-100:#9FE1CB;--teal-600:#0d9373;--teal-800:#085041;
+  --blue:#2563eb;--blue-50:#E6F1FB;--blue-100:#B5D4F4;--blue-800:#0C447C;
+  --purple:#534AB7;--purple-50:#EEEDFE;--purple-100:#CECBF6;--purple-800:#3C3489;
+  --amber:#BA7517;--amber-50:#FAEEDA;--amber-100:#FAC775;--amber-800:#633806;
+  --coral:#993C1D;--coral-50:#FAECE7;--coral-100:#F5C4B3;--coral-800:#712B13;
+  --gray-50:#f8fafc;--gray-100:#f1f5f9;--gray-400:#94a3b8;--gray-600:#475569;--gray-800:#1e293b;
+  --ink:#0f172a;--surface:#ffffff;--surface-2:#f8fafc;--surface-3:#f1f5f9;
+  --border:rgba(15,23,42,0.08);--border-md:rgba(15,23,42,0.16);
+  --nav-h:58px;--r-lg:14px;
+  --font-sans:'DM Sans',system-ui,sans-serif;
+  --font-serif:'DM Serif Display',Georgia,serif;
+  --font-mono:'DM Mono',monospace;
+}
+body{font-family:var(--font-sans);color:var(--ink);background:#f0f4f8;min-height:100vh}
+nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop-filter:blur(12px);border-bottom:0.5px solid var(--border)}
+.nav-inner{max-width:900px;margin:0 auto;padding:0 20px;height:var(--nav-h);display:flex;align-items:center;gap:24px}
+.nav-logo{font-family:var(--font-serif);font-size:20px;color:var(--ink);text-decoration:none}
+.nav-logo span{color:var(--teal)}
+.nav-links{display:flex;gap:20px;list-style:none;flex:1}
+.nav-links a{font-size:14px;color:var(--gray-600);text-decoration:none;transition:color .15s}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a.active{color:var(--ink);font-weight:500}
+.page{max-width:900px;margin:0 auto;padding:28px 20px 60px}
+.page-header{padding:0 0 20px;border-bottom:0.5px solid var(--border);margin-bottom:24px}
+.ph-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-600);background:var(--teal-50);border:0.5px solid var(--teal-100);border-radius:99px;padding:3px 10px;margin-bottom:10px}
+.ph-tag::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--teal)}
+.ph-title{font-family:var(--font-serif);font-size:26px;color:var(--ink);margin-bottom:4px}
+.ph-sub{font-size:14px;color:var(--gray-600);line-height:1.6;max-width:540px}
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.fb-label{font-size:11px;color:var(--gray-400);margin-right:2px;font-weight:500}
+.fchip{font-size:12px;padding:5px 12px;border-radius:99px;border:0.5px solid var(--border-md);background:var(--surface);color:var(--gray-600);cursor:pointer;transition:all .15s;user-select:none}
+.fchip:hover{border-color:var(--teal);color:var(--teal-600)}
+.fchip.on{background:var(--teal-50);color:var(--teal-600);border-color:var(--teal-100);font-weight:500}
+.stats-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:24px}
+.stat-box{background:var(--surface);border-radius:10px;padding:14px 12px;text-align:center;border:0.5px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.sb-num{font-family:var(--font-serif);font-size:26px;line-height:1;margin-bottom:3px}
+.sb-lab{font-size:11px;color:var(--gray-400);line-height:1.4}
+.sn-teal{color:var(--teal)}.sn-blue{color:var(--blue)}.sn-purple{color:var(--purple)}.sn-amber{color:var(--amber)}
+.opp-list{display:flex;flex-direction:column;gap:12px}
+.opp-card{border:0.5px solid var(--border);border-radius:16px;background:var(--surface);overflow:hidden;transition:border-color .15s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.opp-card:hover{border-color:var(--border-md)}
+.opp-card.top-match{border:2px solid var(--teal-100)}
+.oc-header{display:flex;align-items:flex-start;gap:14px;padding:18px 20px 14px}
+.oc-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;flex-shrink:0;font-family:var(--font-mono)}
+.oc-main{flex:1;min-width:0}
+.oc-company{font-size:15px;font-weight:600;margin-bottom:2px}
+.oc-role{font-size:13px;color:var(--gray-600);margin-bottom:6px}
+.oc-badges{display:flex;gap:5px;flex-wrap:wrap}
+.badge{font-size:10px;padding:3px 8px;border-radius:4px;font-weight:500;white-space:nowrap}
+.b-frac{background:var(--teal-50);color:var(--teal-600);border:0.5px solid var(--teal-100)}
+.b-cons{background:var(--blue-50);color:var(--blue-800);border:0.5px solid var(--blue-100)}
+.b-adv{background:var(--purple-50);color:var(--purple-800);border:0.5px solid var(--purple-100)}
+.b-hot{background:var(--coral-50);color:var(--coral-800);border:0.5px solid var(--coral-100)}
+.b-new{background:var(--amber-50);color:var(--amber-800);border:0.5px solid var(--amber-100)}
+.b-best{background:var(--teal-50);color:var(--teal-600);border:0.5px solid var(--teal-100)}
+.oc-score-wrap{flex-shrink:0;text-align:right}
+.oc-score{font-family:var(--font-serif);font-size:30px;line-height:1;color:var(--teal)}
+.oc-score-lab{font-size:10px;color:var(--gray-400);margin-top:2px}
+.oc-body{padding:0 20px 18px}
+.oc-divider{height:0.5px;background:var(--border);margin-bottom:14px}
+.match-reasons{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.mr-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--gray-600);line-height:1.5}
+.mr-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);flex-shrink:0;margin-top:6px}
+.oc-meta-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.oc-meta-item{background:var(--surface-2);border-radius:8px;padding:8px 10px;border:0.5px solid var(--border)}
+.omi-label{font-size:10px;color:var(--gray-400);margin-bottom:2px}
+.omi-value{font-size:13px;font-weight:500;color:var(--ink)}
+.skill-match-bar{margin-bottom:14px}
+.smb-head{display:flex;justify-content:space-between;font-size:11px;color:var(--gray-400);margin-bottom:5px}
+.smb-track{height:6px;background:var(--surface-3);border-radius:3px;overflow:hidden}
+.smb-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--teal),var(--blue));transition:width .8s ease}
+.sp-have{font-size:11px;padding:3px 8px;border-radius:99px;background:var(--teal-50);color:var(--teal-600);border:0.5px solid var(--teal-100)}
+.sp-gap{font-size:11px;padding:3px 8px;border-radius:99px;background:var(--gray-100);color:var(--gray-600);border:0.5px solid var(--border)}
+.sp-label{font-size:10px;color:var(--gray-400);margin-right:4px;font-weight:500;align-self:center}
+.oc-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-primary-sm{font-size:12px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;border:none;cursor:pointer;font-family:var(--font-sans);font-weight:500;transition:opacity .15s}
+.btn-primary-sm:hover{opacity:.88}
+.btn-secondary-sm{font-size:12px;padding:7px 14px;border-radius:8px;border:0.5px solid var(--border-md);background:transparent;color:var(--gray-600);cursor:pointer;transition:background .15s}
+.btn-secondary-sm:hover{background:var(--surface-2)}
+.expanded-section{display:none;border-top:0.5px solid var(--border);padding:16px 20px}
+.expanded-section.open{display:block}
+.es-title{font-size:11px;font-weight:500;color:var(--gray-600);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.pitch-box{background:var(--surface-2);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:12px 14px;font-family:var(--font-serif);font-size:15px;line-height:1.7;color:var(--ink);margin-bottom:14px}
+.engagement-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.eg-item{background:var(--surface-2);border-radius:6px;padding:10px 12px;border:0.5px solid var(--border)}
+.eg-label{font-size:10px;color:var(--gray-400);margin-bottom:2px}
+.eg-value{font-size:13px;font-weight:500}
+.intro-card{background:var(--amber-50);border:0.5px solid var(--amber-100);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--amber-800);line-height:1.6}
+.score-legend{margin-top:24px;padding:16px 20px;background:var(--surface);border-radius:12px;border:0.5px solid var(--border)}
+.sl-title{font-size:11px;font-weight:500;color:var(--gray-600);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.sl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.sl-item{font-size:13px;color:var(--gray-600);line-height:1.5}
+.sl-item strong{font-weight:600;color:var(--ink);display:block;margin-bottom:2px}
+.loading-state{text-align:center;padding:48px 20px;background:var(--surface);border-radius:16px;border:0.5px solid var(--border)}
+.ls-spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ls-text{font-size:14px;color:var(--gray-600)}
+.ls-sub{font-size:12px;color:var(--gray-400);margin-top:4px}
+@media(max-width:600px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .oc-meta-row{grid-template-columns:1fr 1fr}
+  .sl-grid{grid-template-columns:1fr}
+  nav .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">Reskil<span>lio</span></a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="app.html">Try it</a></li>
+      <li><a href="companion.html">Weekly Digest</a></li>
+      <li><a href="radar.html" class="active">Opportunity Radar</a></li>
+    </ul>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="page-header">
+    <div class="ph-tag">Opportunity radar</div>
+    <div class="ph-title">Who needs what you know</div>
+    <div class="ph-sub" id="ph-sub">Loading your personalised opportunity matches&hellip;</div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="fb-label">Show</span>
+    <span class="fchip on" onclick="filter('all',this)">All (<span id="all-count">0</span>)</span>
+    <span class="fchip" onclick="filter('fractional',this)">Fractional</span>
+    <span class="fchip" onclick="filter('consulting',this)">Consulting</span>
+    <span class="fchip" onclick="filter('advisory',this)">Advisory</span>
+    <span class="fchip" onclick="filter('actively_hiring',this)">Actively hiring</span>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box"><div class="sb-num sn-teal" id="stat-matches">—</div><div class="sb-lab">opportunities<br>matched</div></div>
+    <div class="stat-box"><div class="sb-num sn-blue" id="stat-rate">—</div><div class="sb-lab">avg daily rate<br>for your profile</div></div>
+    <div class="stat-box"><div class="sb-num sn-purple" id="stat-active">—</div><div class="sb-lab">actively posting<br>this week</div></div>
+    <div class="stat-box"><div class="sb-num sn-amber" id="stat-persona">—</div><div class="sb-lab">your match<br>persona</div></div>
+  </div>
+
+  <div class="opp-list" id="opp-list">
+    <div class="loading-state" id="loading-state">
+      <div class="ls-spinner"></div>
+      <div class="ls-text">Scanning live postings&hellip;</div>
+      <div class="ls-sub">Searching fractional, consulting, and advisory opportunities for your profile</div>
+    </div>
+  </div>
+
+  <div class="score-legend">
+    <div class="sl-title">How match scores are computed</div>
+    <div class="sl-grid">
+      <div class="sl-item"><strong>Skill overlap (40%)</strong>Three-tier matching: exact name, normalised name, then semantic similarity via embeddings</div>
+      <div class="sl-item"><strong>Trait fit (30%)</strong>Builder / Operator / Fixer identity matched against company stage and culture signals extracted from the posting</div>
+      <div class="sl-item"><strong>Context signals (30%)</strong>Seniority, scale managed, geographic preference, and engagement format from your intake profile</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = 'https://reskillio-10933517215.us-central1.run.app';
+const params      = new URLSearchParams(location.search);
+const candidateId = params.get('candidate_id') || '';
+
+async function loadRadar() {
+  if (!candidateId) {
+    document.getElementById('loading-state').innerHTML =
+      '<div class="ls-text" style="color:var(--coral-800)">No candidate_id in URL — complete your analysis on the Try it page first.</div>';
+    return;
+  }
+  try {
+    const res = await fetch(`${API}/radar/search`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({candidate_id: candidateId, max_results: 12}),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    renderRadar(await res.json());
+  } catch(e) {
+    console.error('[radar]', e);
+    document.getElementById('loading-state').innerHTML =
+      `<div class="ls-text" style="color:var(--coral-800)">Could not load opportunities.<br><small>${e.message}</small></div>`;
+  }
+}
+
+function renderRadar(data) {
+  const matches = data.matches || [];
+  document.getElementById('stat-matches').textContent = data.total_found || matches.length;
+  document.getElementById('stat-rate').textContent    = data.avg_daily_rate ? `$${Math.round(data.avg_daily_rate)}` : '—';
+  document.getElementById('stat-active').textContent  = matches.filter(m => m.opportunity.hiring_signal === 'actively_hiring').length;
+  document.getElementById('stat-persona').textContent = data.persona_used ? data.persona_used.split('·')[0].trim() : '—';
+  document.getElementById('all-count').textContent    = matches.length;
+  if (data.persona_used) {
+    document.getElementById('ph-sub').textContent =
+      `Based on your skill profile and ${data.persona_used} identity — these organisations are looking for exactly what you offer, just not as a full-time hire.`;
+  }
+  const list = document.getElementById('opp-list');
+  list.innerHTML = '';
+  if (!matches.length) {
+    list.innerHTML = '<div class="loading-state"><div class="ls-text">No matches found yet — complete your intake profile to improve matching.</div></div>';
+    return;
+  }
+  matches.forEach((m, i) => renderCard(list, m, i === 0));
+}
+
+const LOGO_COLORS = [
+  ['var(--teal-50)','var(--teal-600)'],['var(--blue-50)','var(--blue-800)'],
+  ['var(--purple-50)','var(--purple-800)'],['var(--amber-50)','var(--amber-800)'],
+];
+const ENG_BADGE = {fractional:['b-frac','Fractional'],consulting:['b-cons','Consulting'],advisory:['b-adv','Advisory'],interim:['b-frac','Interim']};
+
+function renderCard(container, match, isTop) {
+  const opp      = match.opportunity;
+  const score    = match.score_breakdown.overall_score;
+  const initials = opp.company_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  const [bg,fg]  = LOGO_COLORS[Math.floor(Math.random()*LOGO_COLORS.length)];
+  const [engCls,engLbl] = ENG_BADGE[opp.engagement_type] || ['b-frac','Fractional'];
+
+  const hotBadge  = opp.hiring_signal==='actively_hiring' ? '<span class="badge b-hot">Actively hiring</span>' : '';
+  const newBadge  = opp.hiring_signal==='recently_posted'  ? '<span class="badge b-new">New this week</span>'  : '';
+  const topBadge  = isTop ? '<span class="badge b-best">Best match</span>' : '';
+
+  const reasons   = (match.match_reasons||[]).map(r=>`<div class="mr-item"><div class="mr-dot"></div>${r}</div>`).join('')
+    || '<div class="mr-item"><div class="mr-dot"></div>Strong alignment with your skill profile and identity</div>';
+
+  const rate      = opp.rate_floor ? `$${Math.round(opp.rate_floor)}${opp.rate_ceiling?'–$'+Math.round(opp.rate_ceiling):''}/${opp.rate_unit}` : 'TBD';
+  const commit    = opp.commitment_days_per_week ? `${opp.commitment_days_per_week} days/wk${opp.duration_months?' · '+opp.duration_months+' mo':''}` : '—';
+  const location  = opp.remote_ok ? 'Remote OK' : (opp.location_required||'On-site');
+
+  const haveSkills = (match.skill_detail.matched_skills||[]).slice(0,4).map(s=>`<span class="sp-have">${s}</span>`).join('');
+  const missSkills = (match.skill_detail.missing_skills||[]).slice(0,2).map(s=>`<span class="sp-gap">${s}</span>`).join('');
+  const missRow   = missSkills ? `<span class="sp-label" style="margin-left:4px">Missing:</span>${missSkills}` : '';
+
+  const pitchText = match.pitch_text || `Your experience directly addresses what ${opp.company_name} needs — ${opp.required_skills[0]||'operational leadership'} at scale.`;
+  const tipsHtml  = match.engagement_tips&&match.engagement_tips.length
+    ? `<div class="es-title" style="margin-top:14px">Engagement tips</div><div class="engagement-grid">${match.engagement_tips.map(t=>`<div class="eg-item"><div class="eg-label">${t.label}</div><div class="eg-value">${t.value}</div></div>`).join('')}</div>` : '';
+  const introHtml = match.intro_angle ? `<div class="intro-card"><strong>Warm intro angle:</strong> ${match.intro_angle}</div>` : '';
+
+  const card = document.createElement('div');
+  card.className = `opp-card${isTop?' top-match':''}`;
+  card.dataset.type   = opp.engagement_type;
+  card.dataset.signal = opp.hiring_signal;
+  card.innerHTML = `
+    <div class="oc-header">
+      <div class="oc-logo" style="background:${bg};color:${fg}">${initials}</div>
+      <div class="oc-main">
+        <div class="oc-company">${opp.company_name}</div>
+        <div class="oc-role">${opp.role_title}${opp.commitment_days_per_week?' · '+opp.commitment_days_per_week+' days/week':''}</div>
+        <div class="oc-badges"><span class="badge ${engCls}">${engLbl}</span>${hotBadge}${newBadge}${topBadge}</div>
+      </div>
+      <div class="oc-score-wrap"><div class="oc-score">${Math.round(score)}</div><div class="oc-score-lab">match score</div></div>
+    </div>
+    <div class="oc-body">
+      <div class="oc-divider"></div>
+      <div class="match-reasons">${reasons}</div>
+      <div class="oc-meta-row">
+        <div class="oc-meta-item"><div class="omi-label">Rate range</div><div class="omi-value">${rate}</div></div>
+        <div class="oc-meta-item"><div class="omi-label">Commitment</div><div class="omi-value">${commit}</div></div>
+        <div class="oc-meta-item"><div class="omi-label">Location</div><div class="omi-value">${location}</div></div>
+      </div>
+      <div class="skill-match-bar">
+        <div class="smb-head"><span>Skill overlap</span><span style="font-weight:600;color:var(--teal)">${Math.round(match.skill_detail.overlap_pct)}%</span></div>
+        <div class="smb-track"><div class="smb-fill" style="width:${match.skill_detail.overlap_pct}%"></div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+        <span class="sp-label">You have:</span>${haveSkills}${missRow}
+      </div>
+      <div class="oc-actions">
+        <button class="btn-primary-sm" onclick="togglePitch(this)">See outreach pitch &rarr;</button>
+        <button class="btn-secondary-sm" onclick="saveMatch('${match.match_id}',this)">Save</button>
+      </div>
+    </div>
+    <div class="expanded-section">
+      <div class="es-title">Your personalised outreach pitch</div>
+      <div class="pitch-box">${pitchText}</div>
+      ${tipsHtml}${introHtml}
+    </div>`;
+  container.appendChild(card);
+}
+
+function togglePitch(btn) {
+  const section = btn.closest('.opp-card').querySelector('.expanded-section');
+  const isOpen  = section.classList.contains('open');
+  document.querySelectorAll('.expanded-section').forEach(s=>s.classList.remove('open'));
+  document.querySelectorAll('.btn-primary-sm').forEach(b=>{if(b.textContent.includes('Hide'))b.textContent='See outreach pitch \u2192';});
+  if (!isOpen) { section.classList.add('open'); btn.textContent='Hide pitch \u2191'; }
+}
+
+function filter(type, el) {
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  let count=0;
+  document.querySelectorAll('.opp-card').forEach(card=>{
+    const show = type==='all' || card.dataset.type===type || (type==='actively_hiring'&&card.dataset.signal==='actively_hiring');
+    card.style.display=show?'':'none';
+    if(show)count++;
+  });
+  document.getElementById('all-count').textContent=count;
+}
+
+async function saveMatch(matchId, btn) {
+  btn.textContent='Saved \u2713'; btn.disabled=true;
+  try {
+    await fetch(`${API}/radar/match/${matchId}/save`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({candidate_id:candidateId,match_id:matchId,status:'saved'}),
+    });
+  } catch(e){console.error('[radar/save]',e);}
+}
+
+loadRadar();
+</script>
+</body>
+</html>

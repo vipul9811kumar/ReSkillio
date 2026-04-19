@@ -514,6 +514,7 @@ textarea::placeholder { color: var(--gray-400); font-size: 13px; }
   animation: pulse 1s ease-in-out infinite;
 }
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .tick { color: var(--teal); font-size: 12px; font-weight: 500; }
 
@@ -2061,58 +2062,31 @@ textarea#context-text::placeholder { color: var(--gray-400); }
 
     <div class="company-radar-enriching" id="company-radar-enriching">Finding employers actively hiring for your profile&hellip;</div>
 
-    <button class="btn-primary" onclick="goStep(6)">See your 90-day plan &rarr;</button>
+    <button class="btn-primary" onclick="goStep(6); triggerPathway()">See your 90-day plan &rarr;</button>
   </div>
 
   <!-- ── S6 Plan ──────────────────────────────────────────────── -->
   <div class="screen" id="s6">
     <div class="card">
       <div class="card-title">Your 90-day reskilling plan</div>
-      <div class="card-sub">Built around your 3 skill gaps by a two-agent CrewAI crew &mdash; one agent researches real courses (Coursera, Udemy, YouTube), one synthesises them into a phased roadmap. Designed for 6&ndash;8 hours per week alongside active job searching.</div>
+      <div class="card-sub" id="pathway-sub">Built around your actual skill gaps by a two-agent CrewAI crew &mdash; one agent searches Coursera &amp; Udemy for real courses, one synthesises them into a phased roadmap. Designed for 8&ndash;10 hours per week alongside active job searching.</div>
 
-      <div class="plan-item">
-        <div class="pi-weeks">Weeks 1&ndash;4</div>
-        <div>
-          <div class="pi-skill">Python for data analysis</div>
-          <div class="pi-desc">Focus on pandas, data cleaning, and basic operational scripting. Use your own freight data as the practice dataset &mdash; your domain knowledge is the advantage, not the code.</div>
-          <div class="pi-course">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Coursera: Python for Everybody &mdash; University of Michigan
-          </div>
-          <div class="pi-milestone">Milestone: clean and visualise a real dataset from your previous role &mdash; this becomes a portfolio piece</div>
-        </div>
+      <!-- Loading state -->
+      <div id="pathway-loading" style="padding:32px 0;text-align:center;color:var(--gray-400)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="animation:spin 1.2s linear infinite;display:inline-block;margin-bottom:8px"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+        <div style="font-size:13px">Searching Coursera &amp; Udemy for your exact gaps&hellip;<br><span style="font-size:11px;opacity:.6">This takes 30&ndash;60 seconds &mdash; the agent is finding real courses.</span></div>
       </div>
 
-      <div class="plan-item">
-        <div class="pi-weeks">Weeks 5&ndash;8</div>
-        <div>
-          <div class="pi-skill">Tableau fundamentals</div>
-          <div class="pi-desc">Build operational KPI dashboards. You already know what the metrics mean &mdash; now learn to present them visually. Your Operations Analyst target role lists this as a required skill.</div>
-          <div class="pi-course">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Udemy: Tableau A-Z &mdash; Kirill Eremenko
-          </div>
-          <div class="pi-milestone">Milestone: recreate your old KPI dashboard in Tableau &mdash; screenshot for LinkedIn and portfolio</div>
-        </div>
+      <!-- Error state -->
+      <div id="pathway-error" style="display:none;padding:20px 0;text-align:center;color:#888780;font-size:13px">
+        Could not generate roadmap &mdash; run a gap analysis first (paste a JD on the previous step).
       </div>
 
-      <div class="plan-item">
-        <div class="pi-weeks">Weeks 9&ndash;12</div>
-        <div>
-          <div class="pi-skill">A/B testing &amp; analytics basics</div>
-          <div class="pi-desc">Close the final gap and prepare to speak confidently about experimentation in interviews. 2&ndash;3 hours of study &mdash; not a full course. Your process improvement background makes this intuitive.</div>
-          <div class="pi-course">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            Coursera: A/B Testing for Business Analysts &mdash; Google
-          </div>
-          <div class="pi-milestone">Milestone: apply for 3 Operations Analyst roles &mdash; you are ready</div>
-        </div>
-      </div>
+      <!-- Dynamic phases — injected by renderPathway() -->
+      <div id="pathway-phases" style="display:none"></div>
     </div>
 
-    <div class="momentum-callout">
-      You are not starting from zero. You are layering three targeted skills on top of 11 years of deep operational expertise. That combination is uncommon and genuinely sought after &mdash; the courses are the credential. The knowledge is already yours.
-    </div>
+    <div class="momentum-callout" id="pathway-summary" style="display:none"></div>
 
     <button class="btn-primary" onclick="goStep(7)">Get your full report &rarr;</button>
   </div>
@@ -2837,6 +2811,116 @@ function renderPersonGap(pg) {
     noteEl.textContent = pg.context_used === 'intake'
       ? 'Analysis based on your intake answers — tied to your stated goals.'
       : 'Analysis based on your career archetype and industry match. Complete the intake for a more personalised view.';
+  }
+}
+
+/* ── 90-day Pathway ─────────────────────────────────────────────── */
+let _pathwayFired = false;
+function triggerPathway() {
+  if (_pathwayFired || !analysisData) return;
+  _pathwayFired = true;
+  fetchPathway(analysisData);
+}
+
+async function fetchPathway(data) {
+  const missing      = data.gap?.missing_skills      || [];
+  const transferable = data.gap?.transferable_skills || [];
+  const gapScore     = data.gap?.gap_score ?? data.gap?.readiness_score ?? 50;
+  const targetRole   = _enrichTargetRole || data.target_role || 'Career Transition';
+
+  if (!missing.length && !transferable.length) {
+    // No gap data — show error nudge
+    document.getElementById('pathway-loading').style.display = 'none';
+    document.getElementById('pathway-error').style.display   = '';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/pathway/plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        candidate_id:        data.candidate_id,
+        target_role:         targetRole,
+        missing_skills:      missing.slice(0, 8),
+        transferable_skills: transferable.slice(0, 4),
+        gap_score:           gapScore,
+        market_scores:       {},
+      }),
+    });
+
+    document.getElementById('pathway-loading').style.display = 'none';
+
+    if (!res.ok) {
+      console.warn('[pathway] API error:', res.status);
+      document.getElementById('pathway-error').style.display = '';
+      return;
+    }
+
+    const roadmap = await res.json();
+    renderPathway(roadmap, targetRole, gapScore);
+  } catch (e) {
+    console.warn('[pathway] Failed:', e.message);
+    document.getElementById('pathway-loading').style.display = 'none';
+    document.getElementById('pathway-error').style.display   = '';
+  }
+}
+
+function renderPathway(roadmap, targetRole, gapScore) {
+  const container = document.getElementById('pathway-phases');
+  const summaryEl = document.getElementById('pathway-summary');
+  const subEl     = document.getElementById('pathway-sub');
+
+  const missingCount = roadmap.phases?.reduce((n, p) => n + (p.focus_skills?.length || 0), 0) || 0;
+  if (subEl) subEl.textContent = `Built around ${missingCount} skill gaps for ${targetRole}. `
+    + `Current fit: ${Math.round(gapScore)}/100. `
+    + `One agent searched Coursera & Udemy, one built the phased plan.`;
+
+  const PHASE_COLOURS = ['--teal', '--blue', '--purple'];
+
+  container.innerHTML = '';
+  (roadmap.phases || []).forEach((phase, i) => {
+    const colour = PHASE_COLOURS[i] || '--teal';
+    const skillTags = (phase.focus_skills || [])
+      .map(s => `<span style="display:inline-block;background:var(${colour}-50);color:var(${colour}-800,var(${colour}-600));border:0.5px solid var(${colour}-100);border-radius:99px;padding:2px 10px;font-size:11px;font-weight:500;margin:2px 2px 0 0">${s}</span>`)
+      .join('');
+
+    const courseLinks = (phase.resources || []).map(r => {
+      const isReal = r.url && r.url.startsWith('http') && !r.url.includes('example');
+      const link = isReal
+        ? `<a href="${r.url}" target="_blank" rel="noopener" style="color:var(${colour});text-decoration:none;font-weight:500">${r.title}</a>`
+        : `<span style="font-weight:500">${r.title}</span>`;
+      return `<div class="pi-course" style="margin-top:6px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        ${r.platform ? `<strong>${r.platform}:</strong> ` : ''}${link}
+        ${r.duration_hours ? ` <span style="color:var(--gray-400);font-size:11px">· ~${r.duration_hours}h</span>` : ''}
+      </div>`;
+    }).join('');
+
+    container.innerHTML += `
+      <div class="plan-item" style="margin-bottom:20px">
+        <div class="pi-weeks" style="background:var(${colour}-50);color:var(${colour}-800,var(${colour}-600));border-color:var(${colour}-100)">Weeks ${phase.weeks || ''}</div>
+        <div style="flex:1">
+          <div class="pi-skill" style="margin-bottom:6px">${phase.title}</div>
+          <div style="margin-bottom:8px">${skillTags}</div>
+          ${courseLinks}
+          ${phase.milestone ? `<div class="pi-milestone" style="margin-top:10px">Milestone: ${phase.milestone}</div>` : ''}
+        </div>
+      </div>`;
+  });
+
+  if (roadmap.success_metrics?.length) {
+    container.innerHTML += `
+      <div style="margin-top:8px;padding:16px;background:var(--teal-50);border-radius:12px;border:0.5px solid var(--teal-100)">
+        <div style="font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px">Success metrics</div>
+        ${roadmap.success_metrics.map(m => `<div style="font-size:13px;color:var(--ink);padding:3px 0;display:flex;gap:8px"><span style="color:var(--teal)">✓</span>${m}</div>`).join('')}
+      </div>`;
+  }
+
+  container.style.display = '';
+  if (summaryEl && roadmap.overall_summary) {
+    summaryEl.textContent = roadmap.overall_summary;
+    summaryEl.style.display = '';
   }
 }
 

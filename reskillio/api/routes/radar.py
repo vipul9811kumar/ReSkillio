@@ -78,17 +78,29 @@ async def search_opportunities(request: RadarRequest) -> RadarResponse:
         except Exception as exc:
             logger.warning(f"[radar] Intake load failed, using defaults: {exc}")
 
-        top_skills = skill_names[:5] or ["operations", "team leadership", "process optimization"]
+        top_skills = skill_names[:10] or ["operations", "team leadership", "process optimization"]
 
-        # ── Agent search ──────────────────────────────────────────────────
-        from reskillio.radar.radar_agent import RadarAgentCrew
-        crew          = RadarAgentCrew()
-        opportunities = crew.search(
-            candidate_id=request.candidate_id,
+        # Pull top roles from enrichment data if available (MarketPulseAgent output)
+        top_roles: list[str] = []
+        target_role: str | None = None
+        try:
+            from reskillio.intake.intake_store import IntakeStore
+            intake_full = IntakeStore(project_id=s.gcp_project_id).get_profile(request.candidate_id)
+            if intake_full:
+                target_role = getattr(intake_full, "target_role", None)
+        except Exception:
+            pass
+
+        # ── Multi-source job fetch ────────────────────────────────────────
+        from reskillio.radar.job_fetcher import fetch_opportunities
+        opportunities = fetch_opportunities(
             top_skills=top_skills,
-            top_industry=top_industry,
+            top_roles=top_roles,
             identity=candidate_identity,
-            location=None,
+            target_role=target_role,
+            industry=top_industry,
+            project_id=s.gcp_project_id,
+            region=s.gcp_region,
         )
 
         # ── Score and filter ──────────────────────────────────────────────
@@ -103,7 +115,7 @@ async def search_opportunities(request: RadarRequest) -> RadarResponse:
                 candidate_prefs=candidate_prefs,
                 opportunity=opp,
             )
-            if breakdown.overall_score < 60:
+            if breakdown.overall_score < 45:
                 continue
 
             matches.append(OpportunityMatch(

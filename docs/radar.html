@@ -89,6 +89,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop
 .btn-primary-sm:hover{opacity:.88}
 .btn-secondary-sm{font-size:12px;padding:7px 14px;border-radius:8px;border:0.5px solid var(--border-md);background:transparent;color:var(--gray-600);cursor:pointer;transition:background .15s}
 .btn-secondary-sm:hover{background:var(--surface-2)}
+.btn-apply-sm{font-size:12px;padding:7px 14px;border-radius:8px;border:0.5px solid var(--blue-100);background:var(--blue-50);color:var(--blue-600);cursor:pointer;text-decoration:none;font-weight:500;transition:background .15s;display:inline-flex;align-items:center;gap:4px}
+.btn-apply-sm:hover{background:var(--blue-100)}
 .expanded-section{display:none;border-top:0.5px solid var(--border);padding:16px 20px}
 .expanded-section.open{display:block}
 .es-title{font-size:11px;font-weight:500;color:var(--gray-600);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
@@ -284,6 +286,11 @@ function renderCard(container, match, isTop) {
     ? `<div class="es-title" style="margin-top:14px">Engagement tips</div><div class="engagement-grid">${match.engagement_tips.map(t=>`<div class="eg-item"><div class="eg-label">${t.label}</div><div class="eg-value">${t.value}</div></div>`).join('')}</div>` : '';
   const introHtml = match.intro_angle ? `<div class="intro-card"><strong>Warm intro angle:</strong> ${match.intro_angle}</div>` : '';
 
+  const postingUrl  = opp.source_url || opp.company_url || null;
+  const applyBtn    = postingUrl
+    ? `<a class="btn-apply-sm" href="${postingUrl}" target="_blank" rel="noopener noreferrer">View JD &amp; Apply ↗</a>`
+    : '';
+
   const card = document.createElement('div');
   card.className = `opp-card${isTop?' top-match':''}`;
   card.dataset.type   = opp.engagement_type;
@@ -315,6 +322,7 @@ function renderCard(container, match, isTop) {
       </div>
       <div class="oc-actions">
         <button class="btn-primary-sm" onclick="togglePitch(this)">See outreach pitch &rarr;</button>
+        ${applyBtn}
         <button class="btn-secondary-sm" onclick="saveMatch('${match.match_id}',this)">Save</button>
       </div>
     </div>

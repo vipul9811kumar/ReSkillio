@@ -3,12 +3,23 @@ F5 — Gap Analysis Engine.
 
 Compare a candidate's skill profile against a JD's required skills:
 
-  1. Exact match    — skill name appears in both (full credit).
-  2. Transferable   — unmatched JD skill has cosine similarity >= threshold
-                      with a candidate skill (partial credit, weight 0.7).
-  3. Missing        — no exact or semantic match found (no credit).
+  1. Exact match      — skill name appears in both.
+                        Credit = candidate confidence_avg (0–1).
+  2. Transferable     — unmatched JD skill has cosine similarity >= SOFT_LOWER
+                        with a candidate skill.
+                        Credit = similarity (hard zone ≥ threshold) or
+                                 similarity × 0.5 (soft zone SOFT_LOWER–threshold).
+  3. Preferred bonus  — JD preferred skills the candidate has exactly.
+                        Credit = PREFERRED_WEIGHT per skill.
+  4. Missing          — no exact or semantic match found. Credit = 0.
 
-gap_score = min(100, (matched + 0.7 * transferable) / total_required * 100)
+gap_score = min(100,
+    (exact_credit + transfer_credit + preferred_credit) /
+    (total_required + PREFERRED_WEIGHT × total_preferred)
+    × 100
+)
+
+Two BQ round-trips for embeddings are collapsed into one.
 """
 
 from __future__ import annotations
@@ -24,7 +35,13 @@ from reskillio.storage.embedding_store import EmbeddingStore
 from reskillio.storage.jd_store import JDStore
 from reskillio.storage.profile_store import CandidateProfileStore
 
-_TRANSFERABLE_WEIGHT = 0.7
+# ---------------------------------------------------------------------------
+# Scoring constants
+# ---------------------------------------------------------------------------
+
+_SIMILARITY_THRESHOLD = 0.75   # hard transferable zone: full similarity credit
+_SOFT_LOWER           = 0.65   # soft transferable zone: interpolated × 0.5 weight
+_PREFERRED_WEIGHT     = 0.30   # preferred-skill bonus relative to required
 
 
 # ---------------------------------------------------------------------------
@@ -58,28 +75,36 @@ def _recommendation(score: float, missing: list[str]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Embedding helpers
+# Embedding helpers — single BQ fetch for all needed skills
 # ---------------------------------------------------------------------------
 
-def _ensure_embeddings(
-    skill_names: list[str],
-    category_map: dict[str, str],
+def _fetch_all_embeddings(
+    jd_skills: list[str],
+    candidate_skills_obj,       # list[ProfiledSkill]
     embedding_store: EmbeddingStore,
     embedder: VertexEmbedder,
-) -> dict[str, list[float]]:
+    category_map_jd: dict[str, str],
+    category_map_cand: dict[str, str],
+) -> tuple[dict[str, list[float]], dict[str, list[float]]]:
     """
-    Return embeddings for all skill_names.
-    Fetches from BQ first; embeds on the fly for any missing ones
-    and upserts them to the catalog.
+    Fetch embeddings for JD skills and candidate skills in a single BQ call.
+    Embeds any missing vectors on-the-fly and upserts to the catalog.
+    Returns (jd_vecs, cand_vecs) dicts keyed by lowercase skill name.
     """
-    cached = embedding_store.get_embeddings_batch(skill_names)
-    missing_names = [n for n in skill_names if n.lower() not in cached]
+    cand_names = [s.skill_name for s in candidate_skills_obj]
+    all_names  = list({*jd_skills, *cand_names})                 # deduplicated
 
-    if missing_names:
-        logger.debug(f"Embedding {len(missing_names)} uncached skills on the fly")
-        pairs = [(n, category_map.get(n.lower(), "unknown")) for n in missing_names]
+    cached = embedding_store.get_embeddings_batch(all_names)     # single BQ round-trip
+
+    missing_jd   = [n for n in jd_skills  if n.lower() not in cached]
+    missing_cand = [n for n in cand_names if n.lower() not in cached]
+    to_embed     = list({*missing_jd, *missing_cand})
+
+    if to_embed:
+        logger.debug(f"Embedding {len(to_embed)} uncached skills on the fly")
+        combined_cat = {**category_map_cand, **category_map_jd}
+        pairs    = [(n, combined_cat.get(n.lower(), "unknown")) for n in to_embed]
         embedded = embedder.embed_skills(pairs)
-
         embedding_store.upsert_embeddings(
             skills=embedded,
             embed_text_fn=skill_text,
@@ -88,7 +113,9 @@ def _ensure_embeddings(
         for name, _cat, vec in embedded:
             cached[name.lower()] = vec
 
-    return cached
+    jd_vecs   = {n.lower(): cached[n.lower()] for n in jd_skills  if n.lower() in cached}
+    cand_vecs = {n.lower(): cached[n.lower()] for n in cand_names if n.lower() in cached}
+    return jd_vecs, cand_vecs
 
 
 # ---------------------------------------------------------------------------
@@ -103,7 +130,7 @@ def run_gap_analysis(
     jd_title: str | None = None,
     jd_company: str | None = None,
     industry: Industry | None = None,
-    similarity_threshold: float = 0.75,
+    similarity_threshold: float = _SIMILARITY_THRESHOLD,
     region: str = "us-central1",
 ) -> GapAnalysisResult:
     """
@@ -132,24 +159,28 @@ def run_gap_analysis(
     )
 
     # ------------------------------------------------------------------
-    # 2. JD required skills
+    # 2. JD skills — required + preferred
     # ------------------------------------------------------------------
     result_meta: dict = {}
+    required_jd_skills: list[str] = []
+    preferred_jd_skills: list[str] = []
 
     if jd_id:
         jd_store = JDStore(project_id=project_id)
         rows = jd_store.get_jd(jd_id)
         if not rows:
             raise ValueError(f"JD '{jd_id}' not found in BigQuery.")
-        required_jd_skills = [
-            r["skill_name"] for r in rows if r["requirement"] == "required"
-        ]
+        for r in rows:
+            if r["requirement"] == "required":
+                required_jd_skills.append(r["skill_name"])
+            elif r["requirement"] == "preferred":
+                preferred_jd_skills.append(r["skill_name"])
         result_meta = {
-            "jd_id":    jd_id,
-            "jd_title": rows[0].get("title"),
+            "jd_id":      jd_id,
+            "jd_title":   rows[0].get("title"),
             "jd_company": rows[0].get("company"),
-            "industry": rows[0].get("industry"),
-            "seniority": rows[0].get("seniority"),
+            "industry":   rows[0].get("industry"),
+            "seniority":  rows[0].get("seniority"),
         }
     else:
         jd_result: JDExtractionResult = run_jd_pipeline(
@@ -157,15 +188,16 @@ def run_gap_analysis(
             title=jd_title,
             company=jd_company,
             industry=industry,
-            store=None,  # don't persist inline JDs
+            store=None,
         )
-        required_jd_skills = [s.name for s in jd_result.required_skills]
+        required_jd_skills  = [s.name for s in jd_result.required_skills]
+        preferred_jd_skills = [s.name for s in jd_result.preferred_skills]
         result_meta = {
-            "jd_id":    None,
-            "jd_title": jd_title,
+            "jd_id":      None,
+            "jd_title":   jd_title,
             "jd_company": jd_company,
-            "industry": jd_result.industry.value,
-            "seniority": jd_result.seniority.value,
+            "industry":   jd_result.industry.value,
+            "seniority":  jd_result.seniority.value,
         }
 
     if not required_jd_skills:
@@ -178,40 +210,64 @@ def run_gap_analysis(
             **result_meta,
         )
 
-    logger.info(f"  JD required skills ({len(required_jd_skills)}): {required_jd_skills}")
+    logger.info(
+        f"  JD required: {len(required_jd_skills)}  preferred: {len(preferred_jd_skills)}"
+    )
 
     # ------------------------------------------------------------------
-    # 3. Exact matching (case-insensitive name)
+    # 3. Exact matching (case-insensitive) with confidence weighting
     # ------------------------------------------------------------------
     matched: list[str] = []
     unmatched_jd: list[str] = []
+    exact_credit = 0.0
 
     for jd_skill in required_jd_skills:
-        if jd_skill.lower() in candidate_skills:
+        cand = candidate_skills.get(jd_skill.lower())
+        if cand is not None:
             matched.append(jd_skill)
+            # confidence_avg is 0–1; clamp to [0.5, 1.0] so a low-confidence
+            # extraction still gives meaningful credit rather than near-zero.
+            exact_credit += max(0.5, min(1.0, cand.confidence_avg))
         else:
             unmatched_jd.append(jd_skill)
 
-    logger.info(f"  Exact matches: {len(matched)}  Unmatched JD skills: {len(unmatched_jd)}")
+    logger.info(f"  Exact matches: {len(matched)} (credit={exact_credit:.2f})  Unmatched: {len(unmatched_jd)}")
 
     # ------------------------------------------------------------------
-    # 4. Semantic matching for unmatched JD skills
+    # 4. Preferred skill bonus (exact-match only, lightweight)
+    # ------------------------------------------------------------------
+    preferred_credit = 0.0
+    preferred_matched: list[str] = []
+
+    for pref_skill in preferred_jd_skills:
+        if pref_skill.lower() in candidate_skills:
+            preferred_matched.append(pref_skill)
+            preferred_credit += _PREFERRED_WEIGHT
+
+    if preferred_matched:
+        logger.info(f"  Preferred matches: {preferred_matched} (bonus={preferred_credit:.2f})")
+
+    # ------------------------------------------------------------------
+    # 5. Semantic matching for unmatched required JD skills
     # ------------------------------------------------------------------
     transferable: list[TransferableSkill] = []
     missing: list[str] = []
+    transfer_credit = 0.0
 
     if unmatched_jd:
-        # Build category maps (used for on-the-fly embedding)
-        jd_category_map = {s.lower(): "unknown" for s in unmatched_jd}
-        cand_category_map = {
-            s.skill_name.lower(): s.category.value for s in profile.skills
-        }
+        jd_category_map   = {s.lower(): "unknown" for s in unmatched_jd}
+        cand_category_map = {s.skill_name.lower(): s.category.value for s in profile.skills}
 
-        # Fetch / embed all needed vectors in two batch calls
-        jd_vecs   = _ensure_embeddings(unmatched_jd, jd_category_map, embedding_store, embedder)
-        cand_vecs = _ensure_embeddings(
-            [s.skill_name for s in profile.skills], cand_category_map, embedding_store, embedder
+        jd_vecs, cand_vecs = _fetch_all_embeddings(
+            jd_skills=unmatched_jd,
+            candidate_skills_obj=profile.skills,
+            embedding_store=embedding_store,
+            embedder=embedder,
+            category_map_jd=jd_category_map,
+            category_map_cand=cand_category_map,
         )
+
+        soft_lower = min(_SOFT_LOWER, similarity_threshold - 0.01)
 
         for jd_skill in unmatched_jd:
             jd_vec = jd_vecs.get(jd_skill.lower())
@@ -232,36 +288,60 @@ def run_gap_analysis(
                     best_match = cand_skill_obj.skill_name
 
             if best_sim >= similarity_threshold:
-                transferable.append(
-                    TransferableSkill(
-                        jd_skill=jd_skill,
-                        candidate_skill=best_match,
-                        similarity=round(best_sim, 4),
-                    )
-                )
+                # Hard transferable zone: credit = actual similarity (0.75–1.0)
+                transferable.append(TransferableSkill(
+                    jd_skill=jd_skill,
+                    candidate_skill=best_match,
+                    similarity=round(best_sim, 4),
+                ))
+                transfer_credit += best_sim
                 logger.debug(
-                    f"  Transferable: '{jd_skill}' ← '{best_match}' (sim={best_sim:.3f})"
+                    f"  Transferable (hard): '{jd_skill}' ← '{best_match}' "
+                    f"(sim={best_sim:.3f}, credit={best_sim:.3f})"
+                )
+            elif best_sim >= soft_lower:
+                # Soft zone: partial credit, shown as a low-confidence transferable
+                soft_credit = best_sim * 0.5
+                transferable.append(TransferableSkill(
+                    jd_skill=jd_skill,
+                    candidate_skill=best_match,
+                    similarity=round(best_sim, 4),
+                ))
+                transfer_credit += soft_credit
+                logger.debug(
+                    f"  Transferable (soft): '{jd_skill}' ← '{best_match}' "
+                    f"(sim={best_sim:.3f}, credit={soft_credit:.3f})"
                 )
             else:
                 missing.append(jd_skill)
 
     logger.info(
-        f"  Transferable: {len(transferable)}  Missing: {len(missing)}"
+        f"  Transferable: {len(transferable)} (credit={transfer_credit:.2f})  "
+        f"Missing: {len(missing)}"
     )
 
     # ------------------------------------------------------------------
-    # 5. Gap score
+    # 6. Gap score
+    #
+    # Denominator includes preferred skills at their fractional weight so
+    # having them can push the score above what required-only allows,
+    # but a candidate with zero preferred skills isn't penalised.
     # ------------------------------------------------------------------
-    total    = len(required_jd_skills)
-    raw      = (len(matched) + _TRANSFERABLE_WEIGHT * len(transferable)) / total * 100
-    gap_score = round(min(100.0, raw), 1)
+    total_required  = len(required_jd_skills)
+    total_preferred = len(preferred_jd_skills)
+    denominator     = total_required + _PREFERRED_WEIGHT * total_preferred
 
-    logger.info(f"  gap_score={gap_score}")
+    numerator = exact_credit + transfer_credit + preferred_credit
+    gap_score = round(min(100.0, numerator / denominator * 100), 1)
+
+    logger.info(
+        f"  Score: {numerator:.2f} / {denominator:.2f} → gap_score={gap_score}"
+    )
 
     return GapAnalysisResult(
         candidate_id=candidate_id,
         gap_score=gap_score,
-        total_required=total,
+        total_required=total_required,
         matched_skills=matched,
         transferable_skills=sorted(transferable, key=lambda t: t.similarity, reverse=True),
         missing_skills=missing,

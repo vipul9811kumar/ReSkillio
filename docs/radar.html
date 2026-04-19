@@ -123,10 +123,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop
     <a class="nav-logo" href="index.html">Reskil<span>lio</span></a>
     <ul class="nav-links">
       <li><a href="index.html">Home</a></li>
-      <li><a href="app.html">Try it</a></li>
-      <li><a href="pricing.html">Pricing</a></li>
-      <li><a href="companion.html">Weekly Digest</a></li>
+      <li><a href="#" id="nav-analysis">← Analysis</a></li>
+      <li><a href="#" id="nav-companion">Weekly Digest</a></li>
       <li><a href="radar.html" class="active">Opportunity Radar</a></li>
+      <li><a href="pricing.html">Pricing</a></li>
     </ul>
   </div>
 </nav>
@@ -178,6 +178,15 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop
 const API = 'https://reskillio-10933517215.us-central1.run.app';
 const params      = new URLSearchParams(location.search);
 const candidateId = params.get('candidate_id') || '';
+
+// Wire nav links with candidate_id preserved
+(function() {
+  const cid = encodeURIComponent(candidateId);
+  const a = document.getElementById('nav-analysis');
+  const c = document.getElementById('nav-companion');
+  if (a) a.href = candidateId ? `app.html?candidate_id=${cid}` : 'app.html';
+  if (c) c.href = candidateId ? `companion.html?candidate_id=${cid}` : 'companion.html';
+})();
 
 async function loadRadar() {
   if (!candidateId) {

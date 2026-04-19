@@ -36,6 +36,12 @@ nav {
 .nav-logo { font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #0d9373, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
 .nav-back { margin-left: auto; font-size: 14px; color: var(--gray-400); text-decoration: none; transition: color .15s; }
 .nav-back:hover { color: var(--ink); }
+.nav-links { display: flex; gap: 20px; list-style: none; margin-left: auto; }
+.nav-links a { font-size: 13px; color: var(--gray-400); text-decoration: none; transition: color .15s; }
+.nav-links a:hover, .nav-links a.active { color: var(--ink); font-weight: 500; }
+.nav-cta { font-size: 12px; padding: 7px 14px; border-radius: 8px; background: var(--teal); color: #fff; text-decoration: none; font-weight: 600; transition: opacity .15s; flex-shrink: 0; }
+.nav-cta:hover { opacity: .85; }
+@media (max-width: 600px) { .nav-links { display: none; } }
 
 .page { max-width: var(--max); margin: 0 auto; padding: 32px 20px 80px; }
 
@@ -164,7 +170,13 @@ input[type="range"] { width: 100%; accent-color: var(--teal); }
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">ReSkillio</a>
-    <a href="app.html" class="nav-back">← Back to analysis</a>
+    <ul class="nav-links">
+      <li><a href="#" id="nav-analysis">← Analysis</a></li>
+      <li><a href="#" id="nav-radar">Opportunity Radar</a></li>
+      <li><a href="companion.html" class="active">Weekly Digest</a></li>
+      <li><a href="pricing.html">Pricing</a></li>
+    </ul>
+    <a href="#" id="nav-cta" class="nav-cta">Try it →</a>
   </div>
 </nav>
 
@@ -380,6 +392,14 @@ input[type="range"] { width: 100%; accent-color: var(--teal); }
 const API = 'https://reskillio-10933517215.us-central1.run.app';
 const params = new URLSearchParams(location.search);
 const candidateId = params.get('candidate_id') || 'demo-user';
+
+// Wire nav links with candidate_id preserved
+(function() {
+  const cid = encodeURIComponent(candidateId);
+  document.getElementById('nav-analysis').href = `app.html?candidate_id=${cid}`;
+  document.getElementById('nav-radar').href    = `radar.html?candidate_id=${cid}`;
+  document.getElementById('nav-cta').href      = `app.html?candidate_id=${cid}`;
+})();
 
 const WEEKS = {
   1: { gap: 67, delta: 'baseline', course: '12%', apps: 0, interviews: 0 },

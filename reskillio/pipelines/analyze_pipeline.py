@@ -85,6 +85,7 @@ def run_full_analysis(
     """
     wall_start = time.perf_counter()
     stages: dict[str, StageResult] = {}
+    candidate_name: Optional[str] = None
 
     # ── Resolve industry enum ────────────────────────────────────────────
     industry_enum: Optional[Industry] = None
@@ -130,6 +131,17 @@ def run_full_analysis(
             for s in sorted(result.skills, key=lambda x: x.confidence, reverse=True)[:20]
         ]
 
+        # Extract candidate name from resume via NER
+        try:
+            import spacy as _spacy
+            _nlp = _spacy.load(spacy_model)
+            _doc = _nlp(resume_text[:3000])
+            _persons = [ent.text.strip() for ent in _doc.ents if ent.label_ == "PERSON"]
+            if _persons:
+                candidate_name = _persons[0]
+        except Exception:
+            pass
+
         stages["extract"] = StageResult(success=True, duration_ms=_ms(t))
         logger.info(f"[analyze] Stage 1 extract: {skill_count} skills in {_ms(t)} ms")
 
@@ -143,6 +155,7 @@ def run_full_analysis(
             analyzed_at=datetime.now(timezone.utc),
             skill_count=0,
             top_skills=[],
+            candidate_name=candidate_name,
             stages=stages,
             total_duration_ms=_ms(wall_start),
         )
@@ -304,6 +317,7 @@ def run_full_analysis(
         analyzed_at=datetime.now(timezone.utc),
         skill_count=skill_count,
         top_skills=top_skills,
+        candidate_name=candidate_name,
         trait_profile=trait_profile,
         gap=gap,
         industry_match=industry_match,

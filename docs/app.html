@@ -2400,6 +2400,9 @@ async function startAnalysis() {
       throw new Error(err.detail || `HTTP ${res.status}`);
     }
     analysisData = await res.json();
+    if (analysisData.candidate_name) {
+      localStorage.setItem('reskillio_candidate_name', analysisData.candidate_name);
+    }
   } catch (e) {
     stopTimer();
     alert('Analysis failed: ' + e.message + '\n\nMake sure the API server is running.');

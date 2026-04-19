@@ -69,6 +69,9 @@ class AnalysisResult(BaseModel):
     # Stage 5 — 90-day reskilling pathway (slow — opt-in)
     pathway: Optional[PathwayRoadmap] = None
 
+    # Candidate name extracted from resume via NER
+    candidate_name: Optional[str] = None
+
     # Pipeline metadata
     stages:           dict[str, StageResult]
     total_duration_ms: int

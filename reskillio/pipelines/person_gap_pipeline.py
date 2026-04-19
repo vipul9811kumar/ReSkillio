@@ -159,10 +159,11 @@ def run_person_gap(
     want_next:          str   = "",
     open_to_fractional: bool  = False,
     engagement_format:  str   = "",
+    fallback_skills:    list  = None,
 ) -> PersonGapResult:
     _apply_credentials()
 
-    # Read skill profile
+    # Read skill profile from BigQuery; use fallback_skills if BQ is unavailable or empty
     skill_names: list[str] = []
     skill_block_lines: list[str] = []
     try:
@@ -177,6 +178,12 @@ def run_person_gap(
         ]
     except Exception as exc:
         logger.warning(f"[person_gap] Profile read failed: {exc}")
+
+    # If BQ gave nothing, use the skills passed directly from the frontend
+    if not skill_block_lines and fallback_skills:
+        skill_names = fallback_skills
+        skill_block_lines = [f"  - {s}" for s in fallback_skills]
+        logger.info(f"[person_gap] Using {len(fallback_skills)} fallback skills from request")
 
     skills_block = "\n".join(skill_block_lines) or "  (no skill profile available)"
 

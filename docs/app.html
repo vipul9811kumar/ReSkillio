@@ -2716,6 +2716,8 @@ async function fetchPersonGap(data) {
   const industry = data.industry_match?.scores?.[0]?.industry_label || 'your field';
   const workValues = (t.work_values || []).join(',');
 
+  const topSkillsCsv = (data.top_skills || []).slice(0, 20).join(',');
+
   const fd = new FormData();
   fd.append('candidate_id',       data.candidate_id);
   fd.append('archetype',          t.archetype          || 'Operator');
@@ -2723,6 +2725,7 @@ async function fetchPersonGap(data) {
   fd.append('industry',           industry);
   fd.append('ideal_stage',        t.ideal_stage        || 'Growth-stage');
   fd.append('work_values',        workValues);
+  if (topSkillsCsv) fd.append('skills_csv', topSkillsCsv);
 
   try {
     const res = await fetch(`${API_BASE}/person-gap`, { method: 'POST', body: fd });

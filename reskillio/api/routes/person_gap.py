@@ -40,6 +40,7 @@ async def person_gap(
     industry:           Annotated[Optional[str], Form()] = None,
     ideal_stage:        Annotated[Optional[str], Form()] = None,
     work_values:        Annotated[Optional[str], Form(description="Comma-separated")] = None,
+    skills_csv:         Annotated[Optional[str], Form(description="Comma-separated skill names — fallback if BQ profile is empty")] = None,
     # intake fields — pulled from BigQuery if not passed directly
     loved_aspects:      Annotated[Optional[str], Form()] = None,
     want_next:          Annotated[Optional[str], Form()] = None,
@@ -71,6 +72,8 @@ async def person_gap(
     from reskillio.pipelines.person_gap_pipeline import run_person_gap
 
     try:
+        fallback_skills = [s.strip() for s in (skills_csv or "").split(",") if s.strip()]
+
         result = run_person_gap(
             candidate_id=candidate_id,
             project_id=settings.gcp_project_id,
@@ -84,6 +87,7 @@ async def person_gap(
             want_next=_want,
             open_to_fractional=open_to_fractional,
             engagement_format=engagement_format or "",
+            fallback_skills=fallback_skills,
         )
     except Exception as exc:
         logger.exception(f"[person_gap] Pipeline error: {exc}")

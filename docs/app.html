@@ -2740,6 +2740,10 @@ async function fetchPersonGap(data) {
     const pg = await res.json();
     renderPersonGap(pg);
     content.classList.remove('hidden');
+    // If no intake yet, show the CTA nudge beneath the trait-based result
+    if (pg.context_used !== 'intake') {
+      ctaBox.classList.remove('hidden');
+    }
   } catch(e) {
     console.warn('[person-gap] Failed:', e.message);
     loading.classList.add('hidden');

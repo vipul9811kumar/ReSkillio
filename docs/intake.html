@@ -344,7 +344,7 @@ nav {
 <nav>
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">ReSkillio</a>
-    <a href="app.html" class="nav-back">← Back to skills analysis</a>
+    <a href="#" id="nav-back" class="nav-back">← Back to skills analysis</a>
   </div>
 </nav>
 
@@ -397,7 +397,7 @@ nav {
     </div>
     <div class="persona-badge" id="personaBadge">Builder · Remote-open · 6 months runway</div>
     <div class="completion-actions">
-      <a href="app.html" class="btn-primary">View my enriched results →</a>
+      <a href="#" id="results-btn" class="btn-primary">View my enriched results →</a>
       <button class="btn-secondary-link" onclick="window.location.reload()">Start over</button>
     </div>
   </div>
@@ -441,8 +441,16 @@ let currentQ    = 1;
 let demoMode    = false;
 let demoStep    = 0;
 let isWaiting   = false;
+let demoAnswers = [];  // collect user answers in demo mode
 
 const candidateId = new URLSearchParams(location.search).get('candidate_id') || 'demo-user';
+
+// Wire candidate_id into nav and completion links
+(function() {
+  const cid = encodeURIComponent(candidateId);
+  document.getElementById('nav-back').href    = `app.html?candidate_id=${cid}`;
+  document.getElementById('results-btn').href = `app.html?candidate_id=${cid}`;
+})();
 
 const chatMessages = document.getElementById('chatMessages');
 const suggestionsEl = document.getElementById('suggestions');
@@ -530,23 +538,43 @@ function updateQLabel(qNum, theme) {
 function showCompletion(profile) {
   chatWindow.style.display = 'none';
   suggestionsEl.style.display = 'none';
+  document.getElementById('progressTrack').style.display = 'none';
   qLabel.textContent = 'Intake complete';
   completionCard.classList.add('visible');
 
-  // Build persona badge from profile
   const parts = [];
-  if (profile?.work_identity) parts.push(profile.work_identity);
-  if (profile?.geographic_flexibility) {
+
+  if (profile) {
+    // Real API profile — extract fields
+    if (profile.work_identity) parts.push(profile.work_identity);
     const geo = { fully_remote:'Remote', local_only:'Local', open_to_relocation:'Relocation-open', hybrid_local:'Hybrid', global:'Global' };
-    parts.push(geo[profile.geographic_flexibility] || profile.geographic_flexibility);
+    if (profile.geographic_flexibility) parts.push(geo[profile.geographic_flexibility] || profile.geographic_flexibility);
+    const rwy = { immediate:'Urgent', short:'6 month runway', moderate:'12 month runway', comfortable:'No pressure' };
+    if (profile.financial_runway) parts.push(rwy[profile.financial_runway] || profile.financial_runway);
+    if (profile.engagement_format) parts.push(profile.engagement_format);
+  } else {
+    // Demo mode — infer badge from answers the user gave
+    // Q1 = runway, Q2 = geo, Q3 = identity, Q4 = energised-by, Q5 = what-next
+    const runwayMap = { '3': '< 3 month runway', '3–6': '6 month runway', '6–12': '12 month runway', '12+': 'No pressure' };
+    const rwyAns = demoAnswers[0] || '';
+    const rwyKey = Object.keys(runwayMap).find(k => rwyAns.includes(k));
+    if (rwyKey) parts.push(runwayMap[rwyKey]);
+
+    const identityAns = demoAnswers[2] || '';
+    const identityMap = { 'Builder':'Builder', 'Operator':'Operator', 'Fixer':'Fixer', 'Advisor':'Advisor', 'Connector':'Connector', 'Innovator':'Innovator' };
+    const identityKey = Object.keys(identityMap).find(k => identityAns.startsWith(k));
+    if (identityKey) parts.push(identityMap[identityKey]);
+
+    const geoAns = demoAnswers[1] || '';
+    if (geoAns.includes('remote')) parts.push('Remote');
+    else if (geoAns.includes('relocat')) parts.push('Relocation-open');
+    else if (geoAns.includes('Hybrid')) parts.push('Hybrid');
+    else if (geoAns.includes('Local')) parts.push('Local');
+    else if (geoAns.includes('Global')) parts.push('Global');
   }
-  if (profile?.financial_runway) {
-    const rwy = { immediate:'Urgent', short:'6mo runway', moderate:'12mo runway', comfortable:'No pressure' };
-    parts.push(rwy[profile.financial_runway] || profile.financial_runway);
-  }
-  if (parts.length) {
-    document.getElementById('personaBadge').textContent = parts.join(' · ');
-  }
+
+  document.getElementById('personaBadge').textContent =
+    parts.length ? parts.join(' · ') : 'Intake complete';
 }
 
 // ── API calls ─────────────────────────────────────────────────────────────────
@@ -588,6 +616,7 @@ async function sendMessage(text) {
 
   try {
     if (demoMode) {
+      demoAnswers.push(userText);
       await new Promise(r => setTimeout(r, 900 + Math.random() * 600));
       removeTyping();
       demoStep++;

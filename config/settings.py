@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # spaCy
     spacy_model: str = "en_core_web_lg"
 
+    # Adzuna job search API (https://developer.adzuna.com)
+    adzuna_app_id:  str = ""
+    adzuna_app_key: str = ""
+
     # App
     log_level: str = "INFO"
     environment: str = "development"

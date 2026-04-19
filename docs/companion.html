@@ -41,7 +41,18 @@ nav {
 .nav-links a:hover, .nav-links a.active { color: var(--ink); font-weight: 500; }
 .nav-cta { font-size: 12px; padding: 7px 14px; border-radius: 8px; background: var(--teal); color: #fff; text-decoration: none; font-weight: 600; transition: opacity .15s; flex-shrink: 0; }
 .nav-cta:hover { opacity: .85; }
-@media (max-width: 600px) { .nav-links { display: none; } }
+@media (max-width: 600px) { .nav-links { display: none; } .nav-hamburger { display: flex; } }
+.nav-hamburger { display: none; background: none; border: none; cursor: pointer; padding: 6px; flex-direction: column; gap: 5px; }
+.nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--ink); border-radius: 1px; transition: all .25s; }
+nav.nav-open .nav-hamburger span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+nav.nav-open .nav-hamburger span:nth-child(2) { opacity: 0; }
+nav.nav-open .nav-hamburger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+.nav-mobile-panel { display: none; position: absolute; top: var(--nav-h); left: 0; right: 0; background: #fff; border-bottom: 0.5px solid var(--border); box-shadow: 0 8px 24px rgba(0,0,0,.08); z-index: 99; padding: 8px 0 16px; }
+nav.nav-open .nav-mobile-panel { display: block; }
+.nav-mobile-panel a { display: block; padding: 12px 24px; font-size: 15px; color: var(--ink); text-decoration: none; border-bottom: 0.5px solid var(--border); transition: background .12s; }
+.nav-mobile-panel a:last-child { border-bottom: none; }
+.nav-mobile-panel a:hover { background: var(--gray-50); }
+.nav-mobile-panel a.active { color: var(--teal); font-weight: 500; }
 
 .page { max-width: var(--max); margin: 0 auto; padding: 32px 20px 80px; }
 
@@ -177,6 +188,15 @@ input[type="range"] { width: 100%; accent-color: var(--teal); }
       <li><a href="pricing.html">Pricing</a></li>
     </ul>
     <a href="#" id="nav-cta" class="nav-cta">Try it →</a>
+    <button class="nav-hamburger" onclick="this.closest('nav').classList.toggle('nav-open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-mobile-panel">
+      <a href="#" id="mob-analysis">← Analysis</a>
+      <a href="#" id="mob-radar">Opportunity Radar</a>
+      <a href="companion.html" class="active">Weekly Digest</a>
+      <a href="pricing.html">Pricing</a>
+    </div>
   </div>
 </nav>
 
@@ -396,9 +416,11 @@ const candidateId = params.get('candidate_id') || 'demo-user';
 // Wire nav links with candidate_id preserved
 (function() {
   const cid = encodeURIComponent(candidateId);
-  document.getElementById('nav-analysis').href = `app.html?candidate_id=${cid}`;
-  document.getElementById('nav-radar').href    = `radar.html?candidate_id=${cid}`;
-  document.getElementById('nav-cta').href      = `app.html?candidate_id=${cid}`;
+  const aUrl = `app.html?candidate_id=${cid}`;
+  const rUrl = `radar.html?candidate_id=${cid}`;
+  ['nav-analysis','mob-analysis'].forEach(id => { const el=document.getElementById(id); if(el) el.href=aUrl; });
+  ['nav-radar','mob-radar'].forEach(id => { const el=document.getElementById(id); if(el) el.href=rUrl; });
+  document.getElementById('nav-cta').href = aUrl;
 })();
 
 const WEEKS = {

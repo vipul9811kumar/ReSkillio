@@ -113,7 +113,19 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop
   .oc-meta-row{grid-template-columns:1fr 1fr}
   .sl-grid{grid-template-columns:1fr}
   nav .nav-links{display:none}
+  .nav-hamburger{display:flex}
 }
+.nav-hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;margin-left:auto;flex-direction:column;gap:5px}
+.nav-hamburger span{display:block;width:22px;height:2px;background:var(--ink);border-radius:1px;transition:all .25s}
+nav.nav-open .nav-hamburger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+nav.nav-open .nav-hamburger span:nth-child(2){opacity:0}
+nav.nav-open .nav-hamburger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.nav-mobile-panel{display:none;position:absolute;top:var(--nav-h);left:0;right:0;background:#fff;border-bottom:0.5px solid var(--bd);box-shadow:0 8px 24px rgba(0,0,0,.08);z-index:99;padding:8px 0 16px}
+nav.nav-open .nav-mobile-panel{display:block}
+.nav-mobile-panel a{display:block;padding:12px 24px;font-size:15px;color:var(--ink);text-decoration:none;border-bottom:0.5px solid var(--bd);transition:background .12s}
+.nav-mobile-panel a:last-child{border-bottom:none}
+.nav-mobile-panel a:hover{background:var(--gray-50)}
+.nav-mobile-panel a.active{color:var(--teal);font-weight:500}
 </style>
 </head>
 <body>
@@ -128,6 +140,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop
       <li><a href="radar.html" class="active">Opportunity Radar</a></li>
       <li><a href="pricing.html">Pricing</a></li>
     </ul>
+    <button class="nav-hamburger" onclick="this.closest('nav').classList.toggle('nav-open')" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-mobile-panel">
+      <a href="index.html">Home</a>
+      <a href="#" id="mob-analysis">← Analysis</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="#" id="mob-companion">Weekly Digest</a>
+      <a href="radar.html" class="active">Opportunity Radar</a>
+    </div>
   </div>
 </nav>
 
@@ -182,10 +204,10 @@ const candidateId = params.get('candidate_id') || '';
 // Wire nav links with candidate_id preserved
 (function() {
   const cid = encodeURIComponent(candidateId);
-  const a = document.getElementById('nav-analysis');
-  const c = document.getElementById('nav-companion');
-  if (a) a.href = candidateId ? `app.html?candidate_id=${cid}` : 'app.html';
-  if (c) c.href = candidateId ? `companion.html?candidate_id=${cid}` : 'companion.html';
+  const aUrl = candidateId ? `app.html?candidate_id=${cid}` : 'app.html';
+  const cUrl = candidateId ? `companion.html?candidate_id=${cid}` : 'companion.html';
+  ['nav-analysis','mob-analysis'].forEach(id => { const el = document.getElementById(id); if(el) el.href = aUrl; });
+  ['nav-companion','mob-companion'].forEach(id => { const el = document.getElementById(id); if(el) el.href = cUrl; });
 })();
 
 async function loadRadar() {

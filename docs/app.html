@@ -1604,6 +1604,7 @@ textarea#context-text::placeholder { color: var(--gray-400); }
       <li><a href="api.html">API Docs</a></li>
       <li><a href="app.html" class="active">Try it</a></li>
       <li><a href="companion.html" id="nav-companion-link" style="display:none">My Weekly Digest</a></li>
+      <li><a href="radar.html" id="nav-radar-link" style="display:none">Opportunity Radar</a></li>
     </ul>
     <a class="nav-gh" href="https://github.com/vipul9811kumar/ReSkillio" target="_blank" rel="noopener">GitHub &rarr;</a>
   </div>
@@ -2163,6 +2164,18 @@ textarea#context-text::placeholder { color: var(--gray-400); }
       </div>
     </div>
 
+    <!-- Radar CTA -->
+    <div class="companion-cta" id="radar-cta" style="background:linear-gradient(135deg,#eff6ff 0%,#f0fdf8 100%);border-color:#bfdbfe">
+      <div class="companion-cta-icon" style="background:linear-gradient(135deg,var(--blue),var(--teal))">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 2a10 10 0 0 1 0 20A10 10 0 0 1 12 2"/><path d="M12 6a6 6 0 0 1 0 12A6 6 0 0 1 12 6"/></svg>
+      </div>
+      <div class="companion-cta-body">
+        <div class="companion-cta-title">See who needs what you know</div>
+        <div class="companion-cta-sub">Your Opportunity Radar scans live postings for fractional, consulting, and advisory roles — scored against your skills, identity, and preferences.</div>
+      </div>
+      <a class="companion-cta-btn" id="radar-cta-link" href="radar.html" style="background:linear-gradient(135deg,var(--blue),var(--teal))">View my matches &rarr;</a>
+    </div>
+
     <!-- Companion CTA -->
     <div class="companion-cta" id="companion-cta">
       <div class="companion-cta-icon">
@@ -2716,6 +2729,12 @@ async function fetchPersonGap(data) {
   const ctaLink      = document.getElementById('companion-cta-link');
   if (navCompanion) { navCompanion.href = companionUrl; navCompanion.style.display = ''; }
   if (ctaLink)      { ctaLink.href = companionUrl; }
+
+  const radarUrl    = `radar.html?candidate_id=${encodeURIComponent(data.candidate_id)}`;
+  const navRadar    = document.getElementById('nav-radar-link');
+  const radarCtaLink = document.getElementById('radar-cta-link');
+  if (navRadar)     { navRadar.href = radarUrl; navRadar.style.display = ''; }
+  if (radarCtaLink) { radarCtaLink.href = radarUrl; }
 
   const t = data.trait_profile || {};
   const industry = data.industry_match?.scores?.[0]?.industry_label || 'your field';

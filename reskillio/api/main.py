@@ -18,6 +18,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://vipul9811kumar.github.io",
+        "https://reskillio.com",
+        "https://www.reskillio.com",
         "http://localhost:3000",
         "http://localhost:8080",
     ],

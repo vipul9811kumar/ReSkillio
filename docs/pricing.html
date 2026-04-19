@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReSkillio — Pricing</title>
+<meta name="description" content="Start free. Pay when you're ready to act. From individual career plans to enterprise outplacement at 1/10th the cost.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#1D9E75;--teal-50:#E1F5EE;--teal-100:#9FE1CB;--teal-600:#0F6E56;--teal-800:#085041;
+  --blue:#378ADD;--blue-50:#E6F1FB;--blue-100:#B5D4F4;--blue-800:#0C447C;
+  --purple:#534AB7;--purple-50:#EEEDFE;--purple-100:#CECBF6;--purple-800:#3C3489;
+  --amber:#BA7517;--amber-50:#FAEEDA;--amber-100:#FAC775;--amber-800:#633806;
+  --ink:#1a1a18;--surface:#fff;--s2:#f8f7f4;--s3:#f1f0eb;
+  --bd:rgba(44,44,42,0.1);--bd-md:rgba(44,44,42,0.2);
+  --font:'DM Sans',sans-serif;
+  --serif:'DM Serif Display',serif;
+  --mono:'DM Mono',monospace;
+  --nav-h:60px;--max:1100px;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:var(--font);color:var(--ink);background:var(--surface);-webkit-font-smoothing:antialiased}
+
+/* ── Nav ── */
+nav{position:sticky;top:0;z-index:100;height:var(--nav-h);background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-bottom:0.5px solid var(--bd);display:flex;align-items:center}
+.nav-inner{max-width:var(--max);margin:0 auto;padding:0 32px;width:100%;display:flex;align-items:center;gap:32px}
+.nav-logo{font-size:17px;font-weight:500;color:var(--ink);text-decoration:none;letter-spacing:-.02em}
+.nav-logo span{color:var(--teal)}
+.nav-links{display:flex;gap:24px;list-style:none;margin-left:auto}
+.nav-links a{font-size:13px;color:#5F5E5A;text-decoration:none;transition:color .15s}
+.nav-links a:hover,.nav-links a.active{color:var(--ink)}
+.nav-cta{font-size:12px;padding:7px 16px;border-radius:8px;background:var(--teal);color:#fff;text-decoration:none;font-weight:500;transition:opacity .15s;margin-left:8px}
+.nav-cta:hover{opacity:.88}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:72px 24px 56px;background:var(--surface)}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-600);background:var(--teal-50);border:0.5px solid var(--teal-100);border-radius:99px;padding:4px 14px;margin-bottom:20px}
+.hero-eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--teal)}
+.hero h1{font-family:var(--serif);font-size:clamp(36px,5vw,56px);font-weight:400;line-height:1.1;letter-spacing:-.02em;margin-bottom:16px;color:var(--ink)}
+.hero h1 em{font-style:italic;color:var(--teal)}
+.hero-sub{font-size:17px;color:#5F5E5A;line-height:1.65;max-width:560px;margin:0 auto 28px}
+.toggle-wrap{display:inline-flex;align-items:center;gap:12px;background:var(--s2);border:0.5px solid var(--bd-md);border-radius:99px;padding:4px}
+.toggle-btn{font-size:13px;padding:6px 18px;border-radius:99px;border:none;cursor:pointer;font-family:var(--font);transition:all .2s;background:transparent;color:#5F5E5A;font-weight:400}
+.toggle-btn.on{background:var(--surface);color:var(--ink);font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.annual-badge{font-size:11px;background:var(--teal-50);color:var(--teal-800);padding:2px 8px;border-radius:99px;font-weight:500;border:0.5px solid var(--teal-100)}
+
+/* ── Pricing grid ── */
+.pricing-section{max-width:var(--max);margin:0 auto;padding:0 24px 80px}
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+
+.plan-card{background:var(--surface);border:0.5px solid var(--bd-md);border-radius:20px;padding:28px 28px 24px;position:relative;transition:border-color .2s}
+.plan-card:hover{border-color:rgba(44,44,42,0.35)}
+.plan-card.featured{border:2px solid var(--teal-100);background:var(--teal-50)}
+.featured-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:500;padding:4px 14px;border-radius:99px;background:var(--teal);color:#fff;white-space:nowrap}
+
+.plan-name{font-size:13px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:#888780;margin-bottom:6px}
+.plan-price{display:flex;align-items:baseline;gap:4px;margin-bottom:4px}
+.plan-price-num{font-family:var(--serif);font-size:44px;color:var(--ink);line-height:1}
+.plan-price-period{font-size:13px;color:#888780}
+.plan-price-note{font-size:12px;color:#888780;margin-bottom:16px;min-height:18px}
+.plan-desc{font-size:13px;color:#5F5E5A;line-height:1.6;margin-bottom:20px;min-height:48px}
+
+.plan-btn{display:block;width:100%;padding:13px;text-align:center;border-radius:10px;font-size:14px;font-weight:500;font-family:var(--font);cursor:pointer;text-decoration:none;transition:all .15s;letter-spacing:-.01em}
+.btn-primary-plan{background:var(--teal);color:#fff;border:none}
+.btn-primary-plan:hover{opacity:.88}
+.btn-outline-plan{background:transparent;color:var(--ink);border:0.5px solid var(--bd-md)}
+.btn-outline-plan:hover{background:var(--s2)}
+
+.plan-divider{height:0.5px;background:var(--bd-md);margin:20px 0}
+.plan-features{display:flex;flex-direction:column;gap:10px}
+.pf-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--ink)}
+.pf-item.muted{color:#888780}
+.pf-check{width:16px;height:16px;border-radius:50%;background:var(--teal-50);border:0.5px solid var(--teal-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.pf-check svg{width:9px;height:9px;stroke:var(--teal);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pf-x{width:16px;height:16px;border-radius:50%;background:var(--s2);border:0.5px solid var(--bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.pf-x svg{width:8px;height:8px;stroke:#888780;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── Enterprise band ── */
+.enterprise-band{background:var(--ink);border-radius:20px;padding:40px 48px;margin-bottom:16px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center}
+.eb-tag{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-100);margin-bottom:10px}
+.eb-title{font-family:var(--serif);font-size:32px;color:#fff;line-height:1.15;margin-bottom:10px}
+.eb-desc{font-size:14px;color:rgba(255,255,255,.65);line-height:1.65;max-width:540px}
+.eb-right{display:flex;flex-direction:column;gap:10px;flex-shrink:0}
+.eb-btn-primary{display:block;padding:14px 28px;background:var(--teal);color:#fff;border-radius:10px;font-size:14px;font-weight:500;text-decoration:none;text-align:center;transition:opacity .15s;white-space:nowrap}
+.eb-btn-primary:hover{opacity:.88}
+.eb-btn-secondary{display:block;padding:13px 28px;background:rgba(255,255,255,.08);color:#fff;border-radius:10px;font-size:14px;text-decoration:none;text-align:center;transition:background .15s;border:0.5px solid rgba(255,255,255,.15);white-space:nowrap}
+.eb-btn-secondary:hover{background:rgba(255,255,255,.14)}
+.eb-features{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+.ebf-item{display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,.7)}
+.ebf-dot{width:5px;height:5px;border-radius:50%;background:var(--teal);flex-shrink:0}
+
+/* ── Section labels ── */
+.section-label{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:#888780;margin-bottom:20px;text-align:center}
+
+/* ── Segment grid ── */
+.segment-section{max-width:var(--max);margin:0 auto;padding:0 24px 80px}
+.segment-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.seg-card{border:0.5px solid var(--bd-md);border-radius:14px;padding:20px;background:var(--surface)}
+.seg-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.seg-title{font-size:15px;font-weight:500;margin-bottom:4px;letter-spacing:-.01em}
+.seg-who{font-size:12px;color:#888780;margin-bottom:8px}
+.seg-desc{font-size:13px;color:#5F5E5A;line-height:1.55;margin-bottom:10px}
+.seg-price{font-size:12px;font-weight:500;color:var(--teal);background:var(--teal-50);border:0.5px solid var(--teal-100);border-radius:6px;padding:3px 10px;display:inline-block}
+
+/* ── Gating explainer ── */
+.gating-section{background:var(--s2);padding:64px 24px}
+.gating-inner{max-width:var(--max);margin:0 auto}
+.gating-title{font-family:var(--serif);font-size:36px;text-align:center;margin-bottom:8px}
+.gating-sub{font-size:15px;color:#5F5E5A;text-align:center;margin-bottom:40px}
+.gate-flow{display:flex;gap:0;align-items:stretch;position:relative}
+.gate-flow::before{content:'';position:absolute;top:50%;left:0;right:0;height:0.5px;background:var(--bd-md);z-index:0}
+.gate-step{flex:1;background:var(--surface);border:0.5px solid var(--bd-md);border-radius:12px;padding:20px 16px;text-align:center;position:relative;z-index:1;margin:0 6px}
+.gate-step.gate-free{border-color:var(--bd-md)}
+.gate-step.gate-paid{border-color:var(--teal-100);background:var(--teal-50)}
+.gate-step.gate-premium{border-color:var(--purple-100);background:var(--purple-50)}
+.gs-step{font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#888780;margin-bottom:8px}
+.gs-title{font-size:14px;font-weight:500;margin-bottom:4px}
+.gs-desc{font-size:12px;color:#5F5E5A;line-height:1.45;margin-bottom:8px}
+.gs-badge{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:500;display:inline-block}
+.badge-free{background:var(--s3);color:#5F5E5A;border:0.5px solid var(--bd-md)}
+.badge-paid{background:var(--teal);color:#fff}
+.badge-premium{background:var(--purple);color:#fff}
+
+/* ── Region note ── */
+.region-note{max-width:var(--max);margin:0 auto;padding:0 24px 32px;text-align:center}
+.region-note p{font-size:13px;color:#888780;background:var(--s2);border:0.5px solid var(--bd-md);border-radius:10px;padding:12px 20px;display:inline-block}
+.region-note span{color:var(--teal);font-weight:500}
+
+/* ── FAQ ── */
+.faq-section{max-width:720px;margin:0 auto;padding:64px 24px 80px}
+.faq-title{font-family:var(--serif);font-size:32px;text-align:center;margin-bottom:36px}
+.faq-item{border-bottom:0.5px solid var(--bd);padding:18px 0;cursor:pointer}
+.faq-q{font-size:15px;font-weight:500;display:flex;justify-content:space-between;align-items:center;gap:16px;letter-spacing:-.01em}
+.faq-q svg{flex-shrink:0;transition:transform .2s;width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round}
+.faq-item.open .faq-q svg{transform:rotate(45deg)}
+.faq-a{font-size:14px;color:#5F5E5A;line-height:1.7;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s;padding-top:0}
+.faq-item.open .faq-a{max-height:200px;padding-top:12px}
+
+/* ── Footer ── */
+footer{border-top:0.5px solid var(--bd);padding:32px 24px;background:var(--surface)}
+.footer-inner{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-logo{font-size:14px;font-weight:500;color:var(--ink)}
+.footer-logo span{color:var(--teal)}
+.footer-links{display:flex;gap:20px}
+.footer-links a{font-size:12px;color:#888780;text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:var(--ink)}
+.footer-copy{font-size:11px;color:#888780}
+
+@media(max-width:900px){
+  .pricing-grid{grid-template-columns:1fr}
+  .enterprise-band{grid-template-columns:1fr;text-align:center}
+  .eb-desc{margin:0 auto}
+  .segment-grid{grid-template-columns:1fr}
+  .gate-flow{flex-direction:column}
+  .gate-flow::before{display:none}
+  .gate-step{margin:4px 0}
+  nav .nav-links{display:none}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="index.html">Reskil<span>lio</span></a>
+    <ul class="nav-links" style="list-style:none;display:flex;gap:24px;margin-left:auto">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="architecture.html">Architecture</a></li>
+      <li><a href="api.html">API Docs</a></li>
+      <li><a href="app.html">Try it</a></li>
+      <li><a href="pricing.html" class="active">Pricing</a></li>
+    </ul>
+    <a class="nav-cta" href="app.html">Start free &rarr;</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">Pricing</div>
+  <h1>Start free.<br><em>Pay when you're ready to act.</em></h1>
+  <p class="hero-sub">ReSkillio gives you immediate insight at no cost. When you're ready to close gaps, generate documents, and get your plan — that's when you pay.</p>
+  <div class="toggle-wrap">
+    <button class="toggle-btn on" id="monthly-btn" onclick="setBilling('monthly')">Monthly</button>
+    <button class="toggle-btn" id="annual-btn" onclick="setBilling('annual')">Annual <span class="annual-badge">Save 30%</span></button>
+  </div>
+</div>
+
+<div class="region-note">
+  <p>Prices shown in USD. <span>Region-specific pricing</span> for India, UK, and EU coming soon — rates will reflect local purchasing power.</p>
+</div>
+
+<div class="pricing-section">
+  <div class="pricing-grid">
+
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">
+        <div class="plan-price-num">$0</div>
+        <div class="plan-price-period">forever</div>
+      </div>
+      <div class="plan-price-note">No credit card required</div>
+      <div class="plan-desc">See what you're worth to the market. Your skills extracted, analysed, and scored — instantly.</div>
+      <a href="app.html" class="plan-btn btn-outline-plan">Start free &rarr;</a>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Resume upload &amp; skill extraction</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Trait archetype (Builder / Operator / Fixer)</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Industry fit scores — 8 industries</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Auto gap score (summary only)</div>
+        <div class="pf-item muted"><div class="pf-x"><svg viewBox="0 0 8 8"><line x1="1" y1="1" x2="7" y2="7"/><line x1="7" y1="1" x2="1" y2="7"/></svg></div>Detailed skill gap breakdown</div>
+        <div class="pf-item muted"><div class="pf-x"><svg viewBox="0 0 8 8"><line x1="1" y1="1" x2="7" y2="7"/><line x1="7" y1="1" x2="1" y2="7"/></svg></div>Career narrative generation</div>
+        <div class="pf-item muted"><div class="pf-x"><svg viewBox="0 0 8 8"><line x1="1" y1="1" x2="7" y2="7"/><line x1="7" y1="1" x2="1" y2="7"/></svg></div>Resume rewrite &amp; downloads</div>
+        <div class="pf-item muted"><div class="pf-x"><svg viewBox="0 0 8 8"><line x1="1" y1="1" x2="7" y2="7"/><line x1="7" y1="1" x2="1" y2="7"/></svg></div>90-day reskilling plan</div>
+      </div>
+    </div>
+
+    <div class="plan-card featured">
+      <div class="featured-badge">Most popular</div>
+      <div class="plan-name">Career Pack</div>
+      <div class="plan-price">
+        <div class="plan-price-num" id="career-price">$19</div>
+        <div class="plan-price-period" id="career-period">one-time</div>
+      </div>
+      <div class="plan-price-note" id="career-note">Per job target · unlimited re-runs</div>
+      <div class="plan-desc">Everything you need to go from "I don't know what I can do" to a plan you can act on tomorrow morning.</div>
+      <a href="#" class="plan-btn btn-primary-plan" onclick="checkout('career')">Get Career Pack &rarr;</a>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Everything in Free</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Full skill gap breakdown vs any JD</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Gemini career narrative (RAG-grounded)</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Skills-first resume rewrite (PDF)</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>90-day reskilling roadmap (PDF)</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Cover letter for this role</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>5 interview talking points</div>
+        <div class="pf-item muted"><div class="pf-x"><svg viewBox="0 0 8 8"><line x1="1" y1="1" x2="7" y2="7"/><line x1="7" y1="1" x2="1" y2="7"/></svg></div>Opportunity Radar (fractional roles)</div>
+        <div class="pf-item muted"><div class="pf-x"><svg viewBox="0 0 8 8"><line x1="1" y1="1" x2="7" y2="7"/><line x1="7" y1="1" x2="1" y2="7"/></svg></div>Weekly companion digest</div>
+      </div>
+    </div>
+
+    <div class="plan-card">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">
+        <div class="plan-price-num" id="pro-price">$39</div>
+        <div class="plan-price-period" id="pro-period">/month</div>
+      </div>
+      <div class="plan-price-note" id="pro-note">Cancel anytime</div>
+      <div class="plan-desc">For a full career transition. Unlimited targets, weekly tracking, and the Opportunity Radar for fractional and consulting roles.</div>
+      <a href="#" class="plan-btn btn-outline-plan" onclick="checkout('pro')">Start Pro &rarr;</a>
+      <div class="plan-divider"></div>
+      <div class="plan-features">
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Everything in Career Pack</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Unlimited JD gap analyses</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Opportunity Radar — fractional &amp; consulting</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Weekly companion digest</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Progress tracking — gap score over time</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>LinkedIn headline + summary variants</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Salary negotiation range</div>
+        <div class="pf-item"><div class="pf-check"><svg viewBox="0 0 10 8"><polyline points="1 4 4 7 9 1"/></svg></div>Priority support</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="enterprise-band">
+    <div class="eb-left">
+      <div class="eb-tag">For organisations</div>
+      <div class="eb-title">AI-powered outplacement<br>at 1/10th the cost.</div>
+      <div class="eb-desc">Traditional outplacement costs $3,000–$8,000 per employee. ReSkillio delivers better outcomes — personalised skill intelligence, role matching, and 90-day plans — at $50–$200 per head. Built for CHROs, HR teams, and workforce boards who need to move fast and demonstrate care.</div>
+      <div class="eb-features">
+        <div class="ebf-item"><div class="ebf-dot"></div>White-labelled reports with your branding</div>
+        <div class="ebf-item"><div class="ebf-dot"></div>Bulk employee onboarding (CSV upload)</div>
+        <div class="ebf-item"><div class="ebf-dot"></div>HR analytics dashboard — cohort progress</div>
+        <div class="ebf-item"><div class="ebf-dot"></div>API access for HRIS integration</div>
+        <div class="ebf-item"><div class="ebf-dot"></div>Workforce board &amp; government contracts</div>
+        <div class="ebf-item"><div class="ebf-dot"></div>Usage-based billing — pay per employee</div>
+      </div>
+    </div>
+    <div class="eb-right">
+      <a href="mailto:vk@vkdesignlabs.com?subject=ReSkillio Enterprise" class="eb-btn-primary">Talk to us &rarr;</a>
+      <a href="architecture.html" class="eb-btn-secondary">View architecture</a>
+      <div style="font-size:12px;color:rgba(255,255,255,.4);text-align:center;margin-top:4px">From $50/employee · volume pricing</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="gating-section">
+  <div class="gating-inner">
+    <div class="section-label">How the paywall works</div>
+    <div class="gating-title">Free until the moment that matters.</div>
+    <div class="gating-sub">You see your skills and where you fit before spending a cent. The paywall appears at the highest-intent moment — when you want to act, not just explore.</div>
+    <div class="gate-flow">
+      <div class="gate-step gate-free">
+        <div class="gs-step">Step 1–3</div>
+        <div class="gs-title">Upload + discover</div>
+        <div class="gs-desc">Skills extracted, trait archetype revealed, industry fit scored across 8 markets.</div>
+        <span class="gs-badge badge-free">Free forever</span>
+      </div>
+      <div class="gate-step gate-free">
+        <div class="gs-step">Step 4</div>
+        <div class="gs-title">Gap score shown</div>
+        <div class="gs-desc">You see your gap score vs. a role. "74/100 — strong match." The breakdown is locked.</div>
+        <span class="gs-badge badge-free">Free teaser</span>
+      </div>
+      <div class="gate-step gate-paid">
+        <div class="gs-step">Gate 1 · $19</div>
+        <div class="gs-title">Unlock the breakdown</div>
+        <div class="gs-desc">See the exact 3 skills to close. Get the full gap analysis, narrative, resume, cover letter, and 90-day plan.</div>
+        <span class="gs-badge badge-paid">Career Pack</span>
+      </div>
+      <div class="gate-step gate-paid">
+        <div class="gs-step">Gate 2 · $19</div>
+        <div class="gs-title">Download your package</div>
+        <div class="gs-desc">Your career documents — skills-first resume, 90-day PDF, cover letter — ready to use.</div>
+        <span class="gs-badge badge-paid">Career Pack</span>
+      </div>
+      <div class="gate-step gate-premium">
+        <div class="gs-step">Gate 3 · $39/mo</div>
+        <div class="gs-title">Ongoing companion</div>
+        <div class="gs-desc">Weekly digest, opportunity radar for fractional roles, unlimited job targeting.</div>
+        <span class="gs-badge badge-premium">Pro</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="segment-section" style="padding-top:64px">
+  <div class="section-label">Who buys ReSkillio</div>
+  <div class="pricing-grid" style="margin-bottom:0">
+    <div style="font-family:var(--serif);font-size:32px;grid-column:1/-1;text-align:center;margin-bottom:8px">Six paying personas.</div>
+    <div style="font-size:15px;color:#5F5E5A;grid-column:1/-1;text-align:center;margin-bottom:32px;max-width:560px;margin-left:auto;margin-right:auto">Ranked by willingness to pay. The real business is B2B — but B2C creates the proof and data that enterprises require.</div>
+  </div>
+  <div class="segment-grid">
+    <div class="seg-card">
+      <div class="seg-icon" style="background:var(--teal-50)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+      </div>
+      <div class="seg-title">Displaced workers</div>
+      <div class="seg-who">B2C · Individual</div>
+      <div class="seg-desc">Laid-off professionals who need to understand what they're worth and what to do next. They see value immediately — but won't pay upfront.</div>
+      <span class="seg-price">$19 one-time · $39/mo</span>
+    </div>
+    <div class="seg-card" style="border-color:var(--teal-100)">
+      <div class="seg-icon" style="background:var(--blue-50)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+      </div>
+      <div class="seg-title">Corporates (HR / outplacement)</div>
+      <div class="seg-who">B2B · Biggest opportunity</div>
+      <div class="seg-desc">CHROs running layoffs who need to help exiting employees land faster — and protect their company's reputation. Traditional outplacement costs $3K–$8K per person.</div>
+      <span class="seg-price">$50–$200 per employee</span>
+    </div>
+    <div class="seg-card">
+      <div class="seg-icon" style="background:var(--purple-50)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+      </div>
+      <div class="seg-title">Universities &amp; bootcamps</div>
+      <div class="seg-who">B2B · EdTech</div>
+      <div class="seg-desc">Career services teams who need to improve placement rates and demonstrate ROI to students. Priced per student per month.</div>
+      <span class="seg-price">$5–$20/student/month</span>
+    </div>
+    <div class="seg-card">
+      <div class="seg-icon" style="background:var(--amber-50)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </div>
+      <div class="seg-title">Government &amp; workforce boards</div>
+      <div class="seg-who">B2G · Underrated</div>
+      <div class="seg-desc">State employment agencies and workforce development boards reskilling displaced workers at scale. Contracts start in the millions.</div>
+      <span class="seg-price">Contract pricing</span>
+    </div>
+    <div class="seg-card">
+      <div class="seg-icon" style="background:var(--teal-50)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      </div>
+      <div class="seg-title">Recruiters &amp; staffing firms</div>
+      <div class="seg-who">B2B · Non-obvious</div>
+      <div class="seg-desc">Agencies who need to reposition rejected candidates faster. "Turn rejected candidates into placeable candidates."</div>
+      <span class="seg-price">Seat licensing</span>
+    </div>
+    <div class="seg-card">
+      <div class="seg-icon" style="background:var(--blue-50)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      </div>
+      <div class="seg-title">Financial services (future)</div>
+      <div class="seg-who">B2B · Emerging</div>
+      <div class="seg-desc">Banks and insurers assessing employment risk. Your career score becomes a financial signal for income disruption insurance and loan risk models.</div>
+      <span class="seg-price">Data licensing · API</span>
+    </div>
+  </div>
+</div>
+
+<div class="faq-section">
+  <div class="faq-title">Common questions</div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-q">Do I need a credit card to start?<svg viewBox="0 0 16 16"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg></div>
+    <div class="faq-a">No. The free tier — resume upload, skill extraction, trait archetype, and industry fit scores — requires no card and no account. You only need to pay when you want to download documents or access the detailed gap breakdown.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-q">What exactly is included in the Career Pack?<svg viewBox="0 0 16 16"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg></div>
+    <div class="faq-a">For one target role: a full skill gap breakdown showing exactly which skills to close, a Gemini-generated career narrative grounded in your actual data, a skills-first resume rewrite (PDF), a cover letter tailored to the role, 5 interview talking points in the employer's language, and a 90-day reskilling roadmap with real course links. You can re-run the analysis for the same target role as many times as you need.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-q">What's the difference between Career Pack and Pro?<svg viewBox="0 0 16 16"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg></div>
+    <div class="faq-a">Career Pack is a one-time purchase for one specific target role. Pro is a monthly subscription that gives you unlimited role targeting, the Opportunity Radar (which matches you to fractional and consulting opportunities based on your profile), a weekly companion digest that tracks your progress week-over-week, and LinkedIn summary variants. Pro is for people who are in an active 3-month transition and want ongoing intelligence, not just a one-time report.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-q">How does enterprise pricing work for HR teams?<svg viewBox="0 0 16 16"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg></div>
+    <div class="faq-a">Enterprise is priced per employee processed, typically $50–$200 per head depending on volume and features. This compares to $3,000–$8,000 per employee for traditional outplacement firms. You get white-labelled reports with your branding, a bulk onboarding flow (CSV upload), and an HR analytics dashboard showing cohort-level progress. Reach out to discuss your specific situation — we can usually set up a pilot within a week.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-q">Is my resume data private?<svg viewBox="0 0 16 16"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg></div>
+    <div class="faq-a">Yes. Your resume is processed to extract skills and stored in your candidate profile. It is never shared with employers, never used to train models, and never sold. In the Opportunity Radar, employers see only an anonymised profile — your actual identity and employer history are revealed only after mutual acceptance of an introduction request.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-q">Will there be local pricing for India, UK, and EU?<svg viewBox="0 0 16 16"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg></div>
+    <div class="faq-a">Yes — region-specific pricing is coming. Pricing in INR, GBP, and EUR will reflect local purchasing power, not just currency conversion. If you're outside the US and want to be notified when local pricing launches, email vk@vkdesignlabs.com with your region.</div>
+  </div>
+
+  <div class="faq-item" onclick="toggleFaq(this)">
+    <div class="faq-q">Can I use ReSkillio as a demo without paying?<svg viewBox="0 0 16 16"><line x1="8" y1="2" x2="8" y2="14"/><line x1="2" y1="8" x2="14" y2="8"/></svg></div>
+    <div class="faq-a">Yes. Add ?demo=true to any URL to activate demo mode, which bypasses the paywall and uses pre-populated data. This is designed for investor demos, HR evaluations, and conference presentations. The demo token is available on request for enterprise evaluations.</div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">Reskil<span>lio</span></div>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="api.html">API</a>
+      <a href="app.html">Try it</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="https://github.com/vipul9811kumar/ReSkillio" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <div class="footer-copy">&copy; 2026 Vipul Kumar &middot; ReSkillio</div>
+  </div>
+</footer>
+
+<script>
+let billing = 'monthly';
+
+const prices = {
+  monthly: { career: { num: '$19', period: 'one-time', note: 'Per job target · unlimited re-runs' }, pro: { num: '$39', period: '/month', note: 'Cancel anytime' } },
+  annual:  { career: { num: '$13', period: 'one-time', note: 'Billed annually · 30% saving' }, pro: { num: '$27', period: '/month', note: 'Billed $324/yr · 30% saving' } },
+};
+
+// Stripe Price IDs — replace with actual IDs from Stripe dashboard when ready
+const STRIPE_PRICES = {
+  monthly: { career: 'price_CAREER_MONTHLY_ID', pro: 'price_PRO_MONTHLY_ID' },
+  annual:  { career: 'price_CAREER_ANNUAL_ID',  pro: 'price_PRO_ANNUAL_ID'  },
+};
+
+function setBilling(mode) {
+  billing = mode;
+  document.getElementById('monthly-btn').classList.toggle('on', mode === 'monthly');
+  document.getElementById('annual-btn').classList.toggle('on', mode === 'annual');
+  const p = prices[mode];
+  document.getElementById('career-price').textContent = p.career.num;
+  document.getElementById('career-period').textContent = p.career.period;
+  document.getElementById('career-note').textContent = p.career.note;
+  document.getElementById('pro-price').textContent = p.pro.num;
+  document.getElementById('pro-period').textContent = p.pro.period;
+  document.getElementById('pro-note').textContent = p.pro.note;
+}
+
+function checkout(plan) {
+  const priceId = STRIPE_PRICES[billing][plan];
+  // TODO: redirect to Stripe Checkout when implemented
+  // window.location.href = `/api/create-checkout-session?price_id=${priceId}`;
+  alert('Payments coming soon! We\'ll notify you when ' + (plan === 'career' ? 'Career Pack' : 'Pro') + ' is available.');
+}
+
+function toggleFaq(el) {
+  el.classList.toggle('open');
+}
+</script>
+
+</body>
+</html>

@@ -1957,7 +1957,7 @@ textarea#context-text::placeholder { color: var(--gray-400); }
       </div>
     </div>
 
-    <button class="btn-primary hidden mt-16" id="gap-next" onclick="goStep(5)">Read your career story &rarr;</button>
+    <button class="btn-primary mt-16" id="gap-next" onclick="goStep(5)">Skip to career story &rarr;</button>
 
     <!-- Person Gap — loads after /analyze; deepens with intake data -->
     <div class="person-gap-card hidden" id="person-gap-card">
@@ -2605,6 +2605,7 @@ async function runGap() {
 function renderGap(gap) {
   const gr = document.getElementById('gap-result');
   const nb = document.getElementById('gap-next');
+  nb.textContent = 'Read your career story \u2192';
 
   const score = gap.gap_score ?? gap.readiness_score ?? 74;
   const have  = gap.matched_skills  || [];

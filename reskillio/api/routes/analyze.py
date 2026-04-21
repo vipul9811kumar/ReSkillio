@@ -37,12 +37,29 @@ def _require_gcp():
 
 
 def _pdf_to_text(pdf_bytes: bytes) -> str:
-    """Extract plain text from PDF bytes using pdfplumber."""
     import io
     import pdfplumber
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         pages = [page.extract_text() or "" for page in pdf.pages]
     return "\n\n".join(p for p in pages if p.strip())
+
+
+def _docx_to_text(docx_bytes: bytes) -> str:
+    import io
+    from docx import Document
+    doc = Document(io.BytesIO(docx_bytes))
+    return "\n\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+
+def _is_docx(filename: str, content_type: str) -> bool:
+    return (
+        (filename or "").lower().endswith(".docx")
+        or content_type in (
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/octet-stream",
+        )
+        and (filename or "").lower().endswith(".docx")
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -104,20 +121,26 @@ async def analyze(
 
     if resume is not None:
         try:
-            pdf_bytes = await resume.read()
-            if not pdf_bytes:
+            file_bytes = await resume.read()
+            if not file_bytes:
                 raise HTTPException(400, "Uploaded file is empty.")
-            text = _pdf_to_text(pdf_bytes)
+            fname = (resume.filename or "").lower()
+            if fname.endswith(".docx"):
+                text = _docx_to_text(file_bytes)
+                fmt = "DOCX"
+            else:
+                text = _pdf_to_text(file_bytes)
+                fmt = "PDF"
             if not text.strip():
-                raise HTTPException(422, "Could not extract text from the uploaded PDF.")
+                raise HTTPException(422, f"Could not extract text from the uploaded {fmt}.")
             logger.info(
-                f"[analyze] PDF '{resume.filename}' — {len(pdf_bytes):,} bytes "
+                f"[analyze] {fmt} '{resume.filename}' — {len(file_bytes):,} bytes "
                 f"→ {len(text):,} chars"
             )
         except HTTPException:
             raise
         except Exception as exc:
-            raise HTTPException(422, f"PDF parsing failed: {exc}") from exc
+            raise HTTPException(422, f"Resume parsing failed: {exc}") from exc
 
     elif resume_text:
         text = resume_text.strip()

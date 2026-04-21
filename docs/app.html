@@ -1608,11 +1608,11 @@ nav.nav-open .nav-hamburger span:nth-child(1) { transform: translateY(7px) rotat
 nav.nav-open .nav-hamburger span:nth-child(2) { opacity: 0; }
 nav.nav-open .nav-hamburger span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 .nav-mobile-panel {
-  display: none; position: absolute; top: var(--nav-h);
+  display: none; position: fixed; top: var(--nav-h);
   left: 0; right: 0; background: #fff;
   border-bottom: 0.5px solid var(--bd);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-  z-index: 99; padding: 8px 0 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 9999; padding: 8px 0 16px;
 }
 nav.nav-open .nav-mobile-panel { display: block; }
 .nav-mobile-panel a {
@@ -2403,6 +2403,9 @@ async function startAnalysis() {
     if (analysisData.candidate_name) {
       localStorage.setItem('reskillio_candidate_name', analysisData.candidate_name);
     }
+    if (analysisData.candidate_id) {
+      try { localStorage.setItem('reskillio_analysis_' + analysisData.candidate_id, JSON.stringify(analysisData)); } catch(_) {}
+    }
   } catch (e) {
     stopTimer();
     alert('Analysis failed: ' + e.message + '\n\nMake sure the API server is running.');
@@ -2922,13 +2925,30 @@ function triggerPathway() {
 }
 
 async function fetchPathway(data) {
-  const missing      = data.gap?.missing_skills      || [];
-  const transferable = data.gap?.transferable_skills || [];
-  const gapScore     = data.gap?.gap_score ?? data.gap?.readiness_score ?? 50;
+  // If enrichment hasn't landed yet and we have no JD gap, wait up to 30s
+  if (!data.gap?.missing_skills?.length && !enrichData?.auto_gap) {
+    let waited = 0;
+    while (!enrichData?.auto_gap && waited < 30000) {
+      await new Promise(r => setTimeout(r, 2000));
+      waited += 2000;
+    }
+  }
+
+  // Primary: JD-based gap (only present when a JD was pasted)
+  // Fallback: auto-gap from enrich pipeline (always available after enrichment)
+  const autoGap      = enrichData?.auto_gap;
+  const missing      = data.gap?.missing_skills?.length
+    ? data.gap.missing_skills
+    : (autoGap?.top_skills_to_add || []);
+  const transferable = data.gap?.transferable_skills?.length
+    ? data.gap.transferable_skills.map(t => t.candidate_skill || t)
+    : [];
+  const gapScore     = data.gap?.gap_score
+    ?? autoGap?.overall_readiness
+    ?? 50;
   const targetRole   = _enrichTargetRole || data.target_role || 'Career Transition';
 
   if (!missing.length && !transferable.length) {
-    // No gap data — show error nudge
     document.getElementById('pathway-loading').style.display = 'none';
     document.getElementById('pathway-error').style.display   = '';
     return;
@@ -3226,7 +3246,27 @@ document.addEventListener('click', e => {
 document.querySelectorAll('.ind-bar-f').forEach(b => { b.style.width = '0%'; });
 (function() {
   const params = new URLSearchParams(window.location.search);
-  if (params.has('candidate_id')) {
+  const incomingCid = params.get('candidate_id');
+  if (!incomingCid) return;
+
+  // Try to restore a previously completed analysis from localStorage
+  let stored = null;
+  try { stored = JSON.parse(localStorage.getItem('reskillio_analysis_' + incomingCid) || 'null'); } catch(_) {}
+
+  if (stored) {
+    analysisData = stored;
+    try { renderSkills(analysisData);    } catch(e) { console.error('[init/renderSkills]', e); }
+    try { renderTrait(analysisData);     } catch(e) { console.error('[init/renderTrait]', e); }
+    try { renderIndustry(analysisData);  } catch(e) { console.error('[init/renderIndustry]', e); }
+    try { renderNarrative(analysisData); } catch(e) { console.error('[init/renderNarrative]', e); }
+    try { renderSummary(analysisData);   } catch(e) { console.error('[init/renderSummary]', e); }
+    // Re-fire enrichment & person gap so the deeper sections populate
+    const idealStage = analysisData.trait_profile?.ideal_stage || 'Enterprise';
+    fetchEnrichment(analysisData.candidate_id, _enrichTargetRole, '', idealStage);
+    fetchPersonGap(analysisData);
+    goStep(2);
+  } else {
+    // No cached data — show welcome-back banner so they can re-upload
     const banner = document.getElementById('welcome-back-banner');
     if (banner) banner.style.display = 'flex';
   }

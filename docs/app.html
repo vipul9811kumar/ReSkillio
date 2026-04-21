@@ -1793,7 +1793,7 @@ nav.nav-open .nav-mobile-panel { display: block; }
   <div class="screen" id="s2">
     <div class="card">
       <div class="card-title">Your skill profile</div>
-      <div class="card-sub">47 skills found across 11 years of career history &mdash; including skills you may not have thought to put on your resume.</div>
+      <div class="card-sub" id="skill-card-sub">Analysing your career history&hellip;</div>
 
       <div class="stat-grid">
         <div class="stat-box"><div class="stat-num sn-teal">47</div><div class="stat-lab">skills found</div></div>
@@ -2445,6 +2445,9 @@ async function startAnalysis() {
 /* ── Render: Skills (S2) ───────────────────────────────────────── */
 function renderSkills(data) {
   const skills = data.top_skills || [];
+
+  const sub = document.getElementById('skill-card-sub');
+  if (sub) sub.textContent = `${data.skill_count} skills found across your career history — including skills you may not have thought to put on your resume.`;
 
   document.querySelector('#s2 .stat-grid').innerHTML = `
     <div class="stat-box"><div class="stat-num sn-teal">${data.skill_count}</div><div class="stat-lab">skills found</div></div>

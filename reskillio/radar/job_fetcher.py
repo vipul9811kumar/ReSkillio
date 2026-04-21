@@ -65,6 +65,9 @@ def fetch_opportunities(
     if not raw_jobs:
         return []
 
+    # Cap at 25 before normalisation — each job needs a Gemini call
+    raw_jobs = raw_jobs[:25]
+
     normalizer   = JobNormalizer(project_id=project_id, region=region)
     opportunities = normalizer.normalize_batch(raw_jobs)
     logger.info(f"[job_fetcher] {len(opportunities)} opportunities normalised")

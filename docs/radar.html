@@ -268,18 +268,32 @@ async function loadRadar() {
       '<div class="ls-text" style="color:var(--coral-800)">No candidate_id in URL — complete your analysis on the Try it page first.</div>';
     return;
   }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000); // 90s hard stop
   try {
     const res = await fetch(`${API}/radar/search`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({candidate_id: candidateId, max_results: 12}),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
     if (!res.ok) throw new Error(await res.text());
     renderRadar(await res.json());
   } catch(e) {
+    clearTimeout(timeout);
     console.error('[radar]', e);
+    const msg = e.name === 'AbortError'
+      ? 'Search timed out — the server is busy. Please try again in a moment.'
+      : `Could not load opportunities.<br><small>${e.message}</small>`;
     document.getElementById('loading-state').innerHTML =
-      `<div class="ls-text" style="color:var(--coral-800)">Could not load opportunities.<br><small>${e.message}</small></div>`;
+      `<div class="ls-text" style="color:var(--coral-800)">${msg}</div>
+       <div style="text-align:center;margin-top:12px">
+         <button onclick="document.getElementById('loading-state').innerHTML='<div class=ls-spinner></div><div class=ls-text>Scanning live postings&hellip;</div>';loadRadar();"
+           style="padding:8px 20px;border-radius:8px;background:var(--teal);color:#fff;border:none;cursor:pointer;font-size:14px">
+           Try again
+         </button>
+       </div>`;
   }
 }
 

@@ -107,13 +107,20 @@ class JobNormalizer:
 
         return _dict_to_opportunity(extracted, raw)
 
-    def normalize_batch(self, raws: list[dict]) -> list[Opportunity]:
-        """Normalize a list of raw jobs; silently drops ones that fail."""
-        results = []
-        for raw in raws:
-            opp = self.normalize(raw)
-            if opp is not None:
-                results.append(opp)
+    def normalize_batch(self, raws: list[dict], max_jobs: int = 25) -> list[Opportunity]:
+        """Normalize up to max_jobs raw jobs in parallel; silently drops failures."""
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        subset = raws[:max_jobs]
+        results: list[Opportunity] = []
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            futures = {pool.submit(self.normalize, raw): raw for raw in subset}
+            for future in as_completed(futures, timeout=50):
+                try:
+                    opp = future.result(timeout=5)
+                    if opp is not None:
+                        results.append(opp)
+                except Exception as exc:
+                    logger.warning(f"[normalizer] batch item failed: {exc}")
         return results
 
     # ------------------------------------------------------------------

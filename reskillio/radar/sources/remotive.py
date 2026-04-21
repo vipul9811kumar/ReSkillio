@@ -37,16 +37,19 @@ def fetch_by_keyword(keyword: str) -> list[dict]:
     Fetch jobs matching a single short keyword (1–2 words only).
     Returns [] for multi-word phrases — caller should strip to key noun.
     """
-    # Remotive search breaks on long phrases — truncate to first two words
     short = " ".join(keyword.strip().split()[:2])
+    resp = None
     try:
         resp = requests.get(_API_URL, params={"search": short}, timeout=_TIMEOUT)
         resp.raise_for_status()
+        jobs = resp.json().get("jobs", [])
     except Exception as exc:
         logger.warning(f"[remotive] keyword fetch failed for '{short}': {exc}")
         return []
+    finally:
+        if resp is not None:
+            resp.close()
 
-    jobs = resp.json().get("jobs", [])
     logger.info(f"[remotive] keyword='{short}' → {len(jobs)} jobs")
     return [_normalise(j) for j in jobs]
 
@@ -56,16 +59,18 @@ def fetch_by_category(slug: str) -> list[dict]:
     Fetch all current remote jobs in a Remotive category.
     More reliable than keyword search for broad role types.
     """
+    resp = None
     try:
-        resp = requests.get(
-            _API_URL, params={"category": slug}, timeout=_TIMEOUT
-        )
+        resp = requests.get(_API_URL, params={"category": slug}, timeout=_TIMEOUT)
         resp.raise_for_status()
+        jobs = resp.json().get("jobs", [])
     except Exception as exc:
         logger.warning(f"[remotive] category fetch failed for '{slug}': {exc}")
         return []
+    finally:
+        if resp is not None:
+            resp.close()
 
-    jobs = resp.json().get("jobs", [])
     logger.info(f"[remotive] category='{slug}' → {len(jobs)} jobs")
     return [_normalise(j) for j in jobs]
 
@@ -113,5 +118,6 @@ def _normalise(j: dict) -> dict:
 
 def _html_to_text(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
-    text = soup.get_text(separator=" ", strip=True)
-    return re.sub(r"\s+", " ", text)
+    text = re.sub(r"\s+", " ", soup.get_text(separator=" ", strip=True))
+    soup.decompose()
+    return text

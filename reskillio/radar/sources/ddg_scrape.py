@@ -156,6 +156,7 @@ def _domain(url: str) -> str:
 
 
 def _fetch_page_text(url: str) -> str:
+    resp = None
     try:
         resp = requests.get(
             url,
@@ -168,8 +169,12 @@ def _fetch_page_text(url: str) -> str:
         soup = BeautifulSoup(resp.content, "html.parser")
         for tag in soup(_STRIP_TAGS):
             tag.decompose()
-        text = soup.get_text(separator=" ", strip=True)
-        return re.sub(r"\s+", " ", text)
+        text = re.sub(r"\s+", " ", soup.get_text(separator=" ", strip=True))
+        soup.decompose()
+        return text
     except Exception as exc:
         logger.debug(f"[ddg_scrape] page fetch failed {url}: {exc}")
         return ""
+    finally:
+        if resp is not None:
+            resp.close()

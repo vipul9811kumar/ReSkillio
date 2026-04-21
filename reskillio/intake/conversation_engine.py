@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import uuid
 from typing import Any
 
@@ -31,7 +32,20 @@ from reskillio.models.intake import (
 _MODEL_VERTEX = "gemini-2.5-flash"
 _MODEL_STUDIO = "gemini-2.0-flash"
 
-_sessions: dict[str, IntakeSession] = {}
+_sessions:    dict[str, IntakeSession] = {}
+_session_ts:  dict[str, float]         = {}   # session_id → creation monotonic time
+_SESSION_TTL  = 7200.0                         # 2 hours — evict stale sessions
+
+
+def _cleanup_stale_sessions() -> None:
+    """Evict sessions older than _SESSION_TTL. Called on each new session start."""
+    cutoff = time.monotonic() - _SESSION_TTL
+    stale = [sid for sid, ts in _session_ts.items() if ts < cutoff]
+    for sid in stale:
+        _sessions.pop(sid, None)
+        _session_ts.pop(sid, None)
+    if stale:
+        logger.info(f"[intake] Evicted {len(stale)} stale session(s); {len(_sessions)} active")
 
 
 # ── Question guides ─────────────────────────────────────────────────────────
@@ -257,6 +271,7 @@ class IntakeConversationEngine:
 
     def start_session(self, candidate_id: str) -> tuple[str, str, list[str]]:
         """Create a new session and return (session_id, opening_message, suggestions)."""
+        _cleanup_stale_sessions()
         session_id = str(uuid.uuid4())
         q = _QUESTIONS[1]
         session = IntakeSession(
@@ -267,7 +282,8 @@ class IntakeConversationEngine:
         opener = q["opener"]
         session.messages.append(IntakeMessage(role="assistant", content=opener))
         _sessions[session_id] = session
-        logger.info(f"[intake] New session {session_id} for candidate {candidate_id}")
+        _session_ts[session_id] = time.monotonic()
+        logger.info(f"[intake] New session {session_id} for candidate {candidate_id} ({len(_sessions)} active)")
         return session_id, opener, q["suggestions"]
 
     def process_turn(
@@ -338,6 +354,9 @@ class IntakeConversationEngine:
             suggestions = []
             completed = True
             logger.info(f"[intake] Session {session_id} completed")
+            # Free session from RAM immediately — profile is persisted to BQ
+            _sessions.pop(session_id, None)
+            _session_ts.pop(session_id, None)
 
         return reply, session.current_question, suggestions, completed, profile
 

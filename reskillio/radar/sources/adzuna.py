@@ -47,6 +47,7 @@ def fetch(
     cc = COUNTRY_CODES.get(country.lower(), "us")
     url = f"{_BASE_URL}/{cc}/search/1"
 
+    resp = None
     try:
         resp = requests.get(
             url,
@@ -60,11 +61,13 @@ def fetch(
             timeout=_TIMEOUT,
         )
         resp.raise_for_status()
+        jobs = resp.json().get("results", [])
     except Exception as exc:
         logger.warning(f"[adzuna] API call failed for '{search_term}': {exc}")
         return []
-
-    jobs = resp.json().get("results", [])
+    finally:
+        if resp is not None:
+            resp.close()
     logger.info(f"[adzuna] '{search_term}' → {len(jobs)} results")
 
     results = []
@@ -109,5 +112,6 @@ def _credentials() -> tuple[str, str]:
 
 def _html_to_text(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
-    text = soup.get_text(separator=" ", strip=True)
-    return re.sub(r"\s+", " ", text)
+    text = re.sub(r"\s+", " ", soup.get_text(separator=" ", strip=True))
+    soup.decompose()
+    return text

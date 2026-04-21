@@ -125,16 +125,18 @@ async def analyze(
             if not file_bytes:
                 raise HTTPException(400, "Uploaded file is empty.")
             fname = (resume.filename or "").lower()
+            file_size = len(file_bytes)
             if fname.endswith(".docx"):
                 text = _docx_to_text(file_bytes)
                 fmt = "DOCX"
             else:
                 text = _pdf_to_text(file_bytes)
                 fmt = "PDF"
+            del file_bytes  # free raw bytes as soon as text is extracted
             if not text.strip():
                 raise HTTPException(422, f"Could not extract text from the uploaded {fmt}.")
             logger.info(
-                f"[analyze] {fmt} '{resume.filename}' — {len(file_bytes):,} bytes "
+                f"[analyze] {fmt} '{resume.filename}' — {file_size:,} bytes "
                 f"→ {len(text):,} chars"
             )
         except HTTPException:

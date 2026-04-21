@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReSkillio — Deployment Diagram</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--blue:#58a6ff;--green:#3fb950;
+  --teal:#2da07a;--yellow:#d29922;--purple:#bc8cff;--orange:#ffa657;--red:#f85149;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Consolas,monospace;
+}
+html{font-size:15px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;min-height:100vh}
+
+nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 2rem;display:flex;align-items:center;gap:1.5rem}
+.logo{font-weight:700;font-size:1.1rem;color:var(--blue);text-decoration:none}
+nav a{color:var(--muted);text-decoration:none;font-size:.9rem;transition:color .15s}
+nav a:hover{color:var(--text)}
+.pill{margin-left:auto;background:var(--blue);color:#0d1117;padding:.3rem .9rem;border-radius:2rem;font-size:.82rem;font-weight:600;text-decoration:none}
+
+main{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+h1{font-size:1.7rem;font-weight:700;margin-bottom:.4rem}
+.subtitle{color:var(--muted);font-size:.95rem;margin-bottom:2.5rem}
+
+/* ── Legend ── */
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:2rem;padding:14px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.leg-item{display:flex;align-items:center;gap:7px;font-size:.82rem;color:var(--muted)}
+.leg-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+
+/* ── Diagram grid ── */
+.diagram{display:grid;grid-template-columns:220px 1fr 220px;grid-template-rows:auto;gap:20px;align-items:start}
+
+/* ── Zone box ── */
+.zone{border-radius:12px;padding:16px;border:1.5px solid}
+.zone-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.zone-icon{font-size:16px}
+
+.zone-browser{border-color:#2da07a33;background:rgba(45,160,122,.06)}
+.zone-browser .zone-title{color:var(--teal)}
+.zone-cloudrun{border-color:#58a6ff33;background:rgba(88,166,255,.06)}
+.zone-cloudrun .zone-title{color:var(--blue)}
+.zone-gcp{border-color:#bc8cff33;background:rgba(188,140,255,.06);grid-column:3}
+.zone-gcp .zone-title{color:var(--purple)}
+.zone-ext{border-color:#d2992233;background:rgba(210,153,34,.05);grid-column:1/-1}
+.zone-ext .zone-title{color:var(--yellow)}
+
+/* ── Component cards ── */
+.comp{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:8px}
+.comp:last-child{margin-bottom:0}
+.comp-name{font-size:.88rem;font-weight:600;margin-bottom:3px}
+.comp-tech{font-size:.78rem;color:var(--muted);font-family:var(--mono)}
+.comp-desc{font-size:.78rem;color:var(--muted);margin-top:4px;line-height:1.4}
+.badge{display:inline-block;font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:4px;margin-top:4px;font-family:var(--mono)}
+.badge-live{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.badge-gcp{background:rgba(88,166,255,.12);color:var(--blue);border:1px solid rgba(88,166,255,.25)}
+.badge-ext{background:rgba(210,153,34,.12);color:var(--yellow);border:1px solid rgba(210,153,34,.25)}
+.badge-local{background:rgba(188,140,255,.12);color:var(--purple);border:1px solid rgba(188,140,255,.25)}
+
+/* ── Arrows ── */
+.arrows-col{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;padding:16px 0}
+.arrow-row{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--muted);white-space:nowrap}
+.arrow-line{height:1px;flex:1;min-width:30px;background:var(--border)}
+.arrow-label{font-size:.7rem;color:var(--muted);font-family:var(--mono);text-align:center}
+
+/* ── Flow section ── */
+.flow-section{margin-top:2.5rem}
+.flow-title{font-size:1rem;font-weight:600;color:var(--blue);margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+.flow-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.flow-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px}
+.flow-num{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--blue);color:#0d1117;font-size:.78rem;font-weight:700;flex-shrink:0;margin-bottom:8px}
+.flow-step-title{font-size:.88rem;font-weight:600;margin-bottom:4px}
+.flow-step-desc{font-size:.8rem;color:var(--muted);line-height:1.5}
+
+/* ── Config table ── */
+.config-section{margin-top:2.5rem}
+.config-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.config-table th{text-align:left;padding:10px 14px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+.config-table td{padding:10px 14px;border:1px solid var(--border);vertical-align:top}
+.config-table tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.config-table td code{font-family:var(--mono);font-size:.8rem;color:var(--blue)}
+
+@media(max-width:768px){
+  .diagram{grid-template-columns:1fr}
+  .zone-gcp{grid-column:auto}
+  .zone-ext{grid-column:auto}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="logo">ReSkillio</a>
+  <a href="architecture.html">Architecture</a>
+  <a href="app.html">App</a>
+  <a href="api.html">API Docs</a>
+  <a class="pill" href="index.html">Home</a>
+</nav>
+
+<main>
+  <h1>Deployment Diagram</h1>
+  <p class="subtitle">Where every component runs — infrastructure topology as of April 2026</p>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:var(--teal)"></div>GitHub Pages (CDN)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div>Cloud Run (Backend API)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--purple)"></div>Google Cloud Services</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--yellow)"></div>External APIs</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--muted)"></div>In-browser (localStorage)</div>
+  </div>
+
+  <!-- Main diagram -->
+  <div class="diagram">
+
+    <!-- Left: Browser / GitHub Pages -->
+    <div class="zone zone-browser">
+      <div class="zone-title"><span class="zone-icon">🌐</span>User Browser + GitHub Pages</div>
+
+      <div class="comp">
+        <div class="comp-name">Landing Page</div>
+        <div class="comp-tech">docs/index.html</div>
+        <div class="comp-desc">Marketing + CTA → intake flow</div>
+        <span class="badge badge-live">reskillio.com</span>
+      </div>
+
+      <div class="comp">
+        <div class="comp-name">Intake Questionnaire</div>
+        <div class="comp-tech">docs/intake.html</div>
+        <div class="comp-desc">Collects runway, goal, work identity → POST /intake</div>
+      </div>
+
+      <div class="comp">
+        <div class="comp-name">Analysis App (SPA)</div>
+        <div class="comp-tech">docs/app.html</div>
+        <div class="comp-desc">Skill · Industry · Gap · Narrative · Pathway cards. Caches all results in localStorage.</div>
+      </div>
+
+      <div class="comp">
+        <div class="comp-name">Weekly Companion</div>
+        <div class="comp-tech">docs/companion.html</div>
+        <div class="comp-desc">Week tracking, check-ins, course progress, application log — fully localStorage-driven</div>
+      </div>
+
+      <div class="comp">
+        <div class="comp-name">Opportunity Radar</div>
+        <div class="comp-tech">docs/radar.html</div>
+        <div class="comp-desc">Fetches live job matches → POST /radar/search</div>
+      </div>
+
+      <div class="comp" style="border-color:rgba(188,140,255,.3)">
+        <div class="comp-name">localStorage Cache</div>
+        <div class="comp-tech">browser key-value store</div>
+        <div class="comp-desc">analysisData · enrichData · pathwayData · gapData · checkin_wN · apps · gap_history · courses</div>
+        <span class="badge badge-local">in-browser only</span>
+      </div>
+    </div>
+
+    <!-- Centre: Cloud Run -->
+    <div class="zone zone-cloudrun">
+      <div class="zone-title"><span class="zone-icon">☁️</span>Google Cloud Run — FastAPI Backend</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-bottom:12px;font-family:var(--mono)">reskillio-10933517215.us-central1.run.app · 4 GiB RAM · 2 vCPU · min-instances=1 · timeout=300 s</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+        <div class="comp">
+          <div class="comp-name">POST /analyze</div>
+          <div class="comp-tech">routes/analyze.py</div>
+          <div class="comp-desc">Resume PDF → spaCy NLP + Gemini → skill profile → BigQuery</div>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">POST /enrich</div>
+          <div class="comp-tech">pipelines/enrich_pipeline.py</div>
+          <div class="comp-desc">Parallel: MarketPulse + SalaryIntel (Round 1) → AutoGap + CompanyRadar (Round 2)</div>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">POST /gap</div>
+          <div class="comp-tech">routes/gap.py</div>
+          <div class="comp-desc">JD text → skill matching against candidate profile</div>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">GET /pathway/{id}</div>
+          <div class="comp-tech">pipelines/pathway_planner_agent.py</div>
+          <div class="comp-desc">DDG course search (parallel) + Gemini synthesis → 90-day roadmap</div>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">POST /radar/search</div>
+          <div class="comp-tech">radar/job_fetcher.py</div>
+          <div class="comp-desc">Adzuna API → Gemini normalisation (parallel, 8 threads) → opportunity matches</div>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">POST /companion/checkin</div>
+          <div class="comp-tech">routes/companion.py</div>
+          <div class="comp-desc">Saves weekly check-in → triggers async digest generation</div>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">POST /intake</div>
+          <div class="comp-tech">routes/intake.py</div>
+          <div class="comp-desc">Saves financial runway, goals, work identity → BigQuery</div>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">POST /narrative</div>
+          <div class="comp-tech">routes/narrative.py</div>
+          <div class="comp-desc">Gemini → 90-day plan narrative card</div>
+        </div>
+
+        <div class="comp" style="grid-column:1/-1">
+          <div class="comp-name">Enrichment sub-agents (run inside Cloud Run)</div>
+          <div class="comp-tech">agents/ + pipelines/</div>
+          <div class="comp-desc" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+            <span style="font-size:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px">market_pulse_agent</span>
+            <span style="font-size:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px">salary_intel_pipeline</span>
+            <span style="font-size:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px">auto_gap_pipeline</span>
+            <span style="font-size:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px">company_radar_agent</span>
+            <span style="font-size:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px">pathway_planner_agent</span>
+            <span style="font-size:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px">industry_match_pipeline</span>
+            <span style="font-size:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 7px">job_normalizer (radar)</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right: GCP services -->
+    <div class="zone zone-gcp">
+      <div class="zone-title"><span class="zone-icon">🔷</span>Google Cloud Services</div>
+
+      <div class="comp">
+        <div class="comp-name">Vertex AI / Gemini</div>
+        <div class="comp-tech">gemini-2.5-flash</div>
+        <div class="comp-desc">All AI synthesis calls — analysis, enrichment, narrative, pathway, radar normalisation</div>
+        <span class="badge badge-gcp">us-central1</span>
+      </div>
+
+      <div class="comp">
+        <div class="comp-name">BigQuery</div>
+        <div class="comp-tech">dataset: reskillio</div>
+        <div class="comp-desc">
+          Tables:<br>
+          · candidate_profiles<br>
+          · skill_extractions<br>
+          · intake_profiles<br>
+          · industry_vectors<br>
+          · companion_checkins
+        </div>
+        <span class="badge badge-gcp">persistent store</span>
+      </div>
+
+      <div class="comp">
+        <div class="comp-name">Container Registry</div>
+        <div class="comp-tech">gcr.io/[project]/reskillio</div>
+        <div class="comp-desc">Docker image built by Cloud Build, pulled by Cloud Run on deploy</div>
+      </div>
+
+      <div class="comp">
+        <div class="comp-name">Cloud Build</div>
+        <div class="comp-tech">cloudbuild.deploy.yaml</div>
+        <div class="comp-desc">Manual trigger: build → push → deploy Cloud Run. E2_HIGHCPU_8 builder.</div>
+        <span class="badge badge-gcp">on-demand CI/CD</span>
+      </div>
+
+      <div class="comp">
+        <div class="comp-name">Secret Manager</div>
+        <div class="comp-tech">env vars on Cloud Run</div>
+        <div class="comp-desc">GEMINI_API_KEY, GCP credentials, Adzuna keys injected at runtime</div>
+      </div>
+
+    </div>
+
+    <!-- Bottom: External APIs (full width) -->
+    <div class="zone zone-ext" style="grid-column:1/-1">
+      <div class="zone-title"><span class="zone-icon">🌍</span>External APIs — called from Cloud Run at request time</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+
+        <div class="comp">
+          <div class="comp-name">DuckDuckGo Search</div>
+          <div class="comp-tech">ddgs Python library</div>
+          <div class="comp-desc">Live web search for market pulse, salary data, company radar, course search — parallel queries via ThreadPoolExecutor</div>
+          <span class="badge badge-ext">free / no key</span>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">Adzuna Jobs API</div>
+          <div class="comp-tech">api.adzuna.com/v1/api/jobs</div>
+          <div class="comp-desc">Live job listings for Opportunity Radar — fetches real postings, normalised by Gemini</div>
+          <span class="badge badge-ext">API key required</span>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">Coursera / Udemy</div>
+          <div class="comp-tech">via DDG search queries</div>
+          <div class="comp-desc">Pathway planner searches these platforms for real course recommendations — no direct API, uses web search</div>
+          <span class="badge badge-ext">via DDG</span>
+        </div>
+
+        <div class="comp">
+          <div class="comp-name">spaCy NLP</div>
+          <div class="comp-tech">en_core_web_lg model</div>
+          <div class="comp-desc">Resume entity extraction — runs inside the Cloud Run container (bundled in Docker image, no external call)</div>
+          <span class="badge badge-local">bundled in container</span>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Request flow section -->
+  <div class="flow-section">
+    <div class="flow-title">Key Request Flows</div>
+    <div class="flow-grid">
+
+      <div class="flow-card">
+        <div class="flow-num">1</div>
+        <div class="flow-step-title">Resume Analysis</div>
+        <div class="flow-step-desc">Browser → POST /analyze (multipart PDF)<br>→ spaCy extracts skills<br>→ Gemini classifies + enriches<br>→ stored in BigQuery<br>→ returns candidate_id + trait profile<br>→ cached in localStorage as <code>analysisData</code></div>
+      </div>
+
+      <div class="flow-card">
+        <div class="flow-num">2</div>
+        <div class="flow-step-title">Enrichment Pipeline (~20–30 s)</div>
+        <div class="flow-step-desc">Browser → POST /enrich<br>Round 1 (parallel): MarketPulse + SalaryIntel<br>→ DDG search (2 queries each, parallel)<br>→ Gemini synthesis<br>Round 2 (parallel): AutoGap + CompanyRadar<br>→ cached as <code>reskillio_enrich_{id}</code></div>
+      </div>
+
+      <div class="flow-card">
+        <div class="flow-num">3</div>
+        <div class="flow-step-title">Pathway / 90-Day Plan (~15 s)</div>
+        <div class="flow-step-desc">Browser → GET /pathway/{id}<br>→ DDG searches Coursera + Udemy for each gap skill (parallel, 6 threads)<br>→ single Gemini call synthesises 3-phase roadmap<br>→ cached as <code>reskillio_pathway_{id}</code></div>
+      </div>
+
+      <div class="flow-card">
+        <div class="flow-num">4</div>
+        <div class="flow-step-title">Opportunity Radar (~30 s)</div>
+        <div class="flow-step-desc">Browser → POST /radar/search<br>→ Adzuna API fetches live jobs<br>→ Gemini normalises up to 25 jobs (8 parallel threads)<br>→ scored + ranked for candidate fit<br>→ shown on radar.html</div>
+      </div>
+
+      <div class="flow-card">
+        <div class="flow-num">5</div>
+        <div class="flow-step-title">JD Gap Analysis (~10 s)</div>
+        <div class="flow-step-desc">Browser → POST /gap<br>→ JD text matched against candidate profile in BigQuery<br>→ returns exact / transferable / missing skill breakdown<br>→ gap score computed<br>→ cached as <code>reskillio_persongap_{id}</code></div>
+      </div>
+
+      <div class="flow-card">
+        <div class="flow-num">6</div>
+        <div class="flow-step-title">Weekly Check-in (instant local)</div>
+        <div class="flow-step-desc">companion.html → slider values saved to localStorage immediately → POST /companion/checkin for backend sync → async digest generation triggered in background thread on Cloud Run</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Config table -->
+  <div class="config-section">
+    <div class="flow-title" style="margin-top:2rem">Cloud Run Service Configuration</div>
+    <table class="config-table">
+      <thead>
+        <tr><th>Setting</th><th>Value</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Service name</td><td><code>reskillio</code></td><td>Single service, all routes</td></tr>
+        <tr><td>Region</td><td><code>us-central1</code></td><td>Vertex AI co-location for low latency</td></tr>
+        <tr><td>Memory</td><td><code>4 GiB</code></td><td>spaCy lg model + parallel Gemini calls need headroom</td></tr>
+        <tr><td>CPU</td><td><code>2 vCPU</code></td><td>Supports ThreadPoolExecutor parallelism in enrichment pipeline</td></tr>
+        <tr><td>Min instances</td><td><code>1</code></td><td>Eliminates cold start 503s for users</td></tr>
+        <tr><td>Timeout</td><td><code>300 s</code></td><td>Enrichment pipeline can take ~20–30 s; radar ~30 s; narrative ~60 s</td></tr>
+        <tr><td>Auth</td><td>allow-unauthenticated</td><td>Public API consumed by GitHub Pages frontend</td></tr>
+        <tr><td>CI/CD trigger</td><td>Manual — <code>gcloud builds submit</code></td><td>No auto-deploy on push; deploy is a deliberate action</td></tr>
+        <tr><td>Build machine</td><td><code>E2_HIGHCPU_8</code></td><td>Faster Docker builds (spaCy model download is heavy)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Data stores -->
+  <div class="config-section">
+    <div class="flow-title" style="margin-top:2rem">Data Storage — What Lives Where</div>
+    <table class="config-table">
+      <thead>
+        <tr><th>Data</th><th>Storage</th><th>Key / Table</th><th>Lifetime</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Candidate skill profile</td><td>BigQuery</td><td><code>reskillio.candidate_profiles</code></td><td>Persistent</td></tr>
+        <tr><td>Raw skill extractions</td><td>BigQuery</td><td><code>reskillio.skill_extractions</code></td><td>Persistent</td></tr>
+        <tr><td>Intake questionnaire</td><td>BigQuery</td><td><code>reskillio.intake_profiles</code></td><td>Persistent</td></tr>
+        <tr><td>Industry vectors</td><td>BigQuery</td><td><code>reskillio.industry_vectors</code></td><td>Static (built once)</td></tr>
+        <tr><td>Weekly check-ins</td><td>BigQuery + localStorage</td><td><code>reskillio.companion_checkins</code></td><td>Persistent + browser</td></tr>
+        <tr><td>Analysis result</td><td>localStorage</td><td><code>analysisData</code></td><td>Browser session</td></tr>
+        <tr><td>Enrichment result</td><td>localStorage</td><td><code>reskillio_enrich_{id}</code></td><td>Browser (overwritten on re-run)</td></tr>
+        <tr><td>Pathway roadmap</td><td>localStorage</td><td><code>reskillio_pathway_{id}</code></td><td>Browser (overwritten on re-run)</td></tr>
+        <tr><td>JD gap result</td><td>localStorage</td><td><code>reskillio_persongap_{id}</code></td><td>Browser (overwritten per JD)</td></tr>
+        <tr><td>Application log</td><td>localStorage only</td><td><code>reskillio_apps_{id}</code></td><td>Browser (user clears)</td></tr>
+        <tr><td>Gap history (sparkline)</td><td>localStorage only</td><td><code>reskillio_gap_history_{id}</code></td><td>Grows weekly</td></tr>
+        <tr><td>Course completion</td><td>localStorage only</td><td><code>reskillio_courses_{id}</code></td><td>Browser</td></tr>
+        <tr><td>Action checkboxes</td><td>localStorage only</td><td><code>reskillio_actions_wN_{id}</code></td><td>Per week, browser</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+</body>
+</html>

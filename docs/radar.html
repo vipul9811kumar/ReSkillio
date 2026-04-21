@@ -11,7 +11,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --teal:#1D9E75;--teal-50:#E1F5EE;--teal-100:#9FE1CB;--teal-600:#0d9373;--teal-800:#085041;
-  --blue:#2563eb;--blue-50:#E6F1FB;--blue-100:#B5D4F4;--blue-800:#0C447C;
+  --blue:#2563eb;--blue-50:#E6F1FB;--blue-100:#B5D4F4;--blue-600:#1d4ed8;--blue-800:#0C447C;
   --purple:#534AB7;--purple-50:#EEEDFE;--purple-100:#CECBF6;--purple-800:#3C3489;
   --amber:#BA7517;--amber-50:#FAEEDA;--amber-100:#FAC775;--amber-800:#633806;
   --coral:#993C1D;--coral-50:#FAECE7;--coral-100:#F5C4B3;--coral-800:#712B13;
@@ -28,10 +28,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop
 .nav-inner{max-width:900px;margin:0 auto;padding:0 20px;height:var(--nav-h);display:flex;align-items:center;gap:24px}
 .nav-logo{font-family:var(--font-serif);font-size:20px;color:var(--ink);text-decoration:none}
 .nav-logo span{color:var(--teal)}
-.nav-links{display:flex;gap:20px;list-style:none;flex:1}
+.nav-links{display:flex;gap:20px;list-style:none;flex:1;align-items:center}
 .nav-links a{font-size:14px;color:var(--gray-600);text-decoration:none;transition:color .15s}
 .nav-links a:hover{color:var(--ink)}
 .nav-links a.active{color:var(--ink);font-weight:500}
+/* ① saved badge in nav */
+.nav-saved-badge{display:none;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--teal-50);color:var(--teal-600);border:0.5px solid var(--teal-100);white-space:nowrap;cursor:pointer}
 .page{max-width:900px;margin:0 auto;padding:28px 20px 60px}
 .page-header{padding:0 0 20px;border-bottom:0.5px solid var(--border);margin-bottom:24px}
 .ph-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-600);background:var(--teal-50);border:0.5px solid var(--teal-100);border-radius:99px;padding:3px 10px;margin-bottom:10px}
@@ -84,17 +86,30 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop
 .sp-have{font-size:11px;padding:3px 8px;border-radius:99px;background:var(--teal-50);color:var(--teal-600);border:0.5px solid var(--teal-100)}
 .sp-gap{font-size:11px;padding:3px 8px;border-radius:99px;background:var(--gray-100);color:var(--gray-600);border:0.5px solid var(--border)}
 .sp-label{font-size:10px;color:var(--gray-400);margin-right:4px;font-weight:500;align-self:center}
-.oc-actions{display:flex;gap:8px;flex-wrap:wrap}
+.oc-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .btn-primary-sm{font-size:12px;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;border:none;cursor:pointer;font-family:var(--font-sans);font-weight:500;transition:opacity .15s}
 .btn-primary-sm:hover{opacity:.88}
-.btn-secondary-sm{font-size:12px;padding:7px 14px;border-radius:8px;border:0.5px solid var(--border-md);background:transparent;color:var(--gray-600);cursor:pointer;transition:background .15s}
+.btn-secondary-sm{font-size:12px;padding:7px 14px;border-radius:8px;border:0.5px solid var(--border-md);background:transparent;color:var(--gray-600);cursor:pointer;transition:background .15s;font-family:var(--font-sans)}
 .btn-secondary-sm:hover{background:var(--surface-2)}
 .btn-apply-sm{font-size:12px;padding:7px 14px;border-radius:8px;border:0.5px solid var(--blue-100);background:var(--blue-50);color:var(--blue-600);cursor:pointer;text-decoration:none;font-weight:500;transition:background .15s;display:inline-flex;align-items:center;gap:4px}
 .btn-apply-sm:hover{background:var(--blue-100)}
+/* ③ fallback search button */
+.btn-search-sm{font-size:12px;padding:7px 14px;border-radius:8px;border:0.5px solid var(--border-md);background:var(--surface);color:var(--gray-600);text-decoration:none;font-weight:500;transition:background .15s;display:inline-flex;align-items:center;gap:4px}
+.btn-search-sm:hover{background:var(--surface-2);color:var(--ink)}
+/* ② save toast inline */
+.save-toast{font-size:12px;color:var(--teal-600);display:none;align-items:center;gap:6px;padding:0 4px}
+.save-toast a{color:var(--teal-600);font-weight:500;text-decoration:underline;text-underline-offset:2px}
+.save-toast.visible{display:flex}
 .expanded-section{display:none;border-top:0.5px solid var(--border);padding:16px 20px}
 .expanded-section.open{display:block}
 .es-title{font-size:11px;font-weight:500;color:var(--gray-600);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
-.pitch-box{background:var(--surface-2);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:12px 14px;font-family:var(--font-serif);font-size:15px;line-height:1.7;color:var(--ink);margin-bottom:14px}
+/* pitch box row: text + copy button */
+.pitch-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:14px}
+.pitch-box{flex:1;background:var(--surface-2);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:12px 14px;font-family:var(--font-serif);font-size:15px;line-height:1.7;color:var(--ink)}
+/* ① copy pitch button */
+.btn-copy-pitch{flex-shrink:0;font-size:11px;padding:7px 12px;border-radius:8px;border:0.5px solid var(--border-md);background:var(--surface);color:var(--gray-600);cursor:pointer;font-family:var(--font-sans);font-weight:500;transition:all .15s;align-self:flex-start;margin-top:2px}
+.btn-copy-pitch:hover{background:var(--teal-50);color:var(--teal-600);border-color:var(--teal-100)}
+.btn-copy-pitch.copied{background:var(--teal-50);color:var(--teal-600);border-color:var(--teal-100)}
 .engagement-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .eg-item{background:var(--surface-2);border-radius:6px;padding:10px 12px;border:0.5px solid var(--border)}
 .eg-label{font-size:10px;color:var(--gray-400);margin-bottom:2px}
@@ -105,6 +120,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop
 .sl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .sl-item{font-size:13px;color:var(--gray-600);line-height:1.5}
 .sl-item strong{font-weight:600;color:var(--ink);display:block;margin-bottom:2px}
+/* ④ bottom CTA strip */
+.bottom-cta{display:none;margin-top:28px;background:linear-gradient(135deg,var(--teal-50),var(--blue-50));border:0.5px solid var(--teal-100);border-radius:16px;padding:24px 28px;text-align:center}
+.bottom-cta.visible{display:block}
+.bc-title{font-family:var(--font-serif);font-size:20px;color:var(--ink);margin-bottom:6px}
+.bc-sub{font-size:14px;color:var(--gray-600);margin-bottom:18px;line-height:1.6}
+.bc-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn-cta-primary{font-size:14px;padding:11px 24px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;border:none;cursor:pointer;font-family:var(--font-sans);font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:opacity .15s}
+.btn-cta-primary:hover{opacity:.88}
+.btn-cta-secondary{font-size:14px;padding:10px 22px;border-radius:10px;border:0.5px solid var(--border-md);background:var(--surface);color:var(--gray-600);cursor:pointer;font-family:var(--font-sans);font-weight:500;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:background .15s}
+.btn-cta-secondary:hover{background:var(--surface-2);color:var(--ink)}
 .loading-state{text-align:center;padding:48px 20px;background:var(--surface);border-radius:16px;border:0.5px solid var(--border)}
 .ls-spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -114,17 +139,21 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.92);backdrop
   .stats-row{grid-template-columns:1fr 1fr}
   .oc-meta-row{grid-template-columns:1fr 1fr}
   .sl-grid{grid-template-columns:1fr}
+  .engagement-grid{grid-template-columns:1fr}
   nav .nav-links{display:none}
   .nav-hamburger{display:flex}
+  .pitch-row{flex-direction:column}
+  .btn-copy-pitch{align-self:stretch;text-align:center}
+  .bc-actions{flex-direction:column;align-items:center}
 }
 .nav-hamburger{display:none;background:none;border:none;cursor:pointer;padding:6px;margin-left:auto;flex-direction:column;gap:5px}
 .nav-hamburger span{display:block;width:22px;height:2px;background:var(--ink);border-radius:1px;transition:all .25s}
 nav.nav-open .nav-hamburger span:nth-child(1){transform:translateY(7px) rotate(45deg)}
 nav.nav-open .nav-hamburger span:nth-child(2){opacity:0}
 nav.nav-open .nav-hamburger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
-.nav-mobile-panel{display:none;position:fixed;top:var(--nav-h);left:0;right:0;background:#fff;border-bottom:0.5px solid var(--bd);box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:9999;padding:8px 0 16px}
+.nav-mobile-panel{display:none;position:fixed;top:var(--nav-h);left:0;right:0;background:#fff;border-bottom:0.5px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:9999;padding:8px 0 16px}
 nav.nav-open .nav-mobile-panel{display:block}
-.nav-mobile-panel a{display:block;padding:12px 24px;font-size:15px;color:var(--ink);text-decoration:none;border-bottom:0.5px solid var(--bd);transition:background .12s}
+.nav-mobile-panel a{display:block;padding:12px 24px;font-size:15px;color:var(--ink);text-decoration:none;border-bottom:0.5px solid var(--border);transition:background .12s}
 .nav-mobile-panel a:last-child{border-bottom:none}
 .nav-mobile-panel a:hover{background:var(--gray-50)}
 .nav-mobile-panel a.active{color:var(--teal);font-weight:500}
@@ -136,11 +165,12 @@ nav.nav-open .nav-mobile-panel{display:block}
   <div class="nav-inner">
     <a class="nav-logo" href="index.html">Reskil<span>lio</span></a>
     <ul class="nav-links">
-      <li><a href="index.html">Home</a></li>
       <li><a href="#" id="nav-analysis">← Analysis</a></li>
       <li><a href="#" id="nav-companion">Weekly Digest</a></li>
       <li><a href="radar.html" class="active">Opportunity Radar</a></li>
       <li><a href="pricing.html">Pricing</a></li>
+      <!-- ⑤ saved count badge -->
+      <li><span class="nav-saved-badge" id="saved-badge" title="View saved in Weekly Digest"></span></li>
     </ul>
     <button class="nav-hamburger" onclick="this.closest('nav').classList.toggle('nav-open')" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -148,9 +178,9 @@ nav.nav-open .nav-mobile-panel{display:block}
     <div class="nav-mobile-panel">
       <a href="index.html">Home</a>
       <a href="#" id="mob-analysis">← Analysis</a>
-      <a href="pricing.html">Pricing</a>
       <a href="#" id="mob-companion">Weekly Digest</a>
       <a href="radar.html" class="active">Opportunity Radar</a>
+      <a href="pricing.html">Pricing</a>
     </div>
   </div>
 </nav>
@@ -196,6 +226,16 @@ nav.nav-open .nav-mobile-panel{display:block}
     </div>
   </div>
 
+  <!-- ④ bottom CTA strip — shown after first save -->
+  <div class="bottom-cta" id="bottom-cta">
+    <div class="bc-title">Ready to take action?</div>
+    <div class="bc-sub" id="bc-sub">You've saved opportunities — your Weekly Digest will track your progress and remind you to follow up each week.</div>
+    <div class="bc-actions">
+      <a href="#" id="bc-digest-btn" class="btn-cta-primary">Go to Weekly Digest &rarr;</a>
+      <a href="#" id="bc-analysis-btn" class="btn-cta-secondary">Back to my analysis</a>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -203,13 +243,23 @@ const API = 'https://reskillio-10933517215.us-central1.run.app';
 const params      = new URLSearchParams(location.search);
 const candidateId = params.get('candidate_id') || '';
 
+let savedCount = 0;
+
 // Wire nav links with candidate_id preserved
 (function() {
-  const cid = encodeURIComponent(candidateId);
+  const cid  = encodeURIComponent(candidateId);
   const aUrl = candidateId ? `app.html?candidate_id=${cid}` : 'app.html';
   const cUrl = candidateId ? `companion.html?candidate_id=${cid}` : 'companion.html';
   ['nav-analysis','mob-analysis'].forEach(id => { const el = document.getElementById(id); if(el) el.href = aUrl; });
   ['nav-companion','mob-companion'].forEach(id => { const el = document.getElementById(id); if(el) el.href = cUrl; });
+  // ④ wire bottom CTA links
+  const bcDigest   = document.getElementById('bc-digest-btn');
+  const bcAnalysis = document.getElementById('bc-analysis-btn');
+  if (bcDigest)   bcDigest.href   = cUrl;
+  if (bcAnalysis) bcAnalysis.href = aUrl;
+  // ⑤ wire saved badge click → companion
+  const badge = document.getElementById('saved-badge');
+  if (badge) badge.onclick = () => { window.location.href = cUrl; };
 })();
 
 async function loadRadar() {
@@ -273,28 +323,32 @@ function renderCard(container, match, isTop) {
   const reasons   = (match.match_reasons||[]).map(r=>`<div class="mr-item"><div class="mr-dot"></div>${r}</div>`).join('')
     || '<div class="mr-item"><div class="mr-dot"></div>Strong alignment with your skill profile and identity</div>';
 
-  const rate      = opp.rate_floor ? `$${Math.round(opp.rate_floor)}${opp.rate_ceiling?'–$'+Math.round(opp.rate_ceiling):''}/${opp.rate_unit}` : 'TBD';
-  const commit    = opp.commitment_days_per_week ? `${opp.commitment_days_per_week} days/wk${opp.duration_months?' · '+opp.duration_months+' mo':''}` : '—';
-  const location  = opp.remote_ok ? 'Remote OK' : (opp.location_required||'On-site');
+  const rate   = opp.rate_floor ? `$${Math.round(opp.rate_floor)}${opp.rate_ceiling?'–$'+Math.round(opp.rate_ceiling):''}/${opp.rate_unit}` : 'TBD';
+  const commit = opp.commitment_days_per_week ? `${opp.commitment_days_per_week} days/wk${opp.duration_months?' · '+opp.duration_months+' mo':''}` : '—';
+  const loc    = opp.remote_ok ? 'Remote OK' : (opp.location_required||'On-site');
 
   const haveSkills = (match.skill_detail.matched_skills||[]).slice(0,4).map(s=>`<span class="sp-have">${s}</span>`).join('');
   const missSkills = (match.skill_detail.missing_skills||[]).slice(0,2).map(s=>`<span class="sp-gap">${s}</span>`).join('');
-  const missRow   = missSkills ? `<span class="sp-label" style="margin-left:4px">Missing:</span>${missSkills}` : '';
+  const missRow    = missSkills ? `<span class="sp-label" style="margin-left:4px">Missing:</span>${missSkills}` : '';
 
   const pitchText = match.pitch_text || `Your experience directly addresses what ${opp.company_name} needs — ${opp.required_skills[0]||'operational leadership'} at scale.`;
   const tipsHtml  = match.engagement_tips&&match.engagement_tips.length
     ? `<div class="es-title" style="margin-top:14px">Engagement tips</div><div class="engagement-grid">${match.engagement_tips.map(t=>`<div class="eg-item"><div class="eg-label">${t.label}</div><div class="eg-value">${t.value}</div></div>`).join('')}</div>` : '';
   const introHtml = match.intro_angle ? `<div class="intro-card"><strong>Warm intro angle:</strong> ${match.intro_angle}</div>` : '';
 
-  const postingUrl  = opp.source_url || opp.company_url || null;
-  const applyBtn    = postingUrl
+  // ③ apply / search fallback
+  const postingUrl = opp.source_url || opp.company_url || null;
+  const searchQ    = encodeURIComponent(`${opp.role_title} ${opp.company_name} fractional consulting`);
+  const actionLink = postingUrl
     ? `<a class="btn-apply-sm" href="${postingUrl}" target="_blank" rel="noopener noreferrer">View JD &amp; Apply ↗</a>`
-    : '';
+    : `<a class="btn-search-sm" href="https://www.linkedin.com/search/results/all/?keywords=${searchQ}" target="_blank" rel="noopener noreferrer">Search on LinkedIn ↗</a>`;
 
   const card = document.createElement('div');
   card.className = `opp-card${isTop?' top-match':''}`;
   card.dataset.type   = opp.engagement_type;
   card.dataset.signal = opp.hiring_signal;
+  // Escape pitch text for data attribute (strip HTML-unsafe chars)
+  const safePitch = pitchText.replace(/"/g,'&quot;');
   card.innerHTML = `
     <div class="oc-header">
       <div class="oc-logo" style="background:${bg};color:${fg}">${initials}</div>
@@ -311,7 +365,7 @@ function renderCard(container, match, isTop) {
       <div class="oc-meta-row">
         <div class="oc-meta-item"><div class="omi-label">Rate range</div><div class="omi-value">${rate}</div></div>
         <div class="oc-meta-item"><div class="omi-label">Commitment</div><div class="omi-value">${commit}</div></div>
-        <div class="oc-meta-item"><div class="omi-label">Location</div><div class="omi-value">${location}</div></div>
+        <div class="oc-meta-item"><div class="omi-label">Location</div><div class="omi-value">${loc}</div></div>
       </div>
       <div class="skill-match-bar">
         <div class="smb-head"><span>Skill overlap</span><span style="font-weight:600;color:var(--teal)">${Math.round(match.skill_detail.overlap_pct)}%</span></div>
@@ -322,13 +376,17 @@ function renderCard(container, match, isTop) {
       </div>
       <div class="oc-actions">
         <button class="btn-primary-sm" onclick="togglePitch(this)">See outreach pitch &rarr;</button>
-        ${applyBtn}
-        <button class="btn-secondary-sm" onclick="saveMatch('${match.match_id}',this)">Save</button>
+        ${actionLink}
+        <button class="btn-secondary-sm save-btn" onclick="saveMatch('${match.match_id}',this)">Save</button>
+        <span class="save-toast" id="toast-${match.match_id}">✓ Saved &mdash; <a href="#" class="toast-digest-link">track in Weekly Digest &rarr;</a></span>
       </div>
     </div>
-    <div class="expanded-section">
+    <div class="expanded-section" data-pitch="${safePitch}">
       <div class="es-title">Your personalised outreach pitch</div>
-      <div class="pitch-box">${pitchText}</div>
+      <div class="pitch-row">
+        <div class="pitch-box">${pitchText}</div>
+        <button class="btn-copy-pitch" onclick="copyPitch(this)" title="Copy to clipboard">Copy pitch</button>
+      </div>
       ${tipsHtml}${introHtml}
     </div>`;
   container.appendChild(card);
@@ -338,8 +396,30 @@ function togglePitch(btn) {
   const section = btn.closest('.opp-card').querySelector('.expanded-section');
   const isOpen  = section.classList.contains('open');
   document.querySelectorAll('.expanded-section').forEach(s=>s.classList.remove('open'));
-  document.querySelectorAll('.btn-primary-sm').forEach(b=>{if(b.textContent.includes('Hide'))b.textContent='See outreach pitch \u2192';});
-  if (!isOpen) { section.classList.add('open'); btn.textContent='Hide pitch \u2191'; }
+  document.querySelectorAll('.btn-primary-sm').forEach(b=>{if(b.textContent.includes('Hide'))b.textContent='See outreach pitch →';});
+  if (!isOpen) { section.classList.add('open'); btn.textContent='Hide pitch ↑'; }
+}
+
+// ① copy pitch to clipboard
+function copyPitch(btn) {
+  const pitchText = btn.closest('.expanded-section').dataset.pitch || btn.closest('.expanded-section').querySelector('.pitch-box').textContent;
+  navigator.clipboard.writeText(pitchText).then(() => {
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy pitch'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = pitchText;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy pitch'; btn.classList.remove('copied'); }, 2000);
+  });
 }
 
 function filter(type, el) {
@@ -355,13 +435,41 @@ function filter(type, el) {
 }
 
 async function saveMatch(matchId, btn) {
-  btn.textContent='Saved \u2713'; btn.disabled=true;
+  btn.textContent = 'Saving…'; btn.disabled = true;
+
   try {
-    await fetch(`${API}/radar/match/${matchId}/save`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({candidate_id:candidateId,match_id:matchId,status:'saved'}),
+    await fetch(`${API}/radar/match/${matchId}/save`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({candidate_id: candidateId, match_id: matchId, status: 'saved'}),
     });
-  } catch(e){console.error('[radar/save]',e);}
+  } catch(e) { console.error('[radar/save]', e); }
+
+  // ② show inline save toast with digest link
+  btn.style.display = 'none';
+  const toast = document.getElementById(`toast-${matchId}`);
+  if (toast) {
+    const cid = encodeURIComponent(candidateId);
+    const cUrl = candidateId ? `companion.html?candidate_id=${cid}` : 'companion.html';
+    const link = toast.querySelector('.toast-digest-link');
+    if (link) link.href = cUrl;
+    toast.classList.add('visible');
+  }
+
+  // ⑤ increment nav badge
+  savedCount++;
+  const badge = document.getElementById('saved-badge');
+  if (badge) {
+    badge.textContent = `${savedCount} saved`;
+    badge.style.display = 'inline-flex';
+  }
+
+  // ④ reveal bottom CTA after first save
+  const cta = document.getElementById('bottom-cta');
+  if (cta) {
+    cta.classList.add('visible');
+    const sub = document.getElementById('bc-sub');
+    if (sub) sub.textContent = `You've saved ${savedCount} ${savedCount===1?'opportunity':'opportunities'} — your Weekly Digest will track your progress and remind you to follow up each week.`;
+  }
 }
 
 loadRadar();

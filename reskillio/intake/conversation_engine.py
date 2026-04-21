@@ -307,17 +307,8 @@ class IntakeConversationEngine:
         q_num = session.current_question
         q = _QUESTIONS[q_num]
 
-        # 1) Extract structured data from user message
-        extracted = _call_gemini_extract(
-            user_message, q["extract_prompt"], self.project_id, self.region
-        )
-        session.extracted.update(extracted)
-        logger.info(f"[intake] Q{q_num} extracted: {extracted}")
-
-        # 2) Generate warm chat reply
+        # Build chat history (used by both calls below)
         history = [{"role": m.role, "content": m.content} for m in session.messages]
-
-        # If more questions remain, prime the reply to transition smoothly
         next_q_num = q_num + 1
         if next_q_num <= 5:
             next_opener = _QUESTIONS[next_q_num]["opener"]
@@ -331,7 +322,22 @@ class IntakeConversationEngine:
         else:
             history_with_hint = history
 
-        reply = _call_gemini_chat(history_with_hint, self.project_id, self.region)
+        # Run extract + chat in parallel — they're independent
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            extract_fut = pool.submit(
+                _call_gemini_extract,
+                user_message, q["extract_prompt"], self.project_id, self.region,
+            )
+            chat_fut = pool.submit(
+                _call_gemini_chat,
+                history_with_hint, self.project_id, self.region,
+            )
+            extracted = extract_fut.result()
+            reply     = chat_fut.result()
+
+        session.extracted.update(extracted)
+        logger.info(f"[intake] Q{q_num} extracted: {extracted}")
 
         # Fallback if Gemini unavailable
         if not reply:

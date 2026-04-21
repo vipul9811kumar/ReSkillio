@@ -67,11 +67,12 @@ async def start_intake(req: IntakeStartRequest) -> IntakeStartResponse:
     summary="Send a user message and get the next intake reply",
 )
 async def intake_turn(req: IntakeTurnRequest) -> IntakeTurnResponse:
+    import asyncio
     engine = _get_engine()
     try:
-        reply, question_n, suggestions, completed, profile = engine.process_turn(
-            session_id=req.session_id,
-            user_message=req.message,
+        loop = asyncio.get_event_loop()
+        reply, question_n, suggestions, completed, profile = await loop.run_in_executor(
+            None, engine.process_turn, req.session_id, req.message
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

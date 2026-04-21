@@ -580,20 +580,24 @@ function showCompletion(profile) {
 // ── API calls ─────────────────────────────────────────────────────────────────
 
 async function startIntake() {
+  showTyping();
   try {
     const res = await fetch(`${API}/intake/start`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ candidate_id: candidateId }),
+      signal: AbortSignal.timeout(20000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     sessionId = data.session_id;
+    removeTyping();
     addMessage('coach', data.message);
     setSuggestions(data.suggestions || []);
     updateQLabel(data.question_n, DEMO_FLOW[0].theme);
   } catch (e) {
     console.warn('API unavailable, switching to demo mode:', e);
+    removeTyping();
     demoMode = true;
     demoBanner.style.display = 'block';
     addMessage('coach', DEMO_FLOW[0].message);
@@ -636,7 +640,20 @@ async function sendMessage(text) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ session_id: sessionId, message: userText }),
+        signal: AbortSignal.timeout(30000),
       });
+
+      // Session expired (Cloud Run restarted) — restart cleanly
+      if (res.status === 404) {
+        removeTyping();
+        addMessage('coach', "Your session expired — let's start fresh from where we left off.");
+        sessionId = null;
+        isWaiting = false;
+        sendBtn.disabled = false;
+        await startIntake();
+        return;
+      }
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       removeTyping();
@@ -654,7 +671,10 @@ async function sendMessage(text) {
     }
   } catch (e) {
     removeTyping();
-    addMessage('coach', "Sorry, something went wrong. Please try again.");
+    const msg = e.name === 'TimeoutError'
+      ? "That's taking longer than expected — please try again."
+      : "Sorry, something went wrong. Please try again.";
+    addMessage('coach', msg);
     console.error(e);
   }
 

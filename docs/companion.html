@@ -64,8 +64,8 @@ nav.nav-open .nav-mobile-panel { display: block; }
 .dh-sub { font-size: 15px; color: var(--gray-600); line-height: 1.6; }
 
 /* ── Week tabs ── */
-.week-tabs { display: flex; gap: 0; margin-top: 18px; border: 0.5px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--gray-50); }
-.wtab { flex: 1; padding: 8px 4px; text-align: center; font-size: 12px; color: var(--gray-400); border-right: 0.5px solid var(--border); cursor: pointer; transition: background .15s; user-select: none; }
+.week-tabs { display: flex; gap: 0; margin-top: 18px; border: 0.5px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--gray-50); overflow-x: auto; }
+.wtab { flex: 1; min-width: 44px; padding: 8px 4px; text-align: center; font-size: 12px; color: var(--gray-400); border-right: 0.5px solid var(--border); cursor: pointer; transition: background .15s; user-select: none; white-space: nowrap; }
 .wtab:last-child { border-right: none; }
 .wtab.done { color: var(--teal-600); }
 .wtab.on { background: var(--surface); color: var(--ink); font-weight: 600; }
@@ -112,6 +112,10 @@ nav.nav-open .nav-mobile-panel { display: block; }
 .ci-pct { font-size: 14px; font-weight: 600; font-family: var(--font-mono); }
 .ci-bar-bg { width: 60px; height: 4px; background: var(--gray-200); border-radius: 2px; overflow: hidden; margin-top: 4px; }
 .ci-bar-f { height: 100%; border-radius: 2px; }
+.course-toggle { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 0.5px solid var(--border-md); background: var(--surface); cursor: pointer; transition: all .15s; white-space: nowrap; }
+.ct-todo { color: var(--gray-600); }
+.ct-todo:hover { background: var(--teal-50); color: var(--teal-600); border-color: var(--teal-100); }
+.ct-done { background: var(--teal-50); color: var(--teal-600); border-color: var(--teal-100); }
 
 /* ── Applications ── */
 .apps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
@@ -122,7 +126,19 @@ nav.nav-open .nav-mobile-panel { display: block; }
 .s-applied   { background: var(--blue-50);  color: #1e3a8a; }
 .s-interview { background: var(--teal-50);  color: var(--teal-600); }
 .s-rejected  { background: var(--red-50);   color: #7f1d1d; }
+.s-offer     { background: var(--green-50); color: var(--green-800); }
+.s-screening { background: var(--amber-50); color: var(--amber-800); }
 .apc-date { font-size: 11px; color: var(--gray-400); margin-top: 5px; }
+.apc-del { font-size: 11px; color: var(--gray-400); float: right; cursor: pointer; transition: color .12s; }
+.apc-del:hover { color: #b91c1c; }
+.btn-add-app { font-size: 13px; color: var(--teal); background: none; border: 0.5px dashed var(--teal-100); border-radius: var(--r-md); padding: 8px 14px; cursor: pointer; transition: background .12s; width: 100%; margin-top: 4px; }
+.btn-add-app:hover { background: var(--teal-50); }
+.add-app-form { display: none; margin-top: 12px; padding: 14px; background: var(--gray-50); border: 0.5px solid var(--border); border-radius: var(--r-md); }
+.app-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.app-input { width: 100%; padding: 8px 10px; border: 0.5px solid var(--border-md); border-radius: var(--r-md); font-family: var(--font-sans); font-size: 14px; color: var(--ink); background: var(--surface); outline: none; }
+.app-input:focus { border-color: var(--teal); }
+.btn-log-app { font-size: 14px; font-weight: 600; color: #fff; background: var(--teal); border: none; border-radius: var(--r-md); padding: 9px 18px; cursor: pointer; transition: opacity .15s; }
+.btn-log-app:hover { opacity: .85; }
 
 /* ── Market ── */
 .market-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
@@ -168,11 +184,13 @@ input[type="range"] { width: 100%; accent-color: var(--teal); }
 .btn-primary:disabled { opacity: .7; cursor: not-allowed; transform: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .save-success { display: none; text-align: center; font-size: 15px; color: var(--teal); font-weight: 500; padding: 10px; }
+.checkin-saved-banner { background: var(--teal-50); border: 0.5px solid var(--teal-100); border-radius: var(--r-md); padding: 12px 16px; margin-bottom: 14px; font-size: 14px; color: var(--teal-800); display: none; }
 
 @media (max-width: 520px) {
   .stat-row { grid-template-columns: repeat(2,1fr); }
   .apps-grid { grid-template-columns: 1fr; }
   .slider-grid { grid-template-columns: 1fr; }
+  .app-inputs { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -182,17 +200,17 @@ input[type="range"] { width: 100%; accent-color: var(--teal); }
   <div class="nav-inner">
     <a href="index.html" class="nav-logo">ReSkillio</a>
     <ul class="nav-links">
-      <li><a href="#" id="nav-analysis">← Analysis</a></li>
+      <li><a href="#" id="nav-analysis">&#8592; Analysis</a></li>
       <li><a href="#" id="nav-radar">Opportunity Radar</a></li>
       <li><a href="companion.html" class="active">Weekly Digest</a></li>
       <li><a href="pricing.html">Pricing</a></li>
     </ul>
-    <a href="#" id="nav-cta" class="nav-back">← Analysis</a>
+    <a href="#" id="nav-cta" class="nav-back">&#8592; Analysis</a>
     <button class="nav-hamburger" onclick="this.closest('nav').classList.toggle('nav-open')" aria-label="Menu">
       <span></span><span></span><span></span>
     </button>
     <div class="nav-mobile-panel">
-      <a href="#" id="mob-analysis">← Analysis</a>
+      <a href="#" id="mob-analysis">&#8592; Analysis</a>
       <a href="#" id="mob-radar">Opportunity Radar</a>
       <a href="companion.html" class="active">Weekly Digest</a>
       <a href="pricing.html">Pricing</a>
@@ -205,324 +223,349 @@ input[type="range"] { width: 100%; accent-color: var(--teal); }
   <!-- Header -->
   <div class="dh">
     <div class="dh-meta">
-      <span id="digest-date">Monday, April 21, 2026 · Week 3 of your rebound</span>
+      <span id="digest-date"></span>
       <span class="dh-badge">Weekly digest</span>
     </div>
-    <div class="dh-greeting" id="digest-greeting">Good morning, Marcus.</div>
-    <div class="dh-sub" id="digest-sub">Your gap score moved again this week. Here is what changed, what to do next, and one thing the market is doing that you should know about.</div>
-    <div class="week-tabs" id="week-tabs">
-      <div class="wtab done" onclick="setWeek(1)">Wk 1</div>
-      <div class="wtab done" onclick="setWeek(2)">Wk 2</div>
-      <div class="wtab on"   onclick="setWeek(3)">Wk 3</div>
-      <div class="wtab"      onclick="setWeek(4)">Wk 4</div>
-      <div class="wtab"      onclick="setWeek(5)">Wk 5</div>
-      <div class="wtab"      onclick="setWeek(6)">Wk 6</div>
-    </div>
+    <div class="dh-greeting" id="digest-greeting"></div>
+    <div class="dh-sub" id="digest-sub"></div>
+    <div class="week-tabs" id="week-tabs"></div>
   </div>
 
   <!-- At a glance -->
   <div class="section">
     <div class="sh">This week at a glance</div>
     <div class="stat-row">
-      <div class="stat-box"><div class="sb-num sn-teal" id="stat-gap">81</div><div class="sb-lab">Gap score<br>vs target role</div></div>
-      <div class="stat-box"><div class="sb-num sn-blue" id="stat-course">34%</div><div class="sb-lab">Course<br>completion</div></div>
-      <div class="stat-box"><div class="sb-num sn-amber" id="stat-apps">2</div><div class="sb-lab">Applications<br>sent</div></div>
-      <div class="stat-box"><div class="sb-num sn-teal" id="stat-interviews">1</div><div class="sb-lab">Interview<br>scheduled</div></div>
+      <div class="stat-box"><div class="sb-num sn-teal" id="stat-gap">—</div><div class="sb-lab">Gap score<br>vs target role</div></div>
+      <div class="stat-box"><div class="sb-num sn-blue" id="stat-course">—</div><div class="sb-lab">Hours on<br>courses</div></div>
+      <div class="stat-box"><div class="sb-num sn-amber" id="stat-apps">—</div><div class="sb-lab">Applications<br>sent</div></div>
+      <div class="stat-box"><div class="sb-num sn-teal" id="stat-interviews">—</div><div class="sb-lab">Interviews<br>scheduled</div></div>
     </div>
   </div>
 
   <!-- Gap score -->
-  <div class="section">
-    <div class="sh">Gap score — progress over 3 weeks</div>
+  <div class="section" id="gap-section">
+    <div class="sh" id="gap-section-title">Gap score — Week 1 baseline</div>
     <div class="gap-card">
       <div class="gc-header">
-        <div class="gc-score" id="gc-score">81</div>
-        <div class="gc-delta" id="gc-delta">+7 this week</div>
-        <div class="gc-role" id="gc-role">vs Operations Analyst</div>
+        <div class="gc-score" id="gc-score">—</div>
+        <div class="gc-delta" id="gc-delta" style="background:var(--gray-100);color:var(--gray-600)">Week 1 baseline</div>
+        <div class="gc-role" id="gc-role"></div>
       </div>
       <div class="sparkline-wrap"><canvas id="sparkline" width="560" height="52"></canvas></div>
-      <div class="sparkline-labels">
-        <span>Week 1 · 67</span><span>Week 2 · 74</span><span>Week 3 · 81</span><span>Target · 90</span>
-      </div>
+      <div class="sparkline-labels" id="sparkline-labels"></div>
     </div>
-    <div class="sh" style="margin-top:16px">Skills closing — week over week</div>
+    <div class="sh" style="margin-top:16px">Skills to develop — from your gap analysis</div>
     <div class="skill-delta-list" id="skill-delta-list">
-      <div class="sdl-item">
-        <span class="sdl-name">Python (data scripts)</span>
-        <div class="sdl-bar-bg"><div class="sdl-bar-f" style="width:34%;background:var(--teal)"></div></div>
-        <span class="sdl-pct" style="color:var(--teal)">34%</span>
-        <span class="sdl-tag tag-closing">closing</span>
-      </div>
-      <div class="sdl-item">
-        <span class="sdl-name">Tableau / Power BI</span>
-        <div class="sdl-bar-bg"><div class="sdl-bar-f" style="width:0%;background:var(--gray-400)"></div></div>
-        <span class="sdl-pct" style="color:var(--gray-400)">0%</span>
-        <span class="sdl-tag tag-open">not started</span>
-      </div>
-      <div class="sdl-item">
-        <span class="sdl-name">SQL (advanced)</span>
-        <div class="sdl-bar-bg"><div class="sdl-bar-f" style="width:60%;background:var(--blue)"></div></div>
-        <span class="sdl-pct" style="color:var(--blue)">60%</span>
-        <span class="sdl-tag tag-new">bonus skill</span>
-      </div>
+      <div style="font-size:14px;color:var(--gray-400);padding:8px 0">Run your full analysis to see skill-level gaps here.</div>
     </div>
   </div>
 
   <!-- Courses -->
   <div class="section">
-    <div class="sh">Course progress</div>
-    <div class="course-list">
-      <div class="course-item">
-        <div class="ci-icon" style="background:var(--blue-50)">📘</div>
-        <div>
-          <div class="ci-title">Python for Everybody</div>
-          <div class="ci-sub">Coursera · University of Michigan · Week 2 of 6</div>
-        </div>
-        <div class="ci-prog-wrap">
-          <div class="ci-pct" style="color:var(--teal)">34%</div>
-          <div class="ci-bar-bg"><div class="ci-bar-f" style="width:34%;background:var(--teal)"></div></div>
-        </div>
-      </div>
-      <div class="course-item" style="opacity:.5">
-        <div class="ci-icon" style="background:var(--gray-100)">📊</div>
-        <div>
-          <div class="ci-title" style="color:var(--gray-400)">Tableau A-Z</div>
-          <div class="ci-sub">Udemy · Starts Week 5</div>
-        </div>
-        <div class="ci-prog-wrap">
-          <div class="ci-pct" style="color:var(--gray-400)">0%</div>
-          <div class="ci-bar-bg"><div class="ci-bar-f" style="width:0%;background:var(--gray-400)"></div></div>
-        </div>
-      </div>
+    <div class="sh" id="course-section-title">Course progress</div>
+    <div class="course-list" id="course-list">
+      <div style="font-size:14px;color:var(--gray-400);padding:8px 0">Complete your pathway analysis to get personalised course recommendations.</div>
     </div>
   </div>
 
   <!-- Applications -->
   <div class="section">
     <div class="sh">Applications</div>
-    <div class="apps-grid">
-      <div class="app-card">
-        <div class="apc-company">FleetIQ</div>
-        <div class="apc-role">Operations Analyst</div>
-        <div class="apc-status s-interview">● Interview Thu 10am</div>
-        <div class="apc-date">Applied Apr 14</div>
+    <div class="apps-grid" id="apps-grid"></div>
+    <div id="app-insight" style="font-size:13px;color:var(--gray-600);line-height:1.6;padding:11px 14px;background:var(--gray-50);border-radius:var(--r-md);border:0.5px solid var(--border);display:none"></div>
+    <button class="btn-add-app" id="btn-add-app" onclick="toggleAddAppForm()">+ Log an application</button>
+    <div class="add-app-form" id="add-app-form">
+      <div class="app-inputs">
+        <input type="text" id="app-company" class="app-input" placeholder="Company name">
+        <input type="text" id="app-role" class="app-input" placeholder="Role / position">
       </div>
-      <div class="app-card">
-        <div class="apc-company">Convoy Logistics</div>
-        <div class="apc-role">Supply Chain Analyst</div>
-        <div class="apc-status s-applied">● Applied — waiting</div>
-        <div class="apc-date">Applied Apr 17</div>
+      <div class="app-inputs">
+        <select id="app-status" class="app-input">
+          <option value="applied">Applied — waiting</option>
+          <option value="screening">Phone screen</option>
+          <option value="interview">Interview scheduled</option>
+          <option value="offer">Offer received</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <input type="date" id="app-date" class="app-input">
       </div>
-    </div>
-    <div style="font-size:13px;color:var(--gray-600);line-height:1.6;padding:11px 14px;background:var(--gray-50);border-radius:var(--r-md);border:0.5px solid var(--border)">
-      Your interview on Thursday is with FleetIQ — the role where you scored 81/100. Your WMS-to-data-pipeline transferable skill is your strongest talking point.
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn-log-app" onclick="addApplication()">Save</button>
+        <button onclick="toggleAddAppForm()" style="font-size:14px;color:var(--gray-400);background:none;border:none;cursor:pointer;padding:9px 14px">Cancel</button>
+      </div>
     </div>
   </div>
 
   <!-- Market -->
   <div class="section">
-    <div class="sh">Market changes this week</div>
-    <div class="market-row">
-      <span class="mr-ind">Operations &amp; analytics</span>
-      <div class="mr-bar-bg"><div class="mr-bar-f" style="width:75%;background:var(--teal)"></div></div>
-      <span class="mr-score" style="color:var(--teal)">75.1</span>
-      <span class="mr-delta md-up">+3.9</span>
+    <div class="sh">Live market signal</div>
+    <div id="market-rows">
+      <div style="font-size:14px;color:var(--gray-400);padding:8px 0">Run your analysis to see live hiring signals for your profile.</div>
     </div>
-    <div class="market-row">
-      <span class="mr-ind">Supply chain tech</span>
-      <div class="mr-bar-bg"><div class="mr-bar-f" style="width:70%;background:var(--teal)"></div></div>
-      <span class="mr-score" style="color:var(--teal)">70.2</span>
-      <span class="mr-delta md-up">+1.8</span>
-    </div>
-    <div class="market-row">
-      <span class="mr-ind">FinTech / risk ops</span>
-      <div class="mr-bar-bg"><div class="mr-bar-f" style="width:52%;background:var(--amber)"></div></div>
-      <span class="mr-score" style="color:var(--amber)">52.4</span>
-      <span class="mr-delta md-dn">−1.7</span>
-    </div>
-    <div class="market-row">
-      <span class="mr-ind">HealthTech operations</span>
-      <div class="mr-bar-bg"><div class="mr-bar-f" style="width:47%;background:var(--amber)"></div></div>
-      <span class="mr-score" style="color:var(--amber)">47.3</span>
-      <span class="mr-delta md-flat">flat</span>
-    </div>
-    <div class="insight-block">
+    <div class="insight-block" id="market-insight-block" style="display:none">
       <div class="ib-label">Market signal this week</div>
-      <div class="ib-text" id="market-signal">Demand for Operations Analysts in logistics tech rose 12% this week — driven by a wave of Series B companies hiring ahead of summer growth cycles. This is a good week to apply.</div>
+      <div class="ib-text" id="market-signal"></div>
     </div>
   </div>
 
   <!-- Gemini narrative -->
   <div class="section">
     <div class="sh">Gemini's read on your week</div>
-    <div class="narrative-text" id="narrative-text">
-      You are ahead of pace. Most people in week 3 of a career transition are still exploring — you have a 34% Python completion, two applications out, and an interview on Thursday. The gap score moving from 74 to 81 in one week is meaningful: it means your learning is translating directly into role-fit. The one thing worth doing today: prepare three stories from your logistics experience that demonstrate data-driven decision making — that is what FleetIQ will probe for on Thursday.
-    </div>
+    <div class="narrative-text" id="narrative-text" style="font-size:15px;color:var(--gray-400)">Loading your personalised digest&#8230;</div>
   </div>
 
   <!-- Actions -->
   <div class="section">
     <div class="sh">Your actions this week</div>
     <div class="action-list" id="action-list">
-      <div class="action-item" onclick="toggleCheck(this)">
-        <div class="ai-check done"></div>
-        <div><div class="ai-title">Complete Python module 2 — pandas basics</div><div class="ai-sub">3 hrs · Closes the Python gap by ~15 points</div></div>
-        <span class="ai-badge ab-high">high impact</span>
-      </div>
-      <div class="action-item" onclick="toggleCheck(this)">
-        <div class="ai-check"></div>
-        <div><div class="ai-title">Prepare 3 STAR stories for Thursday's FleetIQ interview</div><div class="ai-sub">Focus: data-driven decisions in logistics · 2 hrs</div></div>
-        <span class="ai-badge ab-high">Thursday</span>
-      </div>
-      <div class="action-item" onclick="toggleCheck(this)">
-        <div class="ai-check"></div>
-        <div><div class="ai-title">Apply to 2 more Operations Analyst roles</div><div class="ai-sub">Market momentum is up this week · 1 hr</div></div>
-        <span class="ai-badge ab-med">this week</span>
-      </div>
-      <div class="action-item" onclick="toggleCheck(this)">
-        <div class="ai-check"></div>
-        <div><div class="ai-title">Update LinkedIn headline with your new narrative</div><div class="ai-sub">ReSkillio generated an updated 2-line headline · 15 min</div></div>
-        <span class="ai-badge ab-low">15 min</span>
-      </div>
+      <div style="font-size:14px;color:var(--gray-400);padding:8px 0">Run your analysis to get personalised weekly actions.</div>
     </div>
   </div>
 
   <!-- Check-in log -->
-  <div class="checkin-section">
+  <div class="checkin-section" id="checkin-section">
     <div class="sh">Log this week's activity</div>
-    <div class="slider-grid">
-      <div>
-        <div class="slider-label">Hours on courses this week</div>
-        <input type="range" min="0" max="20" value="4" step="1" id="hours-slider" oninput="document.getElementById('hours-val').textContent=this.value">
-        <div class="slider-val"><span id="hours-val">4</span> hrs logged</div>
+    <div class="checkin-saved-banner" id="checkin-saved-banner"></div>
+    <div id="checkin-form-body">
+      <div class="slider-grid">
+        <div>
+          <div class="slider-label">Hours on courses this week</div>
+          <input type="range" min="0" max="20" value="0" step="1" id="hours-slider" oninput="document.getElementById('hours-val').textContent=this.value">
+          <div class="slider-val"><span id="hours-val">0</span> hrs logged</div>
+        </div>
+        <div>
+          <div class="slider-label">Applications sent this week</div>
+          <input type="range" min="0" max="10" value="0" step="1" id="apps-slider" oninput="document.getElementById('apps-val').textContent=this.value">
+          <div class="slider-val"><span id="apps-val">0</span> applications</div>
+        </div>
+        <div>
+          <div class="slider-label">Interviews scheduled</div>
+          <input type="range" min="0" max="5" value="0" step="1" id="interviews-slider" oninput="document.getElementById('interviews-val').textContent=this.value">
+          <div class="slider-val"><span id="interviews-val">0</span> interviews</div>
+        </div>
+        <div>
+          <div class="slider-label">Confidence this week (1–5)</div>
+          <input type="range" min="1" max="5" value="3" step="1" id="mood-slider" oninput="document.getElementById('mood-val').textContent=['','Low','Below avg','Average','Good','Excellent'][this.value]">
+          <div class="slider-val"><span id="mood-val">Average</span></div>
+        </div>
       </div>
-      <div>
-        <div class="slider-label">Applications sent this week</div>
-        <input type="range" min="0" max="10" value="2" step="1" id="apps-slider" oninput="document.getElementById('apps-val').textContent=this.value">
-        <div class="slider-val"><span id="apps-val">2</span> applications</div>
-      </div>
+      <button class="btn-primary" id="checkin-btn" onclick="saveCheckin()">Save check-in &#8594; lock this week</button>
+      <div class="save-success" id="save-success"></div>
     </div>
-    <button class="btn-primary" id="checkin-btn" onclick="saveCheckin()">Save check-in → see next week's plan</button>
-    <div class="save-success" id="save-success">✓ Check-in saved. Your next digest will be ready Monday morning.</div>
   </div>
 
 </div>
 
 <script>
+// ── Constants & data loading ──────────────────────────────────────────
 const API = 'https://reskillio-10933517215.us-central1.run.app';
 const params = new URLSearchParams(location.search);
-const candidateId = params.get('candidate_id') || 'demo-user';
 
-// Wire nav links with candidate_id preserved
+const analysisData = (function() {
+  try { return JSON.parse(localStorage.getItem('analysisData') || 'null'); } catch(e) { return null; }
+})();
+const candidateId = params.get('candidate_id') || analysisData?.candidate_id || 'demo';
+
+const enrichData  = (function() { try { return JSON.parse(localStorage.getItem(`reskillio_enrich_${candidateId}`) || 'null'); } catch(e) { return null; } })();
+const pathwayData = (function() { try { return JSON.parse(localStorage.getItem(`reskillio_pathway_${candidateId}`) || 'null'); } catch(e) { return null; } })();
+const gapData     = (function() { try { return JSON.parse(localStorage.getItem(`reskillio_persongap_${candidateId}`) || 'null'); } catch(e) { return null; } })();
+const candidateName = localStorage.getItem('reskillio_candidate_name') || '';
+const targetRole = pathwayData?.target_role || analysisData?.target_role || gapData?.target_role || 'your target role';
+
+// ── Nav wiring ────────────────────────────────────────────────────────
 (function() {
   const cid = encodeURIComponent(candidateId);
-  const aUrl = `app.html?candidate_id=${cid}`;
-  const rUrl = `radar.html?candidate_id=${cid}`;
-  ['nav-analysis','mob-analysis'].forEach(id => { const el=document.getElementById(id); if(el) el.href=aUrl; });
-  ['nav-radar','mob-radar'].forEach(id => { const el=document.getElementById(id); if(el) el.href=rUrl; });
-  document.getElementById('nav-cta').href = aUrl;
-
-  // Personalise greeting with name stored during analysis
-  const storedName = localStorage.getItem('reskillio_candidate_name');
-  if (storedName) {
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    document.getElementById('digest-greeting').textContent = `${greeting}, ${storedName}.`;
-  }
+  ['nav-analysis','mob-analysis'].forEach(id => { const el = document.getElementById(id); if (el) el.href = `app.html?candidate_id=${cid}`; });
+  ['nav-radar','mob-radar'].forEach(id => { const el = document.getElementById(id); if (el) el.href = `radar.html?candidate_id=${cid}`; });
+  const cta = document.getElementById('nav-cta');
+  if (cta) cta.href = `app.html?candidate_id=${cid}`;
 })();
 
-const WEEKS = {
-  1: { gap: 67, delta: 'baseline', course: '12%', apps: 0, interviews: 0 },
-  2: { gap: 74, delta: '+7 wk 2',  course: '22%', apps: 1, interviews: 0 },
-  3: { gap: 81, delta: '+7 this week', course: '34%', apps: 2, interviews: 1 },
-  4: { gap: null }, 5: { gap: null }, 6: { gap: null },
-};
+// ── Week tracking ─────────────────────────────────────────────────────
+const START_KEY = `reskillio_companion_start_${candidateId}`;
 
-function setWeek(n) {
-  document.querySelectorAll('.wtab').forEach((t, i) => t.classList.toggle('on', i === n - 1));
-  const w = WEEKS[n];
-  document.getElementById('stat-gap').textContent       = w.gap    ?? '—';
-  document.getElementById('stat-course').textContent    = w.course ?? '—';
-  document.getElementById('stat-apps').textContent      = w.apps   ?? '—';
-  document.getElementById('stat-interviews').textContent = w.interviews ?? '—';
-  document.getElementById('gc-score').textContent       = w.gap    ?? '—';
-  document.getElementById('gc-delta').textContent       = w.delta  ?? '—';
+function getStartDate() {
+  let d = localStorage.getItem(START_KEY);
+  if (!d) {
+    d = new Date().toISOString().split('T')[0];
+    localStorage.setItem(START_KEY, d);
+  }
+  return new Date(d + 'T00:00:00');
 }
 
-function toggleCheck(item) {
-  item.querySelector('.ai-check').classList.toggle('done');
+const currentWeek = (function() {
+  const diffDays = Math.floor((Date.now() - getStartDate().getTime()) / 86400000);
+  return Math.min(Math.max(1, Math.floor(diffDays / 7) + 1), 24);
+})();
+
+// Active view week (starts at currentWeek, can be changed via tabs)
+let viewWeek = currentWeek;
+
+// ── Storage helpers ───────────────────────────────────────────────────
+function getCheckin(w)       { try { return JSON.parse(localStorage.getItem(`reskillio_checkin_w${w}_${candidateId}`) || 'null'); } catch(e) { return null; } }
+function saveCheckinLocal(w, d) { localStorage.setItem(`reskillio_checkin_w${w}_${candidateId}`, JSON.stringify(d)); }
+function getApps()           { try { return JSON.parse(localStorage.getItem(`reskillio_apps_${candidateId}`) || '[]'); } catch(e) { return []; } }
+function saveApps(a)         { localStorage.setItem(`reskillio_apps_${candidateId}`, JSON.stringify(a)); }
+function getCourses()        { try { return JSON.parse(localStorage.getItem(`reskillio_courses_${candidateId}`) || '{}'); } catch(e) { return {}; } }
+function saveCourses(c)      { localStorage.setItem(`reskillio_courses_${candidateId}`, JSON.stringify(c)); }
+function getActionStates(w)  { try { return JSON.parse(localStorage.getItem(`reskillio_actions_w${w}_${candidateId}`) || '[]'); } catch(e) { return []; } }
+function saveActionStates(w, s) { localStorage.setItem(`reskillio_actions_w${w}_${candidateId}`, JSON.stringify(s)); }
+function getGapHistory()     { try { return JSON.parse(localStorage.getItem(`reskillio_gap_history_${candidateId}`) || '[]'); } catch(e) { return []; } }
+function saveGapHistory(h)   { localStorage.setItem(`reskillio_gap_history_${candidateId}`, JSON.stringify(h)); }
+
+// ── Gap score ─────────────────────────────────────────────────────────
+function getBaseGapScore() {
+  if (pathwayData?.gap_score != null) return Math.round(pathwayData.gap_score);
+  if (gapData?.gap_score    != null) return Math.round(gapData.gap_score);
+  if (enrichData?.auto_gap?.overall_readiness != null) return Math.round(enrichData.auto_gap.overall_readiness * 100);
+  return null;
 }
 
-async function saveCheckin() {
-  const btn  = document.getElementById('checkin-btn');
-  const hours = parseInt(document.getElementById('hours-slider').value);
-  const apps  = parseInt(document.getElementById('apps-slider').value);
-
-  btn.disabled = true;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="animation:spin .9s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>Saving your check-in…';
-
-  try {
-    const res = await fetch(`${API}/companion/checkin`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        candidate_id: candidateId,
-        hours_on_courses: hours,
-        applications_sent: apps,
-      }),
-    });
-    if (res.ok) {
-      btn.style.display = 'none';
-      document.getElementById('save-success').style.display = 'block';
-    } else {
-      btn.disabled = false;
-      btn.textContent = "Save check-in → see next week's plan";
+function ensureWeek1History() {
+  let h = getGapHistory();
+  if (!h.find(e => e.week === 1)) {
+    const s = getBaseGapScore();
+    if (s !== null) {
+      h.unshift({ week: 1, score: s });
+      saveGapHistory(h);
     }
-  } catch(e) {
-    btn.style.display = 'none';
-    const s = document.getElementById('save-success');
-    s.style.display  = 'block';
-    s.textContent    = '✓ Check-in saved (demo mode).';
+  }
+  return h.sort((a, b) => a.week - b.week);
+}
+
+// ── Phase helpers ─────────────────────────────────────────────────────
+function getPhaseForWeek(w) {
+  if (!pathwayData?.phases?.length) return null;
+  for (const p of pathwayData.phases) {
+    const parts = (p.weeks || '').replace(/[–—]/g, '-').split('-').map(Number).filter(n => !isNaN(n));
+    if (parts.length >= 2 && w >= parts[0] && w <= parts[1]) return p;
+    if (parts.length === 1 && w === parts[0]) return p;
+  }
+  return pathwayData.phases[pathwayData.phases.length - 1];
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Render: header ────────────────────────────────────────────────────
+function renderHeader() {
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  document.getElementById('digest-date').textContent = `${dateStr} · Week ${currentWeek} of your rebound`;
+
+  const hour  = today.getHours();
+  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const first = candidateName ? candidateName.split(' ')[0] : '';
+  document.getElementById('digest-greeting').textContent = first ? `${greet}, ${first}.` : `${greet}.`;
+
+  const hasCheckin = !!getCheckin(1);
+  const isFirstTime = currentWeek === 1 && !hasCheckin;
+  document.getElementById('digest-sub').textContent = isFirstTime
+    ? `Welcome to your weekly companion. This is your Week 1 — your baseline gap score is set and your plan is ready. Start here.`
+    : `Here is where you stand in Week ${currentWeek} — what to focus on, where the market is moving, and one action to take today.`;
+}
+
+// ── Render: week tabs ─────────────────────────────────────────────────
+function renderTabs(selected) {
+  const el = document.getElementById('week-tabs');
+  const maxTabs = Math.max(6, currentWeek + 2);
+  el.innerHTML = '';
+  for (let w = 1; w <= maxTabs; w++) {
+    const div = document.createElement('div');
+    div.className = 'wtab';
+    if (w < currentWeek && getCheckin(w)) div.classList.add('done');
+    if (w === selected) { div.classList.add('on'); div.classList.remove('done'); }
+    if (w > currentWeek) div.style.opacity = '0.45';
+    div.textContent = `Wk ${w}`;
+    div.onclick = () => setWeek(w);
+    el.appendChild(div);
   }
 }
 
-// Load real digest if available
-async function loadDigest() {
-  try {
-    const res = await fetch(`${API}/companion/${candidateId}/digest`);
-    if (!res.ok) return;
-    const d = await res.json();
-    if (d.gemini_narrative) document.getElementById('narrative-text').textContent = d.gemini_narrative;
-    if (d.market_signal)    document.getElementById('market-signal').textContent  = d.market_signal;
-    if (d.gap_score)        document.getElementById('gc-score').textContent       = Math.round(d.gap_score);
-    if (d.gap_score_delta !== undefined) {
-      const delta = d.gap_score_delta;
-      document.getElementById('gc-delta').textContent = (delta >= 0 ? '+' : '') + Math.round(delta) + ' this week';
-    }
-  } catch(e) { /* use static demo content */ }
+// ── Render: stats ─────────────────────────────────────────────────────
+function renderStats(w) {
+  const checkin = getCheckin(w);
+  const history = getGapHistory();
+  const entry   = history.find(e => e.week === w) || (w <= currentWeek ? { score: getBaseGapScore() } : null);
+
+  document.getElementById('stat-gap').textContent        = entry?.score != null ? entry.score : '—';
+  document.getElementById('stat-course').textContent     = checkin ? `${checkin.hours_on_courses}h` : (w < currentWeek ? '—' : '0h');
+  document.getElementById('stat-apps').textContent       = checkin ? checkin.applications_sent : (w < currentWeek ? '—' : getApps().filter(a => a.week === w).length);
+  document.getElementById('stat-interviews').textContent = checkin ? checkin.interviews_scheduled : (w < currentWeek ? '—' : getApps().filter(a => a.status === 'interview' || a.status === 'offer').length);
 }
 
-// Sparkline
-window.addEventListener('load', () => {
+// ── Render: gap section ───────────────────────────────────────────────
+let sparkChart = null;
+
+function renderGapSection(w) {
+  const history = getGapHistory();
+  const visibleHistory = history.filter(e => e.week <= w);
+  const entry   = visibleHistory.find(e => e.week === w) || (w <= currentWeek ? { score: getBaseGapScore() } : null);
+  const score   = entry?.score;
+
+  document.getElementById('gc-score').textContent = score != null ? score : '—';
+  document.getElementById('gc-role').textContent  = `vs ${targetRole}`;
+
+  const prevEntry = history.find(e => e.week === w - 1);
+  const deltaEl   = document.getElementById('gc-delta');
+  if (w === 1 || !prevEntry) {
+    deltaEl.textContent  = 'Week 1 baseline';
+    deltaEl.style.background = 'var(--gray-100)';
+    deltaEl.style.color      = 'var(--gray-600)';
+    deltaEl.style.borderColor = 'var(--border)';
+  } else {
+    const delta = (score ?? 0) - (prevEntry.score ?? 0);
+    deltaEl.textContent  = (delta >= 0 ? '+' : '') + Math.round(delta) + ' this week';
+    deltaEl.style.background  = delta >= 0 ? 'var(--teal-50)'          : 'rgba(220,38,38,.08)';
+    deltaEl.style.color       = delta >= 0 ? 'var(--teal-600)'         : '#b91c1c';
+    deltaEl.style.borderColor = delta >= 0 ? 'var(--teal-100)'         : 'rgba(220,38,38,.2)';
+  }
+
+  const titEl = document.getElementById('gap-section-title');
+  titEl.textContent = visibleHistory.length <= 1
+    ? 'Your Week 1 gap score baseline'
+    : `Gap score — progress over ${visibleHistory.length} week${visibleHistory.length > 1 ? 's' : ''}`;
+
+  // Sparkline labels
+  const labelsEl = document.getElementById('sparkline-labels');
+  const labelParts = visibleHistory.map(e => `Wk ${e.week} · ${e.score}`);
+  labelParts.push('Target · 90');
+  labelsEl.innerHTML = labelParts.map(l => `<span>${escHtml(l)}</span>`).join('');
+
+  // Chart
+  const scores   = visibleHistory.map(e => e.score);
+  const xLabels  = [...visibleHistory.map(e => `Wk ${e.week}`), 'Target'];
+  const dataset1 = [...scores, null];
+  // Dashed projection: from last real point to target
+  const proj = new Array(xLabels.length).fill(null);
+  if (scores.length > 0) { proj[scores.length - 1] = scores[scores.length - 1]; }
+  proj[proj.length - 1] = 90;
+
   const ctx = document.getElementById('sparkline').getContext('2d');
-  new Chart(ctx, {
+  if (sparkChart) sparkChart.destroy();
+  sparkChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ['Wk 1', 'Wk 2', 'Wk 3', 'Target'],
+      labels: xLabels,
       datasets: [
         {
-          data: [67, 74, 81, 90],
+          data: dataset1,
           borderColor: '#0d9373', borderWidth: 2,
-          pointBackgroundColor: ['#0d9373','#0d9373','#0d9373','rgba(0,0,0,0)'],
-          pointBorderColor:     ['#0d9373','#0d9373','#0d9373','rgba(13,147,115,.4)'],
-          pointBorderWidth: [0,0,0,1.5], pointRadius: [4,4,6,4],
-          tension: 0.35, fill: true,
+          pointBackgroundColor: scores.map(() => '#0d9373'),
+          pointRadius: scores.map((_, i) => i === scores.length - 1 ? 6 : 4),
+          pointBorderWidth: 0, tension: 0.35, fill: true,
           backgroundColor: 'rgba(13,147,115,0.07)',
         },
         {
-          data: [null, null, 81, 90],
+          data: proj,
           borderColor: 'rgba(13,147,115,.35)', borderWidth: 1.5,
-          borderDash: [4,4], pointRadius: 0, tension: 0.35, fill: false,
+          borderDash: [4, 4],
+          pointBackgroundColor: proj.map(() => 'rgba(0,0,0,0)'),
+          pointBorderColor: proj.map((_, i) => i === proj.length - 1 ? 'rgba(13,147,115,.4)' : 'transparent'),
+          pointBorderWidth: proj.map((_, i) => i === proj.length - 1 ? 1.5 : 0),
+          pointRadius: proj.map((_, i) => i === proj.length - 1 ? 4 : 0),
+          tension: 0.35, fill: false,
         },
       ],
     },
@@ -530,16 +573,456 @@ window.addEventListener('load', () => {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: {
-          callbacks: { label: ctx => ` Gap score: ${ctx.parsed.y}` },
-          backgroundColor: '#fff', titleColor: '#0f172a', bodyColor: '#475569',
-          borderColor: 'rgba(0,0,0,0.1)', borderWidth: 1,
-        },
+        tooltip: { callbacks: { label: c => ` Gap score: ${c.parsed.y}` }, backgroundColor: '#fff', titleColor: '#0f172a', bodyColor: '#475569', borderColor: 'rgba(0,0,0,0.1)', borderWidth: 1 },
       },
-      scales: { x: { display: false }, y: { display: false, min: 55, max: 95 } },
+      scales: { x: { display: false }, y: { display: false, min: 40, max: 100 } },
     },
   });
-  loadDigest();
+
+  // Skills section
+  renderSkills();
+}
+
+// ── Render: skills ────────────────────────────────────────────────────
+function renderSkills() {
+  const el = document.getElementById('skill-delta-list');
+  const skills = enrichData?.auto_gap?.top_skills_to_add || [];
+  if (!skills.length) {
+    el.innerHTML = '<div style="font-size:14px;color:var(--gray-400);padding:8px 0">Run your full analysis to see skill-level gaps here.</div>';
+    return;
+  }
+
+  const done = getCourses();
+  const allCourses = (pathwayData?.phases || []).flatMap(p => (p.resources || []).map((c, i) => ({ ...c, key: `p${p.phase}_c${i}` })));
+
+  el.innerHTML = skills.slice(0, 6).map(skill => {
+    const related = allCourses.filter(c => {
+      const s = (c.skill || '').toLowerCase();
+      const sk = skill.toLowerCase();
+      return s.includes(sk) || sk.includes(s) || sk.split(' ').some(w => w.length > 3 && s.includes(w));
+    });
+    const completedCount = related.filter(c => done[c.key]).length;
+    const pct = related.length ? Math.round(completedCount / related.length * 100) : 0;
+    const color   = pct > 0 ? 'var(--teal)' : 'var(--gray-400)';
+    const tagText = pct === 100 ? 'done' : pct > 0 ? 'closing' : 'not started';
+    const tagCls  = pct === 100 ? 'tag-new' : pct > 0 ? 'tag-closing' : 'tag-open';
+    return `<div class="sdl-item">
+      <span class="sdl-name">${escHtml(skill)}</span>
+      <div class="sdl-bar-bg"><div class="sdl-bar-f" style="width:${pct}%;background:${color}"></div></div>
+      <span class="sdl-pct" style="color:${color}">${pct}%</span>
+      <span class="sdl-tag ${tagCls}">${tagText}</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Render: courses ───────────────────────────────────────────────────
+function renderCourses(w) {
+  const phase = getPhaseForWeek(w);
+  const el    = document.getElementById('course-list');
+  const titleEl = document.getElementById('course-section-title');
+
+  if (!phase || !phase.resources?.length) {
+    titleEl.textContent = 'Course progress';
+    el.innerHTML = '<div style="font-size:14px;color:var(--gray-400);padding:8px 0">Complete your pathway analysis to get personalised course recommendations.</div>';
+    return;
+  }
+
+  titleEl.textContent = `Phase ${phase.phase}: ${phase.title || 'Course progress'} (Wk ${phase.weeks})`;
+  const done = getCourses();
+
+  el.innerHTML = phase.resources.slice(0, 5).map((c, i) => {
+    const key   = `p${phase.phase}_c${i}`;
+    const isDone = !!done[key];
+    const icon   = isDone ? '✅' : c.platform === 'Coursera' ? '📘' : c.platform === 'Udemy' ? '🎓' : '📺';
+    const bgColor = isDone ? 'var(--teal-50)' : 'var(--blue-50)';
+    const linkHtml = c.url && c.url !== '#' ? `<a href="${escHtml(c.url)}" target="_blank" style="font-size:11px;color:var(--teal);text-decoration:none;margin-left:4px">Open ↗</a>` : '';
+    return `<div class="course-item" style="${isDone ? 'opacity:.75' : ''}">
+      <div class="ci-icon" style="background:${bgColor}">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div class="ci-title">${escHtml(c.title)}${linkHtml}</div>
+        <div class="ci-sub">${escHtml(c.platform)} · ${escHtml(c.skill)} · ${escHtml(c.level)}${c.duration_hours ? ' · ~' + c.duration_hours + 'h' : ''}</div>
+      </div>
+      <div class="ci-prog-wrap">
+        <button class="course-toggle ${isDone ? 'ct-done' : 'ct-todo'}" data-key="${escHtml(key)}" data-phase="${phase.phase}" onclick="toggleCourse(this)">${isDone ? 'Done ✓' : 'Mark done'}</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Phase completion % in section header area
+  const totalCourses = phase.resources.length;
+  const doneCourses  = phase.resources.filter((_, i) => done[`p${phase.phase}_c${i}`]).length;
+  if (totalCourses > 0) {
+    titleEl.textContent += ` — ${doneCourses}/${totalCourses} done`;
+  }
+}
+
+function toggleCourse(btn) {
+  const key  = btn.dataset.key;
+  const done = getCourses();
+  done[key]  = !done[key];
+  saveCourses(done);
+  renderCourses(viewWeek);
+  renderSkills();
+  const phase = parseInt(btn.dataset.phase);
+  updateStatCourse();
+}
+
+function updateStatCourse() {
+  const phase = getPhaseForWeek(viewWeek);
+  if (!phase) return;
+  const done  = getCourses();
+  const total = phase.resources?.length || 0;
+  const comp  = phase.resources?.filter((_, i) => done[`p${phase.phase}_c${i}`]).length || 0;
+  if (total > 0) document.getElementById('stat-course').textContent = `${comp}/${total}`;
+}
+
+// ── Render: applications ──────────────────────────────────────────────
+function renderApps() {
+  const apps   = getApps();
+  const gridEl = document.getElementById('apps-grid');
+  const inEl   = document.getElementById('app-insight');
+
+  if (!apps.length) {
+    gridEl.innerHTML = `<div style="grid-column:1/-1;font-size:14px;color:var(--gray-400);padding:8px 0">No applications logged yet — use the button below to start tracking.</div>`;
+    inEl.style.display = 'none';
+    return;
+  }
+
+  const recent = [...apps].reverse().slice(0, 4);
+  const statusMap = {
+    applied:   ['s-applied',   '● Applied — waiting'],
+    screening: ['s-screening', '● Phone screen'],
+    interview: ['s-interview', '● Interview scheduled'],
+    offer:     ['s-offer',     '● Offer received'],
+    rejected:  ['s-rejected',  '● Rejected'],
+  };
+
+  gridEl.innerHTML = recent.map((a, idx) => {
+    const [cls, label] = statusMap[a.status] || statusMap.applied;
+    const date = a.date ? new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+    const realIdx = apps.length - 1 - idx;
+    return `<div class="app-card">
+      <span class="apc-del" onclick="deleteApp(${realIdx})" title="Remove">&#10005;</span>
+      <div class="apc-company">${escHtml(a.company)}</div>
+      <div class="apc-role">${escHtml(a.role)}</div>
+      <div class="apc-status ${cls}">${label}</div>
+      ${date ? `<div class="apc-date">Logged ${date}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  // Insight text
+  const interviews = apps.filter(a => a.status === 'interview');
+  const company = enrichData?.company_radar?.companies?.[0];
+  let insight = '';
+  if (interviews.length) {
+    insight = `You have ${interviews.length} interview${interviews.length > 1 ? 's' : ''} scheduled — prepare specific examples that demonstrate your top skills. Concrete stories beat generic answers every time.`;
+  } else if (apps.length >= 2) {
+    insight = `${apps.length} application${apps.length > 1 ? 's' : ''} tracked. Keep momentum — aim for 2–3 new applications each week while your pipeline is active.`;
+  } else if (company) {
+    insight = `Consider targeting ${escHtml(company.name)} — ${escHtml(company.match_reason || 'a strong match for your profile')}.`;
+  }
+  if (insight) { inEl.innerHTML = insight; inEl.style.display = 'block'; }
+  else { inEl.style.display = 'none'; }
+}
+
+function toggleAddAppForm() {
+  const f = document.getElementById('add-app-form');
+  const isOpen = f.style.display === 'block';
+  f.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    document.getElementById('app-company').value = '';
+    document.getElementById('app-role').value = '';
+    document.getElementById('app-status').value = 'applied';
+    document.getElementById('app-date').value = new Date().toISOString().split('T')[0];
+  }
+}
+
+function addApplication() {
+  const company = document.getElementById('app-company').value.trim();
+  const role    = document.getElementById('app-role').value.trim();
+  if (!company || !role) { alert('Please enter a company name and role.'); return; }
+  const apps = getApps();
+  apps.push({ company, role, status: document.getElementById('app-status').value, date: document.getElementById('app-date').value, week: currentWeek });
+  saveApps(apps);
+  toggleAddAppForm();
+  renderApps();
+  renderStats(viewWeek);
+}
+
+function deleteApp(idx) {
+  if (!confirm('Remove this application?')) return;
+  const apps = getApps();
+  apps.splice(idx, 1);
+  saveApps(apps);
+  renderApps();
+}
+
+// ── Render: market ────────────────────────────────────────────────────
+function renderMarket() {
+  const rowsEl   = document.getElementById('market-rows');
+  const insEl    = document.getElementById('market-insight-block');
+  const sigEl    = document.getElementById('market-signal');
+  const roles    = enrichData?.market_pulse?.top_roles || [];
+
+  if (!roles.length) {
+    rowsEl.innerHTML = '<div style="font-size:14px;color:var(--gray-400);padding:8px 0">Run your analysis to see live hiring signals for your profile.</div>';
+    insEl.style.display = 'none';
+    return;
+  }
+
+  const actMap = { high: [80, 'var(--teal)', 'md-up', 'high'], medium: [60, 'var(--teal)', 'md-flat', 'stable'], low: [35, 'var(--amber)', 'md-dn', 'low'] };
+  rowsEl.innerHTML = roles.slice(0, 5).map(r => {
+    const [pct, color, deltaCls, label] = actMap[r.hiring_activity] || actMap.medium;
+    return `<div class="market-row">
+      <span class="mr-ind">${escHtml(r.title)}</span>
+      <div class="mr-bar-bg"><div class="mr-bar-f" style="width:${pct}%;background:${color}"></div></div>
+      <span class="mr-score" style="color:${color}">${pct}</span>
+      <span class="mr-delta ${deltaCls}">${label}</span>
+    </div>`;
+  }).join('');
+
+  const summary = enrichData?.market_pulse?.market_summary;
+  if (summary) {
+    sigEl.textContent   = summary;
+    insEl.style.display = 'block';
+  } else {
+    insEl.style.display = 'none';
+  }
+}
+
+// ── Render: narrative ─────────────────────────────────────────────────
+async function renderNarrative() {
+  const el = document.getElementById('narrative-text');
+  el.style.color = 'var(--gray-400)';
+  el.textContent = 'Loading your personalised read…';
+
+  try {
+    const res = await fetch(`${API}/companion/${candidateId}/digest`, { signal: AbortSignal.timeout(8000) });
+    if (res.ok) {
+      const d = await res.json();
+      if (d.gemini_narrative) {
+        el.textContent = d.gemini_narrative;
+        el.style.color = '';
+        return;
+      }
+    }
+  } catch(e) { /* fall through */ }
+
+  el.textContent = buildLocalNarrative();
+  el.style.color = '';
+}
+
+function buildLocalNarrative() {
+  const score   = getBaseGapScore();
+  const phase   = getPhaseForWeek(currentWeek);
+  const prevCk  = getCheckin(currentWeek - 1);
+  const summary = enrichData?.market_pulse?.market_summary;
+  const parts   = [];
+
+  if (currentWeek === 1) {
+    if (score !== null) parts.push(`Your baseline gap score is ${score}/100 against ${targetRole}.`);
+    if (phase) {
+      parts.push(`Week 1 focus — ${phase.title}: ${(phase.focus_skills || []).slice(0, 3).join(', ')}.`);
+      if (phase.milestone) parts.push(`Phase goal: ${phase.milestone}.`);
+    } else {
+      parts.push('Start by completing at least one course module this week — consistent effort compounds fast.');
+    }
+  } else {
+    parts.push(`Week ${currentWeek} of your rebound.`);
+    if (prevCk) {
+      const hrs  = prevCk.hours_on_courses;
+      const apps = prevCk.applications_sent;
+      if (hrs > 0)  parts.push(`Last week: ${hrs} hour${hrs !== 1 ? 's' : ''} on courses.`);
+      if (apps > 0) parts.push(`${apps} application${apps !== 1 ? 's' : ''} sent.`);
+    }
+    if (phase) parts.push(`This week: ${(phase.focus_skills || []).slice(0, 2).join(' and ')}.`);
+  }
+  if (summary) parts.push(summary);
+  return parts.join(' ') || 'Keep building momentum — consistent progress, even an hour a day, compounds significantly over 90 days.';
+}
+
+// ── Render: actions ───────────────────────────────────────────────────
+function renderActions(w) {
+  const el     = document.getElementById('action-list');
+  const phase  = getPhaseForWeek(w);
+  const states = getActionStates(w);
+  const actions = buildActions(w, phase);
+
+  if (!actions.length) {
+    el.innerHTML = '<div style="font-size:14px;color:var(--gray-400);padding:8px 0">Run your analysis to get personalised weekly actions.</div>';
+    return;
+  }
+
+  el.innerHTML = actions.map((a, i) => {
+    const done = !!states[i];
+    return `<div class="action-item" onclick="toggleAction(${w},${i},this)">
+      <div class="ai-check${done ? ' done' : ''}"></div>
+      <div style="flex:1"><div class="ai-title">${escHtml(a.title)}</div><div class="ai-sub">${escHtml(a.sub)}</div></div>
+      <span class="ai-badge ${a.badgeClass}">${escHtml(a.badge)}</span>
+    </div>`;
+  }).join('');
+}
+
+function buildActions(w, phase) {
+  const actions = [];
+  const apps    = getApps();
+
+  if (phase) {
+    const firstCourse = phase.resources?.[0];
+    if (firstCourse) {
+      actions.push({ title: `Start: ${firstCourse.title}`, sub: `${firstCourse.platform} · ${firstCourse.skill} · ~${firstCourse.duration_hours || 8}h total — closes the gap on ${firstCourse.skill}`, badge: 'high impact', badgeClass: 'ab-high' });
+    }
+    const skills = phase.focus_skills || [];
+    if (skills.length > 1) {
+      actions.push({ title: `Study ${skills[1]}`, sub: `${phase.weekly_hours || 8} hrs/week is the target — even 1–2 hours today builds momentum`, badge: 'this week', badgeClass: 'ab-med' });
+    }
+    if (phase.milestone) {
+      actions.push({ title: `Phase milestone: ${phase.milestone}`, sub: `End-of-phase goal — track whether you can demonstrate this by week ${phase.weeks?.split(/[-–]/)[1] || '4'}`, badge: 'milestone', badgeClass: 'ab-med' });
+    }
+  }
+
+  const interviews = apps.filter(a => a.status === 'interview');
+  if (interviews.length) {
+    const company = interviews[0].company;
+    actions.push({ title: `Prepare for your ${escHtml(company)} interview`, sub: 'Prepare 3 STAR stories from your experience — concrete examples beat generic answers', badge: 'priority', badgeClass: 'ab-high' });
+  } else {
+    const appsThisWeek = apps.filter(a => a.week === w).length;
+    if (appsThisWeek < 3) {
+      actions.push({ title: `Apply to ${Math.max(1, 3 - appsThisWeek)} more ${targetRole} role${3 - appsThisWeek !== 1 ? 's' : ''}`, sub: 'Log each application above to keep your pipeline visible — track beats memory', badge: 'this week', badgeClass: 'ab-med' });
+    }
+  }
+
+  const company = enrichData?.company_radar?.companies?.[0];
+  if (company) {
+    actions.push({ title: `Check ${company.name} for openings`, sub: company.match_reason || 'Strong match for your profile based on your skills and target role', badge: '15 min', badgeClass: 'ab-low' });
+  }
+
+  return actions.slice(0, 5);
+}
+
+function toggleAction(w, i, item) {
+  const states = getActionStates(w);
+  states[i] = !states[i];
+  saveActionStates(w, states);
+  item.querySelector('.ai-check').classList.toggle('done', !!states[i]);
+}
+
+// ── Check-in form ─────────────────────────────────────────────────────
+function renderCheckinForm(w) {
+  const section    = document.getElementById('checkin-section');
+  const banner     = document.getElementById('checkin-saved-banner');
+  const formBody   = document.getElementById('checkin-form-body');
+  const saved      = getCheckin(w);
+
+  // Only show form for current week
+  if (w !== currentWeek) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  if (saved) {
+    banner.style.display = 'block';
+    const nextMon = nextMonday();
+    banner.innerHTML = `&#10003; Check-in saved for Week ${w}. Sliders reflect what you logged. Next check-in available <strong>${nextMon}</strong>.`;
+    // Restore slider values
+    document.getElementById('hours-slider').value = saved.hours_on_courses ?? 0;
+    document.getElementById('hours-val').textContent = saved.hours_on_courses ?? 0;
+    document.getElementById('apps-slider').value = saved.applications_sent ?? 0;
+    document.getElementById('apps-val').textContent = saved.applications_sent ?? 0;
+    document.getElementById('interviews-slider').value = saved.interviews_scheduled ?? 0;
+    document.getElementById('interviews-val').textContent = saved.interviews_scheduled ?? 0;
+    document.getElementById('mood-slider').value = saved.mood ?? 3;
+    document.getElementById('mood-val').textContent = ['','Low','Below avg','Average','Good','Excellent'][saved.mood ?? 3];
+    // Disable sliders
+    ['hours-slider','apps-slider','interviews-slider','mood-slider'].forEach(id => { document.getElementById(id).disabled = true; });
+    document.getElementById('checkin-btn').style.display = 'none';
+    document.getElementById('save-success').style.display = 'none';
+  } else {
+    banner.style.display = 'none';
+    ['hours-slider','apps-slider','interviews-slider','mood-slider'].forEach(id => { document.getElementById(id).disabled = false; });
+    document.getElementById('checkin-btn').style.display = '';
+    document.getElementById('save-success').style.display = 'none';
+  }
+}
+
+function nextMonday() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = day === 0 ? 1 : 8 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+async function saveCheckin() {
+  const btn   = document.getElementById('checkin-btn');
+  const hours = parseInt(document.getElementById('hours-slider').value);
+  const apps  = parseInt(document.getElementById('apps-slider').value);
+  const ivws  = parseInt(document.getElementById('interviews-slider').value);
+  const mood  = parseInt(document.getElementById('mood-slider').value);
+
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="animation:spin .9s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>Saving…';
+
+  const score = getBaseGapScore();
+  const data  = { hours_on_courses: hours, applications_sent: apps, interviews_scheduled: ivws, mood, gap_score: score, saved_at: new Date().toISOString(), week: currentWeek };
+  saveCheckinLocal(currentWeek, data);
+
+  // Update gap history with current score
+  if (score !== null) {
+    const history = getGapHistory();
+    const existing = history.findIndex(e => e.week === currentWeek);
+    if (existing >= 0) history[existing].score = score;
+    else history.push({ week: currentWeek, score });
+    saveGapHistory(history);
+  }
+
+  // Sync to backend
+  try {
+    await fetch(`${API}/companion/checkin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidate_id: candidateId, hours_on_courses: hours, applications_sent: apps, interviews_scheduled: ivws }),
+      signal: AbortSignal.timeout(12000),
+    });
+  } catch(e) { /* saved locally — backend sync optional */ }
+
+  const successEl = document.getElementById('save-success');
+  successEl.textContent = `✓ Check-in saved for Week ${currentWeek}. See you next week.`;
+  successEl.style.display = 'block';
+  btn.style.display = 'none';
+
+  // Re-render with locked state
+  renderCheckinForm(currentWeek);
+  renderTabs(viewWeek);
+  renderStats(viewWeek);
+  renderGapSection(viewWeek);
+}
+
+// ── Main render flow ──────────────────────────────────────────────────
+function setWeek(w) {
+  viewWeek = w;
+  renderTabs(w);
+  renderStats(w);
+  renderGapSection(w);
+  renderCourses(w);
+  renderActions(w);
+  renderCheckinForm(w);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  ensureWeek1History();
+  renderHeader();
+  renderTabs(currentWeek);
+  renderStats(currentWeek);
+  renderGapSection(currentWeek);
+  renderCourses(currentWeek);
+  renderApps();
+  renderMarket();
+  renderCheckinForm(currentWeek);
+  renderActions(currentWeek);
+  renderNarrative();
 });
 </script>
 </body>

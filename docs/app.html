@@ -2626,23 +2626,25 @@ function animateBars() {
 async function runGap() {
   const jd = document.getElementById('jd-text').value.trim();
   if (!jd) { alert('Paste a job description first.'); return; }
-  if (!resumeFile) { alert('Resume not found — please start over.'); return; }
+  if (!analysisData?.candidate_id) { alert('No analysis found — please start over.'); return; }
 
   const btn = document.querySelector('#s4 .btn-secondary');
   btn.textContent = 'Analyzing\u2026';
   btn.disabled = true;
 
-  const formData = new FormData();
-  formData.append('resume', resumeFile);
-  formData.append('target_role', document.getElementById('target-role').value.trim() || 'Career Transition');
-  formData.append('jd_text', jd);
-
   try {
-    const res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData });
+    const res = await fetch(`${API_BASE}/gap`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        candidate_id: analysisData.candidate_id,
+        jd_text:      jd,
+        jd_title:     document.getElementById('target-role')?.value.trim() || null,
+      }),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-
-    if (data.gap) renderGap(data.gap);
+    renderGap(data);
   } catch (e) {
     alert('Gap analysis failed: ' + e.message);
   } finally {

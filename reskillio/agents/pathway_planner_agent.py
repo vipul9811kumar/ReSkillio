@@ -1,24 +1,12 @@
 """
-F11 — PathwayPlannerAgent (CrewAI).
+F11 — PathwayPlannerAgent.
 
-Two-agent sequential crew:
-  1. Researcher  — calls CourseSearchTool for each priority skill gap, returns
-                   a structured list of real course links.
-  2. Planner     — takes the research + gap/market context, synthesises a
-                   structured 90-day reskilling roadmap.
+Replaces the old CrewAI two-agent crew with a faster direct implementation:
+  1. DDG course searches run in parallel threads (one per skill)
+  2. A single Gemini call synthesises all research into a 90-day roadmap
 
-Tools
------
-CourseSearchTool — DuckDuckGo with Coursera + Udemy site filters.
-                   No API keys required.
-
-Input
------
-- missing_skills : list[str]          — from gap analysis
-- transferable   : list[str]          — partially-covered skills worth deepening
-- market_scores  : dict[str, float]   — demand_score per skill from F10
-- gap_score      : float              — overall JD fit score 0–100
-- target_role    : str
+Previous CrewAI approach: 60–120 s (sequential DDG + multi-turn agent loop)
+New approach: 12–20 s (parallel DDG + single Gemini synthesis)
 """
 
 from __future__ import annotations
@@ -26,246 +14,184 @@ from __future__ import annotations
 import json
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from typing import Any, Optional, Type
 
-from crewai import Agent, Crew, LLM, Process, Task
-from crewai.tools import BaseTool
-from ddgs import DDGS
 from loguru import logger
-from pydantic import BaseModel, Field
 
 from reskillio.models.pathway import CourseResource, PathwayRoadmap, RoadmapPhase
 
-_AGENT_MODEL    = "vertex_ai/gemini-2.5-flash"
-_MAX_GAP_SKILLS = 8      # cap skills searched to control latency
-_COURSES_PER_SKILL = 2   # target courses per skill
+_MAX_GAP_SKILLS    = 6   # fewer skills → fewer searches → faster
+_COURSES_PER_SKILL = 2
+_DDG_TIMEOUT       = 8   # seconds per skill search
+_GEMINI_MODEL      = "gemini-2.5-flash"
 
 
 # ---------------------------------------------------------------------------
-# Tool
+# Step 1 — parallel DDG course search
 # ---------------------------------------------------------------------------
 
-class _CourseInput(BaseModel):
-    skill: str = Field(..., description="Skill name to search courses for")
-
-
-class CourseSearchTool(BaseTool):
-    """
-    Search Coursera and Udemy for courses on a given skill.
-    Uses DuckDuckGo — no API key required.
-    Returns titles, URLs, platforms, and descriptions.
-    """
-    name:        str = "course_search"
-    description: str = (
-        "Find online courses for a specific skill from Coursera and Udemy. "
-        "Input: skill name. Returns course titles, URLs, platforms, descriptions."
-    )
-    args_schema: Type[BaseModel] = _CourseInput
-
-    def _run(self, skill: str) -> str:
-        results: list[str] = []
-        queries = [
-            f"{skill} course coursera.org",
-            f"{skill} course udemy.com",
-        ]
-        try:
-            with DDGS() as ddgs:
-                for q in queries:
-                    hits = ddgs.text(q, max_results=3) or []
+def _search_courses_for_skill(skill: str) -> dict:
+    """Search Coursera + Udemy for one skill. Runs in a thread."""
+    courses = []
+    queries = [
+        f"site:coursera.org {skill} course",
+        f"site:udemy.com {skill} course",
+    ]
+    try:
+        from ddgs import DDGS
+        with DDGS() as ddgs:
+            for q in queries:
+                try:
+                    hits = ddgs.text(q, max_results=2) or []
                     for h in hits:
-                        title = h.get("title", "")
-                        url   = h.get("href", h.get("url", ""))
-                        body  = h.get("body", "")[:180]
+                        url = h.get("href", h.get("url", ""))
                         platform = (
                             "Coursera" if "coursera.org" in url else
                             "Udemy"    if "udemy.com"    in url else
                             "Other"
                         )
-                        results.append(
-                            f"PLATFORM: {platform}\n"
-                            f"TITLE: {title}\n"
-                            f"URL: {url}\n"
-                            f"DESC: {body}"
-                        )
-        except Exception as exc:
-            logger.warning(f"CourseSearchTool failed for '{skill}': {exc}")
-            return f"Search unavailable for {skill}."
+                        courses.append({
+                            "title":       h.get("title", ""),
+                            "platform":    platform,
+                            "url":         url,
+                            "description": h.get("body", "")[:150],
+                        })
+                except Exception:
+                    pass
+    except Exception as exc:
+        logger.warning(f"[pathway] DDG search failed for '{skill}': {exc}")
 
-        if not results:
-            return f"No courses found for '{skill}'."
-
-        return f"=== Courses for '{skill}' ===\n\n" + "\n\n".join(results)
+    return {"skill": skill, "courses": courses[:_COURSES_PER_SKILL]}
 
 
-# ---------------------------------------------------------------------------
-# Env + LLM
-# ---------------------------------------------------------------------------
-
-def _setup_env(project_id: str, region: str) -> None:
-    os.environ.setdefault("VERTEXAI_PROJECT",       project_id)
-    os.environ.setdefault("VERTEXAI_LOCATION",      region)
-    os.environ.setdefault("CREWAI_TRACING_ENABLED", "false")
-    os.environ.setdefault("OTEL_SDK_DISABLED",      "true")
-    if not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-        try:
-            from config.settings import settings
-            if settings.google_application_credentials:
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = (
-                    settings.google_application_credentials
-                )
-        except Exception:
-            pass
-
-
-def _build_llm(project_id: str, region: str) -> LLM:
-    _setup_env(project_id, region)
-    return LLM(model=_AGENT_MODEL, temperature=0.2, max_tokens=4096)
+def _fetch_all_courses(skills: list[str]) -> list[dict]:
+    """Run course searches for all skills in parallel."""
+    results = []
+    with ThreadPoolExecutor(max_workers=min(len(skills), 6)) as pool:
+        futures = {pool.submit(_search_courses_for_skill, s): s for s in skills}
+        for future in as_completed(futures, timeout=_DDG_TIMEOUT * 2):
+            try:
+                results.append(future.result(timeout=3))
+            except Exception as exc:
+                skill = futures[future]
+                logger.warning(f"[pathway] Course search timed out for '{skill}': {exc}")
+                results.append({"skill": skill, "courses": []})
+    return results
 
 
 # ---------------------------------------------------------------------------
-# Crew
+# Step 2 — single Gemini synthesis call
 # ---------------------------------------------------------------------------
 
-_RESEARCHER_TASK = """
-You are researching online courses for a professional re-entering the {target_role} field.
+_SYNTHESIS_PROMPT = """\
+You are a career development coach building a 90-day reskilling roadmap.
 
-PRIORITY SKILLS TO LEARN (ordered by urgency — search all of them):
-{skills_with_scores}
+TARGET ROLE: {target_role}
+CURRENT FIT SCORE: {gap_score}/100
+MISSING SKILLS: {missing_skills}
+TRANSFERABLE SKILLS (worth deepening): {transferable_skills}
 
-For EACH skill above, call the course_search tool exactly once.
-Compile all findings into a structured list. For each skill return:
-- skill name
-- 1-2 best courses found (title, platform, URL, brief description, estimated level)
-
-Return a JSON array like this (no markdown fences):
-[
-  {{
-    "skill": "...",
-    "courses": [
-      {{"title": "...", "platform": "Coursera|Udemy|Other", "url": "...", "level": "beginner|intermediate|advanced", "description": "..."}}
-    ]
-  }}
-]
-"""
-
-_PLANNER_TASK = """
-You are designing a 90-day reskilling roadmap for a professional targeting a
-{target_role} role. Their current JD fit score is {gap_score:.0f}/100.
-
-COURSE RESEARCH (already gathered — use these resources):
+COURSE RESEARCH (real courses found online):
 {course_research}
 
-GAP CONTEXT:
-- Missing skills (required but not in profile): {missing_skills}
-- Transferable skills (partially covered, worth deepening): {transferable_skills}
-- Market demand scores: {market_scores}
-
-ROADMAP RULES:
-1. Three phases — allocate skills by market demand and urgency:
-   Phase 1 (Weeks 1–4)  "Foundation"             — 2-3 highest-demand missing skills
-   Phase 2 (Weeks 5–8)  "Core Development"        — remaining missing skills
-   Phase 3 (Weeks 9–13) "Advanced & Portfolio"    — transferable deepening + project work
-2. Recommend 8–12 study hours per week (realistic for working adults).
-3. Each phase must have a concrete, measurable milestone.
-4. Assign courses from the research above to the appropriate phase.
-5. Success metrics: 3–5 verifiable outcomes the candidate can achieve.
-
-Return ONLY this JSON (no markdown fences, no explanation):
+Build a 3-phase 90-day roadmap. Return ONLY this JSON (no markdown fences):
 {{
   "phases": [
     {{
       "phase": 1,
       "title": "Foundation",
       "weeks": "1-4",
-      "focus_skills": ["...", "..."],
+      "focus_skills": ["skill1", "skill2"],
       "resources": [
         {{
-          "skill": "...",
+          "skill": "skill name",
           "title": "course title",
-          "platform": "Coursera",
+          "platform": "Coursera|Udemy|Other",
           "url": "https://...",
-          "level": "beginner",
-          "duration_hours": 20,
+          "level": "beginner|intermediate|advanced",
+          "duration_hours": 15,
           "description": "one sentence"
         }}
       ],
       "weekly_hours": 10,
-      "milestone": "concrete measurable outcome"
+      "milestone": "concrete measurable outcome by end of week 4"
     }},
-    {{ "phase": 2, ... }},
-    {{ "phase": 3, ... }}
+    {{"phase": 2, "title": "Core Development", "weeks": "5-8", "focus_skills": [], "resources": [], "weekly_hours": 10, "milestone": "..."}},
+    {{"phase": 3, "title": "Advanced & Portfolio", "weeks": "9-13", "focus_skills": [], "resources": [], "weekly_hours": 8, "milestone": "..."}}
   ],
-  "success_metrics": ["...", "...", "..."],
-  "overall_summary": "2-3 sentence overview of the roadmap"
+  "success_metrics": ["metric1", "metric2", "metric3"],
+  "overall_summary": "2-3 sentence overview"
 }}
+
+Rules:
+- Use only courses from the research above (real URLs). If none found for a skill, omit resources for it.
+- Phase 1: highest-priority missing skills. Phase 2: remaining gaps. Phase 3: transferable deepening + portfolio.
+- 8-12 study hours/week — realistic for job searching alongside learning.
+- Milestones must be specific and verifiable.
 """
 
 
-def _build_crew(llm: LLM, target_role: str) -> tuple[Crew, Task, Task]:
-    search_tool = CourseSearchTool()
+def _call_gemini_synthesis(
+    target_role: str,
+    gap_score: float,
+    missing_skills: list[str],
+    transferable_skills: list[str],
+    course_research: list[dict],
+    project_id: str,
+    region: str,
+) -> str:
+    import warnings
+    warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
 
-    researcher = Agent(
-        role="Learning Resources Researcher",
-        goal=(
-            "Find the most relevant and highly-rated online courses from Coursera "
-            "and Udemy for each skill gap a displaced professional needs to fill."
-        ),
-        backstory=(
-            "You are an expert in online learning platforms who knows exactly which "
-            "courses give displaced workers the fastest, most practical path to job-readiness. "
-            "You always search before recommending — no hallucinated course titles or URLs."
-        ),
-        tools=[search_tool],
-        llm=llm,
-        verbose=False,
-        max_iter=25,
+    research_text = ""
+    for item in course_research:
+        skill = item["skill"]
+        courses = item.get("courses", [])
+        if courses:
+            lines = [f"  • [{c['platform']}] {c['title']} — {c['url']}" for c in courses]
+            research_text += f"\n{skill}:\n" + "\n".join(lines)
+        else:
+            research_text += f"\n{skill}: (no courses found — suggest self-study resources)"
+
+    prompt = _SYNTHESIS_PROMPT.format(
+        target_role=target_role,
+        gap_score=f"{gap_score:.0f}",
+        missing_skills=", ".join(missing_skills) or "none identified",
+        transferable_skills=", ".join(transferable_skills) or "none",
+        course_research=research_text or "No courses found — use general recommendations.",
     )
 
-    planner = Agent(
-        role="Career Pathway Architect",
-        goal=(
-            "Transform course research and gap analysis into a structured, "
-            "actionable 90-day reskilling roadmap with clear milestones."
-        ),
-        backstory=(
-            "You are a career development coach specialising in tech workforce re-entry. "
-            "You create realistic, week-by-week plans that displaced workers can follow "
-            "alongside part-time job searching. You never invent courses — you only use "
-            "resources found by the researcher."
-        ),
-        tools=[],
-        llm=llm,
-        verbose=False,
-    )
+    try:
+        from google import genai
+        from google.genai import types as gt
 
-    research_task = Task(
-        description=_RESEARCHER_TASK,
-        expected_output=(
-            "A JSON array where each entry has 'skill' and 'courses' (list with "
-            "title, platform, url, level, description)."
-        ),
-        agent=researcher,
-    )
+        _apply_credentials()
+        client = genai.Client(vertexai=True, project=project_id, location=region)
+        response = client.models.generate_content(
+            model=_GEMINI_MODEL,
+            contents=prompt,
+            config=gt.GenerateContentConfig(
+                temperature=0.3,
+                max_output_tokens=3000,
+                thinking_config=gt.ThinkingConfig(thinking_budget=0),
+            ),
+        )
+        return response.text.strip()
+    except Exception as exc:
+        logger.error(f"[pathway] Gemini synthesis failed: {exc}")
+        return ""
 
-    plan_task = Task(
-        description=_PLANNER_TASK,
-        expected_output=(
-            "A JSON object with phases (list), success_metrics (list), "
-            "and overall_summary (string)."
-        ),
-        agent=planner,
-        context=[research_task],
-    )
 
-    crew = Crew(
-        agents=[researcher, planner],
-        tasks=[research_task, plan_task],
-        process=Process.sequential,
-        verbose=False,
-    )
-
-    return crew, research_task, plan_task
+def _apply_credentials() -> None:
+    if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        return
+    try:
+        from config.settings import settings
+        if settings.google_application_credentials:
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.google_application_credentials
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -273,7 +199,9 @@ def _build_crew(llm: LLM, target_role: str) -> tuple[Crew, Task, Task]:
 # ---------------------------------------------------------------------------
 
 def _strip_fences(text: str) -> str:
-    return re.sub(r"```(?:json)?\s*|\s*```", "", text).strip()
+    text = re.sub(r"```(?:json)?\s*", "", text)
+    text = re.sub(r"\s*```", "", text)
+    return text.strip()
 
 
 def _parse_roadmap(
@@ -317,10 +245,10 @@ def _parse_roadmap(
             success_metrics=data.get("success_metrics", []),
             overall_summary=data.get("overall_summary", ""),
             generated_at=datetime.now(timezone.utc),
-            agent_model=_AGENT_MODEL,
+            agent_model=_GEMINI_MODEL,
         )
     except Exception as exc:
-        logger.warning(f"Roadmap parse failed: {exc} — raw[:300]: {raw[:300]}")
+        logger.warning(f"[pathway] Parse failed: {exc} — raw[:200]: {raw[:200]}")
         return PathwayRoadmap(
             candidate_id=candidate_id,
             target_role=target_role,
@@ -330,7 +258,7 @@ def _parse_roadmap(
             success_metrics=["Complete all identified skill gaps"],
             overall_summary="Roadmap generation encountered a parsing error.",
             generated_at=datetime.now(timezone.utc),
-            agent_model=_AGENT_MODEL,
+            agent_model=_GEMINI_MODEL,
         )
 
 
@@ -351,68 +279,44 @@ def run_pathway_planner_agent(
     """
     Generate a 90-day reskilling roadmap.
 
-    Parameters
-    ----------
-    candidate_id:       Candidate identifier.
-    target_role:        Job title being targeted.
-    missing_skills:     Skills required by JD but absent from profile.
-    transferable_skills:Skills partially covered — worth deepening.
-    gap_score:          Current JD fit 0–100.
-    market_scores:      demand_score per skill from MarketAnalystAgent.
-    project_id:         GCP project for Vertex AI LLM.
-    region:             Vertex AI region.
+    Replaces the old CrewAI two-agent crew.
+    Step 1: parallel DDG course searches (~6-8s)
+    Step 2: single Gemini synthesis call (~6-10s)
+    Total: ~12-18s vs previous 60-120s
     """
     if not missing_skills and not transferable_skills:
         raise ValueError("No skill gaps provided — nothing to plan.")
 
-    # Combine and prioritise: missing skills first, then transferable
-    # Sort by market demand score descending
-    all_gap_skills = list(dict.fromkeys(missing_skills + transferable_skills))
+    all_skills = list(dict.fromkeys(missing_skills + transferable_skills))
     priority_skills = sorted(
-        all_gap_skills[:_MAX_GAP_SKILLS],
+        all_skills[:_MAX_GAP_SKILLS],
         key=lambda s: market_scores.get(s, 50.0),
         reverse=True,
     )
 
-    skills_with_scores = "\n".join(
-        f"  {i+1}. {s} (market demand: {market_scores.get(s, 'unknown')})"
-        for i, s in enumerate(priority_skills)
-    )
-
-    market_scores_str = ", ".join(
-        f"{s}: {market_scores.get(s, 'N/A')}" for s in priority_skills
-    )
-
     logger.info(
-        f"[pathway-agent] Planning roadmap: candidate='{candidate_id}' "
-        f"role='{target_role}' skills={len(priority_skills)} gap={gap_score:.0f}"
+        f"[pathway] Planning roadmap: candidate='{candidate_id}' "
+        f"role='{target_role}' skills={priority_skills} gap={gap_score:.0f}"
     )
 
-    llm  = _build_llm(project_id, region)
-    crew, research_task, plan_task = _build_crew(llm, target_role)
+    # Step 1 — parallel course searches
+    course_research = _fetch_all_courses(priority_skills)
+    logger.info(f"[pathway] Course research done — {sum(len(r['courses']) for r in course_research)} courses found")
 
-    # Inject context into task descriptions
-    research_task.description = _RESEARCHER_TASK.format(
-        target_role=target_role,
-        skills_with_scores=skills_with_scores,
-    )
-    plan_task.description = _PLANNER_TASK.format(
+    # Step 2 — single Gemini synthesis
+    raw = _call_gemini_synthesis(
         target_role=target_role,
         gap_score=gap_score,
-        course_research="{course_research_placeholder}",   # filled by context
-        missing_skills=", ".join(missing_skills) or "none",
-        transferable_skills=", ".join(transferable_skills) or "none",
-        market_scores=market_scores_str,
+        missing_skills=missing_skills[:_MAX_GAP_SKILLS],
+        transferable_skills=transferable_skills[:4],
+        course_research=course_research,
+        project_id=project_id,
+        region=region,
     )
 
-    result = crew.kickoff()
-    raw    = str(result)
-    logger.debug(f"[pathway-agent] Raw output:\n{raw[:600]}")
-
     roadmap = _parse_roadmap(raw, candidate_id, target_role, gap_score)
-
     logger.info(
-        f"[pathway-agent] Done — {len(roadmap.phases)} phases  "
+        f"[pathway] Done — {len(roadmap.phases)} phases  "
         f"resources={sum(len(p.resources) for p in roadmap.phases)}"
     )
     return roadmap

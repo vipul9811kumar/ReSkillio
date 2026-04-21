@@ -2942,17 +2942,15 @@ function triggerPathway() {
 }
 
 async function fetchPathway(data) {
-  // If enrichment hasn't landed yet and we have no JD gap, wait up to 30s
+  // If enrichment hasn't landed yet and we have no JD gap, wait up to 20s
   if (!data.gap?.missing_skills?.length && !enrichData?.auto_gap) {
     let waited = 0;
-    while (!enrichData?.auto_gap && waited < 30000) {
+    while (!enrichData?.auto_gap && waited < 20000) {
       await new Promise(r => setTimeout(r, 2000));
       waited += 2000;
     }
   }
 
-  // Primary: JD-based gap (only present when a JD was pasted)
-  // Fallback: auto-gap from enrich pipeline (always available after enrichment)
   const autoGap      = enrichData?.auto_gap;
   const missing      = data.gap?.missing_skills?.length
     ? data.gap.missing_skills
@@ -2960,9 +2958,7 @@ async function fetchPathway(data) {
   const transferable = data.gap?.transferable_skills?.length
     ? data.gap.transferable_skills.map(t => t.candidate_skill || t)
     : [];
-  const gapScore     = data.gap?.gap_score
-    ?? autoGap?.overall_readiness
-    ?? 50;
+  const gapScore     = data.gap?.gap_score ?? autoGap?.overall_readiness ?? 50;
   const targetRole   = _enrichTargetRole || data.target_role || 'Career Transition';
 
   if (!missing.length && !transferable.length) {
@@ -2971,6 +2967,18 @@ async function fetchPathway(data) {
     return;
   }
 
+  // Restore from cache on return navigation
+  const cacheKey = 'reskillio_pathway_' + data.candidate_id;
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+    if (cached) {
+      document.getElementById('pathway-loading').style.display = 'none';
+      renderPathway(cached, targetRole, gapScore);
+      console.info('[pathway] Restored from cache');
+      return;
+    }
+  } catch(_) {}
+
   try {
     const res = await fetch(`${API_BASE}/pathway/plan`, {
       method: 'POST',
@@ -2978,7 +2986,7 @@ async function fetchPathway(data) {
       body: JSON.stringify({
         candidate_id:        data.candidate_id,
         target_role:         targetRole,
-        missing_skills:      missing.slice(0, 8),
+        missing_skills:      missing.slice(0, 6),
         transferable_skills: transferable.slice(0, 4),
         gap_score:           gapScore,
         market_scores:       {},
@@ -2994,6 +3002,7 @@ async function fetchPathway(data) {
     }
 
     const roadmap = await res.json();
+    try { localStorage.setItem(cacheKey, JSON.stringify(roadmap)); } catch(_) {}
     renderPathway(roadmap, targetRole, gapScore);
   } catch (e) {
     console.warn('[pathway] Failed:', e.message);

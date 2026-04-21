@@ -108,14 +108,20 @@ def _gather_snippets(
     queries = [
         f"{industry} companies hiring {top_role} 2025",
         f"{stage_query} {top_skills} 2025",
-        f"{industry} {top_role} job openings employers 2025",
     ]
 
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     all_snippets: list[str] = []
-    for q in queries:
-        found = _ddg_search(q)
-        all_snippets.extend(found)
-        logger.debug(f"[company-radar] Query '{q}' → {len(found)} snippets")
+    with ThreadPoolExecutor(max_workers=len(queries)) as pool:
+        futures = {pool.submit(_ddg_search, q): q for q in queries}
+        for future in as_completed(futures, timeout=10):
+            q = futures[future]
+            try:
+                found = future.result(timeout=3)
+                all_snippets.extend(found)
+                logger.debug(f"[company-radar] Query '{q}' → {len(found)} snippets")
+            except Exception:
+                pass
 
     if not all_snippets:
         return "No live search results — do not fabricate company names."

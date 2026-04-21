@@ -85,23 +85,29 @@ def _ddg_search(query: str, max_results: int = _DDG_RESULTS) -> list[str]:
 
 
 def _gather_snippets(skills: list[str], industry: str, target_role: str) -> str:
-    """Run 3–4 DDG queries and return concatenated snippets."""
-    top_skills = ", ".join(skills[:5])
+    """Run DDG queries in parallel and return concatenated snippets."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    top_skills = ", ".join(skills[:4])
     queries = [
         f"{industry} jobs hiring 2025 {top_skills}",
-        f"{target_role} role hiring demand 2025",
-        f"career transition {industry} in-demand skills 2025",
+        f"{target_role} hiring demand 2025",
     ]
     all_snippets: list[str] = []
-    for q in queries:
-        found = _ddg_search(q, max_results=_DDG_RESULTS)
-        all_snippets.extend(found)
-        logger.debug(f"[market-pulse] Query '{q}' → {len(found)} snippets")
+    with ThreadPoolExecutor(max_workers=len(queries)) as pool:
+        futures = {pool.submit(_ddg_search, q, _DDG_RESULTS): q for q in queries}
+        for future in as_completed(futures, timeout=10):
+            q = futures[future]
+            try:
+                found = future.result(timeout=3)
+                all_snippets.extend(found)
+                logger.debug(f"[market-pulse] Query '{q}' → {len(found)} snippets")
+            except Exception as exc:
+                logger.warning(f"[market-pulse] Query '{q}' failed: {exc}")
 
     if not all_snippets:
         return "No live search results available — synthesise from general market knowledge."
 
-    return "\n".join(all_snippets[:20])  # cap to avoid token overflow
+    return "\n".join(all_snippets[:16])  # cap to avoid token overflow
 
 
 def _apply_credentials() -> None:

@@ -1,20 +1,16 @@
 """
-Option B — Enrichment pipeline (slow path, ~60 s when fully built).
+Option B — Enrichment pipeline (parallel stages, ~20-30 s).
 
-Called by POST /enrich after the fast /analyze has already returned.
-Reads the candidate's stored skill profile from BigQuery so the client
-only needs to send candidate_id — no re-upload of resume needed.
-
-Stages added here as Steps 3-6 are built:
-  Stage E1 — MarketPulseAgent    (Step 3)
-  Stage E2 — Auto-gap            (Step 4)
-  Stage E3 — Salary Intelligence (Step 5)
-  Stage E4 — CompanyRadarAgent   (Step 6)
+Stages run in two parallel rounds:
+  Round 1 (parallel): E1 MarketPulse  +  E3 SalaryIntel
+  Round 2 (parallel): E2 AutoGap      +  E4 CompanyRadar
+  (E2 and E4 both need MarketPulse output, so they wait for Round 1)
 """
 
 from __future__ import annotations
 
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -43,27 +39,15 @@ def run_enrichment(
     ideal_stage:  str = "Enterprise",
 ) -> EnrichmentResult:
     """
-    Run the enrichment pipeline for a candidate whose skills are already
-    stored in BigQuery from a prior /analyze call.
-
-    Parameters
-    ----------
-    candidate_id : Unique ID matching the /analyze call.
-    target_role  : Role string from the /analyze call (may be "Career Transition").
-    project_id   : GCP project ID.
-    region       : Vertex AI region.
-    context_text : Optional free-text context passed through from the frontend.
-
-    Returns
-    -------
-    EnrichmentResult — all Optional fields are None until their step is built.
+    Run enrichment pipeline for a candidate already processed by /analyze.
+    Parallel execution cuts total time from ~60s sequential → ~20-30s.
     """
     wall_start = time.perf_counter()
     stages: dict[str, StageResult] = {}
 
     # ── Resolve candidate skill profile from BigQuery ─────────────────────
-    skill_names:     list[str] = []
-    industry_label:  str       = "General Business"
+    skill_names:    list[str] = []
+    industry_label: str       = "General Business"
 
     try:
         from reskillio.storage.profile_store import CandidateProfileStore
@@ -81,113 +65,93 @@ def run_enrichment(
                 region=region,
             )
             if industry_result.scores:
-                top_key   = industry_result.scores[0].industry
+                top_key        = industry_result.scores[0].industry
                 industry_label = _INDUSTRY_LABELS.get(top_key, top_key)
 
         logger.info(
-            f"[enrich] Profile loaded — {len(skill_names)} skills, "
-            f"industry='{industry_label}' for candidate='{candidate_id}'"
+            f"[enrich] Profile — {len(skill_names)} skills, "
+            f"industry='{industry_label}', candidate='{candidate_id}'"
         )
     except Exception as exc:
-        logger.warning(f"[enrich] Profile lookup failed: {exc} — proceeding with empty profile")
+        logger.warning(f"[enrich] Profile lookup failed: {exc}")
 
     # ====================================================================
-    # Stage E1 — Market Pulse  (Step 3)
+    # Round 1 — E1 MarketPulse  +  E3 SalaryIntel  (parallel)
     # ====================================================================
     market_pulse: Optional[MarketPulseResult] = None
-    t = time.perf_counter()
-    try:
+    salary_intel: Optional[SalaryIntelResult] = None
+
+    def _run_market_pulse():
         from reskillio.agents.market_pulse_agent import run_market_pulse_agent
-        market_pulse = run_market_pulse_agent(
+        return run_market_pulse_agent(
             skill_names=skill_names,
             industry=industry_label,
             target_role=target_role,
             project_id=project_id,
             region=region,
         )
-        stages["market_pulse"] = StageResult(success=True, duration_ms=_ms(t))
-        logger.info(
-            f"[enrich] Market pulse done — {len(market_pulse.top_roles)} roles, "
-            f"demand={market_pulse.overall_demand}"
-        )
-    except Exception as exc:
-        stages["market_pulse"] = StageResult(success=False, duration_ms=_ms(t), error=str(exc))
-        logger.warning(f"[enrich] Market pulse failed: {exc}")
 
-    # ====================================================================
-    # Stage E2 — Auto-gap  (Step 4)
-    # ====================================================================
-    auto_gap: Optional[AutoGapResult] = None
-    t = time.perf_counter()
-    if market_pulse and market_pulse.top_roles:
-        try:
-            from reskillio.pipelines.auto_gap_pipeline import run_auto_gap
-            auto_gap = run_auto_gap(
-                top_roles=market_pulse.top_roles,
-                candidate_id=candidate_id,
-                project_id=project_id,
-                region=region,
-            )
-            stages["auto_gap"] = StageResult(success=True, duration_ms=_ms(t))
-            logger.info(
-                f"[enrich] Auto-gap done — readiness={auto_gap.overall_readiness:.1f}, "
-                f"top_missing={auto_gap.top_skills_to_add[:3]}"
-            )
-        except Exception as exc:
-            stages["auto_gap"] = StageResult(success=False, duration_ms=_ms(t), error=str(exc))
-            logger.warning(f"[enrich] Auto-gap failed: {exc}")
-    else:
-        stages["auto_gap"] = StageResult(
-            success=True, duration_ms=0, error="skipped — no market pulse roles"
-        )
-
-    # ====================================================================
-    # Stage E3 — Salary Intelligence  (Step 5)
-    # ====================================================================
-    salary_intel: Optional[SalaryIntelResult] = None
-    t = time.perf_counter()
-    try:
+    def _run_salary_intel():
         from reskillio.pipelines.salary_intel_pipeline import run_salary_intel
-
-        # Use top market role as target if candidate said "Career Transition"
-        effective_role = target_role
-        if (target_role == "Career Transition"
-                and market_pulse
-                and market_pulse.top_roles):
-            effective_role = market_pulse.top_roles[0].title
-
-        salary_intel = run_salary_intel(
+        return run_salary_intel(
             skill_names=skill_names,
             industry=industry_label,
-            target_role=effective_role,
+            target_role=target_role,
             project_id=project_id,
             region=region,
         )
-        stages["salary_intel"] = StageResult(success=True, duration_ms=_ms(t))
-        logger.info(
-            f"[enrich] Salary intel done — "
-            f"${salary_intel.floor_usd:,} / ${salary_intel.median_usd:,} / "
-            f"${salary_intel.ceiling_usd:,}"
-        )
-    except Exception as exc:
-        stages["salary_intel"] = StageResult(success=False, duration_ms=_ms(t), error=str(exc))
-        logger.warning(f"[enrich] Salary intel failed: {exc}")
+
+    t_r1 = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_mp = pool.submit(_run_market_pulse)
+        f_si = pool.submit(_run_salary_intel)
+
+        t_mp = time.perf_counter()
+        try:
+            market_pulse = f_mp.result(timeout=60)
+            stages["market_pulse"] = StageResult(success=True, duration_ms=_ms(t_mp))
+            logger.info(f"[enrich] MarketPulse done — {len(market_pulse.top_roles)} roles, demand={market_pulse.overall_demand}")
+        except Exception as exc:
+            stages["market_pulse"] = StageResult(success=False, duration_ms=_ms(t_mp), error=str(exc))
+            logger.warning(f"[enrich] MarketPulse failed: {exc}")
+
+        t_si = time.perf_counter()
+        try:
+            salary_intel = f_si.result(timeout=60)
+            stages["salary_intel"] = StageResult(success=True, duration_ms=_ms(t_si))
+            logger.info(f"[enrich] SalaryIntel done — ${salary_intel.floor_usd:,}/${salary_intel.median_usd:,}/${salary_intel.ceiling_usd:,}")
+        except Exception as exc:
+            stages["salary_intel"] = StageResult(success=False, duration_ms=_ms(t_si), error=str(exc))
+            logger.warning(f"[enrich] SalaryIntel failed: {exc}")
+
+    logger.info(f"[enrich] Round 1 done in {_ms(t_r1)} ms")
 
     # ====================================================================
-    # Stage E4 — Company Radar  (Step 6)
+    # Round 2 — E2 AutoGap  +  E4 CompanyRadar  (parallel, need E1 output)
     # ====================================================================
+    auto_gap:      Optional[AutoGapResult]      = None
     company_radar: Optional[CompanyRadarResult] = None
-    t = time.perf_counter()
-    try:
-        from reskillio.agents.company_radar_agent import run_company_radar_agent
 
-        top_role_titles = (
-            [r.title for r in market_pulse.top_roles]
-            if market_pulse and market_pulse.top_roles
-            else [target_role]
+    top_role_titles = (
+        [r.title for r in market_pulse.top_roles]
+        if market_pulse and market_pulse.top_roles
+        else [target_role]
+    )
+
+    def _run_auto_gap():
+        if not (market_pulse and market_pulse.top_roles):
+            raise ValueError("skipped — no market pulse roles")
+        from reskillio.pipelines.auto_gap_pipeline import run_auto_gap
+        return run_auto_gap(
+            top_roles=market_pulse.top_roles,
+            candidate_id=candidate_id,
+            project_id=project_id,
+            region=region,
         )
 
-        company_radar = run_company_radar_agent(
+    def _run_company_radar():
+        from reskillio.agents.company_radar_agent import run_company_radar_agent
+        return run_company_radar_agent(
             skill_names=skill_names,
             industry=industry_label,
             top_roles=top_role_titles,
@@ -195,15 +159,31 @@ def run_enrichment(
             project_id=project_id,
             region=region,
         )
-        stages["company_radar"] = StageResult(success=True, duration_ms=_ms(t))
-        logger.info(
-            f"[enrich] Company radar done — "
-            f"{len(company_radar.companies)} employers, "
-            f"freshness={company_radar.data_freshness}"
-        )
-    except Exception as exc:
-        stages["company_radar"] = StageResult(success=False, duration_ms=_ms(t), error=str(exc))
-        logger.warning(f"[enrich] Company radar failed: {exc}")
+
+    t_r2 = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        f_ag = pool.submit(_run_auto_gap)
+        f_cr = pool.submit(_run_company_radar)
+
+        t_ag = time.perf_counter()
+        try:
+            auto_gap = f_ag.result(timeout=60)
+            stages["auto_gap"] = StageResult(success=True, duration_ms=_ms(t_ag))
+            logger.info(f"[enrich] AutoGap done — readiness={auto_gap.overall_readiness:.1f}, top_missing={auto_gap.top_skills_to_add[:3]}")
+        except Exception as exc:
+            stages["auto_gap"] = StageResult(success=False, duration_ms=_ms(t_ag), error=str(exc))
+            logger.warning(f"[enrich] AutoGap failed: {exc}")
+
+        t_cr = time.perf_counter()
+        try:
+            company_radar = f_cr.result(timeout=60)
+            stages["company_radar"] = StageResult(success=True, duration_ms=_ms(t_cr))
+            logger.info(f"[enrich] CompanyRadar done — {len(company_radar.companies)} employers")
+        except Exception as exc:
+            stages["company_radar"] = StageResult(success=False, duration_ms=_ms(t_cr), error=str(exc))
+            logger.warning(f"[enrich] CompanyRadar failed: {exc}")
+
+    logger.info(f"[enrich] Round 2 done in {_ms(t_r2)} ms")
 
     total_ms = _ms(wall_start)
     logger.info(f"[enrich] Complete: {total_ms} ms for candidate='{candidate_id}'")

@@ -81,19 +81,23 @@ def _ddg_search(query: str, max_results: int = _DDG_RESULTS) -> list[str]:
 
 
 def _gather_snippets(target_role: str, industry: str, skills: list[str]) -> str:
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     top_skills = ", ".join(skills[:4])
     queries = [
         f"{target_role} salary 2025 US",
         f"{industry} professional salary range 2025",
-        f"{top_skills} skills salary premium 2025",
     ]
     all_snippets: list[str] = []
-    for q in queries:
-        found = _ddg_search(q)
-        all_snippets.extend(found)
+    with ThreadPoolExecutor(max_workers=len(queries)) as pool:
+        futures = {pool.submit(_ddg_search, q): q for q in queries}
+        for future in as_completed(futures, timeout=10):
+            try:
+                all_snippets.extend(future.result(timeout=3))
+            except Exception:
+                pass
     if not all_snippets:
         return "No live salary data found — use general US compensation benchmarks."
-    return "\n".join(all_snippets[:18])
+    return "\n".join(all_snippets[:16])
 
 
 def _apply_credentials() -> None:

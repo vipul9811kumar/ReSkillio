@@ -2658,41 +2658,44 @@ function renderGap(gap) {
   const nb = document.getElementById('gap-next');
   nb.textContent = 'Read your career story \u2192';
 
-  const score = gap.gap_score ?? gap.readiness_score ?? 74;
-  const have  = gap.matched_skills  || [];
-  const need  = gap.missing_skills  || [];
+  const score     = gap.gap_score ?? gap.readiness_score ?? 74;
+  const have      = gap.matched_skills      || [];
+  const need      = gap.missing_skills      || [];
+  const transfers = gap.transferable_skills || [];
 
   gr.querySelector('.gsh-num').textContent = score;
   gr.querySelector('.gsh-text').textContent =
-    score >= 70
-      ? `Strong match \u2014 you already have most of what this role needs. ${need.length} skill${need.length !== 1 ? 's' : ''} to bridge.`
-      : `Moderate match \u2014 ${need.length} skill${need.length !== 1 ? 's' : ''} to develop before you\u2019re fully competitive.`;
+    need.length === 0
+      ? `Excellent match \u2014 you meet all key requirements for this role.`
+      : score >= 70
+        ? `Strong match \u2014 you already have most of what this role needs. ${need.length} skill${need.length !== 1 ? 's' : ''} to bridge.`
+        : `Moderate match \u2014 ${need.length} skill${need.length !== 1 ? 's' : ''} to develop before you\u2019re fully competitive.`;
 
+  // "You already have" — exact matches + transferable matches
   const haveCol = gr.querySelector('.gap-cols > div:first-child');
   haveCol.innerHTML = '<div class="gc-head">You already have</div>';
   have.forEach(s => {
     haveCol.innerHTML += `<div class="gap-item gi-have"><div class="gi-dot gd-h"></div>${s}</div>`;
   });
-
-  const needCol = gr.querySelector('.gap-cols > div:last-child');
-  needCol.innerHTML = '<div class="gc-head">Skills to develop</div>';
-  need.forEach(s => {
-    needCol.innerHTML += `<div class="gap-item gi-need"><div class="gi-dot gd-n"></div>${s}</div>`;
+  transfers.forEach(t => {
+    const pct = Math.round((t.similarity || 0) * 100);
+    haveCol.innerHTML += `<div class="gap-item gi-have" style="opacity:0.8" title="Transferable: ${pct}% match"><div class="gi-dot" style="background:var(--teal-400)"></div>${t.candidate_skill} <span style="font-size:11px;color:var(--teal-600)">(covers \u201c${t.jd_skill}\u201d)</span></div>`;
   });
 
-  const txBox = document.getElementById('transfer-box');
-  const transfers = gap.transferable_skills || [];
-  if (txBox && transfers.length > 0) {
-    const lines = transfers.slice(0, 3).map(t => {
-      const pct = Math.round((t.similarity || 0) * 100);
-      return `<div style="margin-bottom:6px"><strong>Transferable match:</strong> your <em>${t.candidate_skill}</em> maps to their &ldquo;${t.jd_skill}&rdquo; requirement &mdash; ${pct}% semantic similarity. Mention this explicitly in your cover letter; most candidates won\u2019t make this connection.</div>`;
+  // "Still to develop" — genuinely missing skills
+  const needCol = gr.querySelector('.gap-cols > div:last-child');
+  needCol.innerHTML = '<div class="gc-head">Still to develop</div>';
+  if (need.length === 0) {
+    needCol.innerHTML += `<div class="gap-item" style="color:var(--teal-700);font-size:13px;padding:10px 0">\u2713 No critical gaps \u2014 you meet all key requirements</div>`;
+  } else {
+    need.forEach(s => {
+      needCol.innerHTML += `<div class="gap-item gi-need"><div class="gi-dot gd-n"></div>${s}</div>`;
     });
-    txBox.innerHTML = lines.join('');
-    txBox.classList.remove('hidden');
-  } else if (txBox) {
-    txBox.classList.add('hidden');
-    txBox.innerHTML = '';
   }
+
+  // Hide old transfer-box (now shown inline above)
+  const txBox = document.getElementById('transfer-box');
+  if (txBox) { txBox.classList.add('hidden'); txBox.innerHTML = ''; }
 
   gr.classList.remove('hidden');
   nb.classList.remove('hidden');

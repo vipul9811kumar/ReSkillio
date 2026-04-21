@@ -2822,20 +2822,32 @@ async function fetchPersonGap(data) {
   fd.append('work_values',        workValues);
   if (topSkillsCsv) fd.append('skills_csv', topSkillsCsv);
 
+  // Restore from localStorage cache on return navigation
+  try {
+    const cached = JSON.parse(localStorage.getItem('reskillio_persongap_' + data.candidate_id) || 'null');
+    if (cached) {
+      loading.classList.add('hidden');
+      renderPersonGap(cached);
+      content.classList.remove('hidden');
+      if (cached.context_used !== 'intake') ctaBox.classList.remove('hidden');
+      console.info('[person-gap] Restored from cache');
+      return;
+    }
+  } catch(_) {}
+
   try {
     const res = await fetch(`${API_BASE}/person-gap`, { method: 'POST', body: fd });
     loading.classList.add('hidden');
 
     if (!res.ok) {
-      // No intake yet — show CTA
       ctaBox.classList.remove('hidden');
       return;
     }
 
     const pg = await res.json();
+    try { localStorage.setItem('reskillio_persongap_' + data.candidate_id, JSON.stringify(pg)); } catch(_) {}
     renderPersonGap(pg);
     content.classList.remove('hidden');
-    // If no intake yet, show the CTA nudge beneath the trait-based result
     if (pg.context_used !== 'intake') {
       ctaBox.classList.remove('hidden');
     }
@@ -3044,8 +3056,24 @@ function renderPathway(roadmap, targetRole, gapScore) {
 }
 
 /* ── Option B — Background enrichment ──────────────────────────── */
-async function fetchEnrichment(candidateId, targetRole, contextText, idealStage) {
+async function fetchEnrichment(candidateId, targetRole, contextText, idealStage, forceRefresh) {
   if (!candidateId) return;
+
+  // On return navigation, restore from localStorage cache instead of re-fetching
+  if (!forceRefresh && !contextText) {
+    try {
+      const cached = JSON.parse(localStorage.getItem('reskillio_enrich_' + candidateId) || 'null');
+      if (cached) {
+        enrichData = cached;
+        console.info('[enrich] Restored from cache for', candidateId);
+        try { renderEnrichment(enrichData); } catch(e) { console.error('[renderEnrichment]', e); }
+        return;
+      }
+    } catch(_) {}
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 110000); // 110s — just under Cloud Run limit
   try {
     const fd = new FormData();
     fd.append('candidate_id', candidateId);
@@ -3054,15 +3082,18 @@ async function fetchEnrichment(candidateId, targetRole, contextText, idealStage)
     if (idealStage)  fd.append('ideal_stage', idealStage);
 
     console.info('[enrich] Starting background enrichment for', candidateId);
-    const res = await fetch(`${API_BASE}/enrich`, { method: 'POST', body: fd });
+    const res = await fetch(`${API_BASE}/enrich`, { method: 'POST', body: fd, signal: controller.signal });
+    clearTimeout(timeout);
     if (!res.ok) { console.warn('[enrich] Non-OK response:', res.status); return; }
 
     enrichData = await res.json();
+    // Cache so return navigation doesn't need to re-fetch
+    try { localStorage.setItem('reskillio_enrich_' + candidateId, JSON.stringify(enrichData)); } catch(_) {}
     console.info('[enrich] Enrichment complete:', enrichData);
 
-    // If user has already navigated to a step that uses enrichment, refresh it
     try { renderEnrichment(enrichData); } catch(e) { console.error('[renderEnrichment]', e); }
   } catch(e) {
+    clearTimeout(timeout);
     console.warn('[enrich] Background enrichment failed (non-blocking):', e.message);
   }
 }
@@ -3260,9 +3291,11 @@ document.querySelectorAll('.ind-bar-f').forEach(b => { b.style.width = '0%'; });
     try { renderIndustry(analysisData);  } catch(e) { console.error('[init/renderIndustry]', e); }
     try { renderNarrative(analysisData); } catch(e) { console.error('[init/renderNarrative]', e); }
     try { renderSummary(analysisData);   } catch(e) { console.error('[init/renderSummary]', e); }
-    // Re-fire enrichment & person gap so the deeper sections populate
-    const idealStage = analysisData.trait_profile?.ideal_stage || 'Enterprise';
-    fetchEnrichment(analysisData.candidate_id, _enrichTargetRole, '', idealStage);
+    // Restore enrichment from cache (instant) or re-fetch if cache is missing
+    const idealStage   = analysisData.trait_profile?.ideal_stage || 'Enterprise';
+    const storedRole   = analysisData.target_role || 'Career Transition';
+    _enrichTargetRole  = storedRole;
+    fetchEnrichment(analysisData.candidate_id, storedRole, '', idealStage);
     fetchPersonGap(analysisData);
     goStep(2);
   } else {

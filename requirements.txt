@@ -11,7 +11,8 @@ crewai>=1.14.0
 litellm>=1.83.0
 ddgs>=9.0.0
 
-# --- Gemini AI Studio (generative narrative) ---
+# --- LLM APIs ---
+groq>=0.9.0
 google-genai>=1.0.0
 
 # --- GCP / Vertex AI ---

@@ -14,7 +14,11 @@ class Settings(BaseSettings):
     # Vertex AI
     vertex_model_name: str = "gemini-1.5-pro-001"
 
-    # Gemini AI Studio (simpler alternative to Vertex AI for generative calls)
+    # Groq — free LLM API, no billing required (llama-3.3-70b-versatile)
+    # Get a free key at https://console.groq.com/keys
+    groq_api_key: str = ""
+
+    # Gemini AI Studio (fallback if Groq key not set)
     # Get a free key at https://aistudio.google.com
     gemini_api_key: str = ""
 

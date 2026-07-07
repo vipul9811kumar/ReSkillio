@@ -1,8 +1,12 @@
 """
-Shared Gemini client helper — Vertex AI when configured, AI Studio key as fallback.
+Shared LLM client helper.
 
-Set GEMINI_USE_AI_STUDIO=true in .env to skip Vertex entirely and route all
-LLM calls through the AI Studio API key (use when Vertex AI is unavailable).
+Routing priority (first available wins):
+  1. Groq  — if GROQ_API_KEY is set (llama-3.3-70b-versatile, completely free)
+  2. AI Studio — if GEMINI_API_KEY is set and GEMINI_USE_AI_STUDIO=true
+  3. Vertex AI  — if GCP project configured and above two are absent
+
+Set GROQ_API_KEY in .env for the fully free path with no Google billing required.
 """
 
 from __future__ import annotations
@@ -11,8 +15,18 @@ import warnings
 
 from loguru import logger
 
+_GROQ_MODEL   = "llama-3.3-70b-versatile"
 _VERTEX_MODEL = "gemini-2.5-flash"
 _STUDIO_MODEL = "gemini-2.0-flash"
+
+
+def _groq_key() -> str:
+    try:
+        from config.settings import settings
+        return settings.groq_api_key
+    except Exception:
+        import os
+        return os.environ.get("GROQ_API_KEY", "")
 
 
 def _prefer_studio() -> bool:
@@ -32,6 +46,27 @@ def _studio_key() -> str:
         return os.environ.get("GEMINI_API_KEY", "")
 
 
+def _call_groq(
+    prompt: str,
+    system_instruction: str,
+    temperature: float,
+    max_tokens: int,
+) -> str:
+    from groq import Groq
+    client = Groq(api_key=_groq_key())
+    messages = []
+    if system_instruction:
+        messages.append({"role": "system", "content": system_instruction})
+    messages.append({"role": "user", "content": prompt})
+    completion = client.chat.completions.create(
+        model=_GROQ_MODEL,
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    return completion.choices[0].message.content.strip()
+
+
 def call_gemini(
     prompt: str,
     system_instruction: str,
@@ -41,14 +76,24 @@ def call_gemini(
     max_tokens: int = 1024,
 ) -> str:
     """
-    Call Gemini and return response text.
+    Call the configured LLM and return response text.
 
     Routing:
-      GEMINI_USE_AI_STUDIO=true (or GCP_PROJECT_ID unset) → AI Studio key, gemini-2.0-flash
-      Otherwise → Vertex AI gemini-2.5-flash, falls back to AI Studio on failure.
-
-    Raises RuntimeError if both paths are unavailable.
+      GROQ_API_KEY set        → Groq llama-3.3-70b-versatile (free, no billing)
+      GEMINI_USE_AI_STUDIO=true → Google AI Studio gemini-2.0-flash
+      Otherwise               → Vertex AI gemini-2.5-flash → AI Studio fallback
     """
+    # 1. Groq — free tier, no Google billing required
+    groq_key = _groq_key()
+    if groq_key:
+        try:
+            result = _call_groq(prompt, system_instruction, temperature, max_tokens)
+            logger.debug(f"[llm] Groq {_GROQ_MODEL} OK ({len(result)} chars)")
+            return result
+        except Exception as exc:
+            logger.warning(f"[llm] Groq failed ({type(exc).__name__}: {exc}) — trying Gemini")
+
+    # 2. Google Gemini (AI Studio or Vertex)
     warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
     from google import genai
     from google.genai import types as gt
@@ -75,12 +120,12 @@ def call_gemini(
             )
             return resp.text.strip()
         except Exception as exc:
-            logger.warning(f"[gemini] Vertex failed ({type(exc).__name__}) — falling back to AI Studio")
+            logger.warning(f"[llm] Vertex failed ({type(exc).__name__}) — falling back to AI Studio")
 
     api_key = _studio_key()
     if not api_key:
         raise RuntimeError(
-            "Gemini unavailable — set GEMINI_API_KEY in .env or enable Vertex AI"
+            "No LLM available — set GROQ_API_KEY (free) or GEMINI_API_KEY in .env"
         )
 
     client = genai.Client(api_key=api_key)

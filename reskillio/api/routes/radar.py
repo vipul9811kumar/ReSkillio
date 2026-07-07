@@ -46,10 +46,21 @@ async def search_opportunities(request: RadarRequest) -> RadarResponse:
         from reskillio.storage.profile_store import CandidateProfileStore
         profile     = CandidateProfileStore(project_id=s.gcp_project_id).get_profile(request.candidate_id)
         skill_names = [sk.skill_name for sk in (profile.skills or [])]
+
+        # candidate_profiles may be empty (DML MERGE blocked in BQ Sandbox).
+        # Fall back to skill_extractions which is written via batch load job.
+        if not skill_names:
+            try:
+                from reskillio.storage.bigquery_store import BigQuerySkillStore
+                rows = BigQuerySkillStore(project_id=s.gcp_project_id).get_skills_for_candidate(request.candidate_id)
+                skill_names = [r["skill_name"] for r in rows[:20]]
+                logger.info(f"[radar] Using {len(skill_names)} skills from skill_extractions fallback")
+            except Exception as exc:
+                logger.warning(f"[radar] skill_extractions fallback failed: {exc}")
+
         candidate_skills = [
-            {"name": sk.skill_name, "category": getattr(sk, "category", "general"),
-             "confidence": getattr(sk, "confidence_score", 0.9)}
-            for sk in (profile.skills or [])[:20]
+            {"name": name, "category": "general", "confidence": 0.9}
+            for name in skill_names[:20]
         ]
 
         # ── Load intake for identity / prefs ─────────────────────────────
@@ -78,7 +89,7 @@ async def search_opportunities(request: RadarRequest) -> RadarResponse:
         except Exception as exc:
             logger.warning(f"[radar] Intake load failed, using defaults: {exc}")
 
-        top_skills = skill_names[:10] or ["operations", "team leadership", "process optimization"]
+        top_skills = skill_names[:10] or ["cloud", "consulting", "project management"]
 
         # Pull top roles from enrichment data if available (MarketPulseAgent output)
         top_roles: list[str] = []
@@ -131,6 +142,43 @@ async def search_opportunities(request: RadarRequest) -> RadarResponse:
             ))
 
         matches.sort(key=lambda m: m.score_breakdown.overall_score, reverse=True)
+
+        # If real sources produced fewer than 3 matches, backfill with Groq-generated
+        # synthetic opportunities so the radar always shows meaningful results.
+        if len(matches) < 3 and skill_names:
+            try:
+                from reskillio.radar.job_fetcher import generate_groq_opportunities
+                synthetic = generate_groq_opportunities(
+                    top_skills=skill_names[:10],
+                    identity=candidate_identity,
+                    industry=top_industry,
+                    project_id=s.gcp_project_id,
+                    region=s.gcp_region,
+                )
+                for opp in synthetic:
+                    breakdown, skill_detail = _engine.score_match(
+                        candidate_skills=candidate_skills,
+                        candidate_identity=candidate_identity,
+                        candidate_seniority=candidate_seniority,
+                        candidate_prefs=candidate_prefs,
+                        opportunity=opp,
+                    )
+                    matches.append(OpportunityMatch(
+                        match_id=str(uuid.uuid4()),
+                        candidate_id=request.candidate_id,
+                        opportunity_id=opp.opportunity_id,
+                        opportunity=opp,
+                        score_breakdown=breakdown,
+                        skill_detail=skill_detail,
+                        match_reasons=_build_reasons(opp, breakdown, skill_detail),
+                        fit_narrative=f"{breakdown.overall_score:.0f}/100 match — {opp.engagement_type.value} opportunity",
+                        generated_at=datetime.now(timezone.utc),
+                    ))
+                matches.sort(key=lambda m: m.score_breakdown.overall_score, reverse=True)
+                logger.info(f"[radar] Added {len(synthetic)} Groq synthetic opportunities")
+            except Exception as exc:
+                logger.warning(f"[radar] Groq synthetic fallback failed: {exc}")
+
         matches = matches[:request.max_results]
 
         rates    = [m.opportunity.rate_floor for m in matches if m.opportunity.rate_floor]

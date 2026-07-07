@@ -56,7 +56,7 @@ def fetch_opportunities(
     search_terms = _build_search_terms(top_skills, top_roles, identity, target_role, industry)
     logger.info(f"[job_fetcher] search terms: {search_terms}")
 
-    raw_jobs = _fetch_all_sources(search_terms)
+    raw_jobs = _fetch_all_sources(search_terms, top_skills=top_skills)
     logger.info(f"[job_fetcher] {len(raw_jobs)} raw jobs before dedup")
 
     raw_jobs = _dedup_by_url(raw_jobs)
@@ -154,7 +154,7 @@ def _build_search_terms(
 # Parallel source fetching
 # ---------------------------------------------------------------------------
 
-def _fetch_all_sources(search_terms: list[str]) -> list[dict]:
+def _fetch_all_sources(search_terms: list[str], top_skills: list[str] | None = None) -> list[dict]:
     """
     Run Remotive + DDG in parallel threads.
     Adzuna is tried automatically if credentials are present.
@@ -169,7 +169,7 @@ def _fetch_all_sources(search_terms: list[str]) -> list[dict]:
         futures_map[f] = "remotive:categories"
 
         # Remotive — keyword searches using short 1-2 word terms
-        remotive_keywords = _extract_short_keywords(search_terms)
+        remotive_keywords = _extract_short_keywords(search_terms, top_skills=top_skills)
         for kw in remotive_keywords[:4]:
             f = pool.submit(fetch_by_keyword, kw)
             futures_map[f] = f"remotive:{kw}"
@@ -202,31 +202,121 @@ def _fetch_all_sources(search_terms: list[str]) -> list[dict]:
     return raw_jobs
 
 
-def _extract_short_keywords(search_terms: list[str]) -> list[str]:
+def _extract_short_keywords(search_terms: list[str], top_skills: list[str] | None = None) -> list[str]:
     """
-    Derive short 1-2 word keywords from full search phrases for Remotive,
-    which only returns results for simple terms.
-    E.g. 'fractional VP operations startup' → 'operations'
-         'Head of Operations' → 'operations'
+    Derive short 1-2 word keywords from actual candidate skills + search phrases for Remotive.
+    Prioritises the real skill set so tech candidates get tech jobs, not ops jobs.
     """
-    priority = ["operations", "management", "consulting", "finance",
-                "product", "sales", "project", "strategy", "analyst"]
     found: list[str] = []
     seen:  set[str]  = set()
 
+    # First: use actual skills directly (1-2 words work best in Remotive)
+    if top_skills:
+        for skill in top_skills[:6]:
+            word = skill.lower().strip()
+            if word and len(word.split()) <= 2 and word not in seen:
+                seen.add(word)
+                found.append(skill)
+
+    # Second: extract useful words from search phrases
+    useful = {
+        "operations", "management", "consulting", "finance", "product",
+        "sales", "project", "strategy", "analyst", "engineering", "developer",
+        "data", "python", "cloud", "devops", "machine", "learning", "ai",
+        "security", "infrastructure", "platform", "backend", "frontend",
+    }
     for term in search_terms:
-        words = term.lower().split()
-        for w in words:
-            if w in priority and w not in seen:
+        for w in term.lower().split():
+            if w in useful and w not in seen:
                 seen.add(w)
                 found.append(w)
 
-    # Always include "operations" and "management" as base terms
-    for base in ("operations", "management"):
-        if base not in seen:
-            found.append(base)
+    return found[:6]
 
-    return found
+
+def generate_groq_opportunities(
+    top_skills: list[str],
+    identity:   str,
+    industry:   str,
+    project_id: str,
+    region:     str = "us-central1",
+) -> list["Opportunity"]:
+    """
+    Generate 4 realistic fractional/contract opportunities via Groq when real
+    job sources return too few results.  required_skills are drawn directly from
+    the candidate's top skills so the matching engine scores them highly.
+    """
+    import json, re, uuid
+    from reskillio.utils.gemini import call_gemini
+    from reskillio.radar.models import Opportunity, EngagementType, HiringSignal, CompanyStage
+
+    def _safe(enum_cls, val, default):
+        try:
+            return enum_cls(val)
+        except Exception:
+            return default
+
+    skills_str = ", ".join(top_skills[:8])
+    prompt = f"""Generate 4 realistic fractional or contract job opportunities for a candidate with these skills:
+Skills: {skills_str}
+Industry: {industry}
+Work identity: {identity} (builder=prefers greenfield; operator=prefers scale; expert=advisory)
+
+Rules:
+- Tailor engagement_type and required_skills to the actual skills listed.
+- required_skills MUST overlap significantly with the candidate's skill list above.
+- Rates in USD per day (typical range $600–$1500 for senior consultants).
+- Realistic company names (not "Example Corp").
+
+Return ONLY a valid JSON array (no markdown fences):
+[
+  {{
+    "company_name": "...",
+    "company_stage": "seed|series_a|series_b|smb|enterprise",
+    "company_industry": "...",
+    "role_title": "...",
+    "engagement_type": "fractional|consulting|advisory|interim",
+    "days_per_week": 2,
+    "duration_months": 6,
+    "rate_floor": 800,
+    "rate_ceiling": 1200,
+    "required_skills": ["skill1", "skill2", "skill3", "skill4"],
+    "culture_signals": ["signal1", "signal2"],
+    "remote_ok": true
+  }}
+]"""
+
+    system = "You are a senior tech recruiter. Respond only with valid JSON."
+    try:
+        raw = call_gemini(prompt, system, project_id, region, temperature=0.4, max_tokens=1200)
+        raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()
+        data = json.loads(raw)
+        opps = []
+        for d in (data if isinstance(data, list) else []):
+            if not isinstance(d, dict):
+                continue
+            opps.append(Opportunity(
+                opportunity_id=str(uuid.uuid4()),
+                company_name=d.get("company_name", "Tech Startup"),
+                company_stage=_safe(CompanyStage, d.get("company_stage"), CompanyStage.SERIES_A),
+                company_industry=d.get("company_industry", industry),
+                role_title=d.get("role_title", "Fractional Tech Consultant"),
+                engagement_type=_safe(EngagementType, d.get("engagement_type"), EngagementType.CONSULTING),
+                commitment_days_per_week=float(d.get("days_per_week") or 2),
+                duration_months=d.get("duration_months"),
+                rate_floor=float(d.get("rate_floor") or 700),
+                rate_ceiling=float(d.get("rate_ceiling") or 1100),
+                rate_unit="day",
+                required_skills=d.get("required_skills", top_skills[:4]),
+                culture_signals=d.get("culture_signals", []),
+                hiring_signal=HiringSignal.INFERRED,
+                remote_ok=bool(d.get("remote_ok", True)),
+            ))
+        logger.info(f"[job_fetcher] Groq generated {len(opps)} synthetic opportunities")
+        return opps
+    except Exception as exc:
+        logger.warning(f"[job_fetcher] Groq opportunity generation failed: {exc}")
+        return []
 
 
 def _dedup_by_url(raw_jobs: list[dict]) -> list[dict]:

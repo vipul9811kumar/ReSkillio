@@ -23,4 +23,4 @@ ENV PYTHONPATH=/app
 
 # Railway injects $PORT at runtime; fall back to 8080 locally
 EXPOSE 8080
-CMD ["uvicorn", "reskillio.api.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "uvicorn reskillio.api.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

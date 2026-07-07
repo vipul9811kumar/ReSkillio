@@ -56,4 +56,6 @@ def health() -> dict:
 
 @app.on_event("startup")
 def _startup() -> None:
+    from config.gcp_auth import bootstrap_service_account
+    bootstrap_service_account()
     logger.info("ReSkillio API starting up")

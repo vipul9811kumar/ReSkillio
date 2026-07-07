@@ -163,14 +163,24 @@ def run_auto_gap(
     )
 
     # Read candidate skill set from BigQuery
+    candidate_skills_lower: set[str] = set()
     try:
         from reskillio.storage.profile_store import CandidateProfileStore
         profile_store = CandidateProfileStore(project_id=project_id)
         profile = profile_store.get_profile(candidate_id)
         candidate_skills_lower = {s.skill_name.lower() for s in profile.skills}
     except Exception as exc:
-        logger.warning(f"[auto-gap] Could not load candidate profile: {exc} — using empty set")
-        candidate_skills_lower = set()
+        logger.warning(f"[auto-gap] Could not load candidate profile: {exc}")
+
+    # candidate_profiles may be empty (DML MERGE blocked in BQ Sandbox).
+    # Fall back to skill_extractions which is written via batch load job.
+    if not candidate_skills_lower:
+        try:
+            from reskillio.storage.bigquery_store import BigQuerySkillStore
+            rows = BigQuerySkillStore(project_id=project_id).get_skills_for_candidate(candidate_id)
+            candidate_skills_lower = {r["skill_name"].lower() for r in rows}
+        except Exception as exc:
+            logger.warning(f"[auto-gap] skill_extractions fallback failed: {exc}")
 
     logger.info(f"[auto-gap] Candidate has {len(candidate_skills_lower)} skills in profile")
 

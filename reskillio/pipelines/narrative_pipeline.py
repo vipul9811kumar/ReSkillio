@@ -188,23 +188,62 @@ def run_narrative_pipeline(
     # ── 2. Retrieve candidate top skills from BQ ──────────────────────────
     profile_store = CandidateProfileStore(project_id=project_id)
     profile = profile_store.get_profile(candidate_id)
+    candidate_top_skills = [s.skill_name for s in profile.skills[:_TOP_CANDIDATE_SKILLS]]
 
-    if not profile.skills:
+    # candidate_profiles may be empty (DML MERGE blocked in BQ Sandbox).
+    # Fall back to skill_extractions which is written via batch load job.
+    if not candidate_top_skills:
+        try:
+            from reskillio.storage.bigquery_store import BigQuerySkillStore
+            rows = BigQuerySkillStore(project_id=project_id).get_skills_for_candidate(candidate_id)
+            candidate_top_skills = [r["skill_name"] for r in rows[:_TOP_CANDIDATE_SKILLS]]
+            logger.info(f"[narrative] Using {len(candidate_top_skills)} skills from skill_extractions fallback")
+        except Exception as exc:
+            logger.warning(f"[narrative] skill_extractions fallback failed: {exc}")
+
+    if not candidate_top_skills:
         raise ValueError(f"No skill profile found for candidate '{candidate_id}'.")
 
-    candidate_top_skills = [
-        s.skill_name for s in profile.skills[:_TOP_CANDIDATE_SKILLS]
-    ]
     logger.info(f"Candidate top {len(candidate_top_skills)} skills retrieved")
 
     # ── 3. Retrieve industry demand data from BQ ──────────────────────────
     bq_client = profile_store.client
     industry_top_skills = _fetch_industry_skills(bq_client, project_id, industry_key)
 
+    # No industry seed data yet — generate a skills-only narrative without RAG context.
+    # This handles the case where industry_profiles table is empty or not yet seeded.
     if not industry_top_skills:
-        raise RuntimeError(
-            f"No industry profile data found for '{industry_key}'. "
-            "Run scripts/seed_market_data.py first."
+        logger.warning(
+            f"[narrative] No industry_profiles data for '{industry_key}' — "
+            "generating skills-only narrative (run seed_market_data.py to enable RAG)"
+        )
+        skills_str = ", ".join(candidate_top_skills)
+        simple_prompt = (
+            f"Write a 3-sentence career narrative for a professional targeting {target_role} roles.\n"
+            f"Their top skills: {skills_str}.\n"
+            "Sentence 1: Summarise their technical strengths in specific terms.\n"
+            f"Sentence 2: Explain how those skills directly apply to {target_role} roles.\n"
+            "Sentence 3: State a concrete, specific path to get hired.\n"
+            "Write in second person. Reference only the listed skills. Be specific, not generic."
+        )
+        narrative, model_used = _call_gemini(simple_prompt, project_id, region)
+        grounding = NarrativeGrounding(
+            candidate_top_skills=candidate_top_skills,
+            industry_top_skills=[],
+            skill_overlap=[],
+            overlap_count=0,
+            total_industry_skills=0,
+            sample_jd_titles=[],
+        )
+        return NarrativeResult(
+            candidate_id=candidate_id,
+            target_role=target_role,
+            industry=industry_key,
+            industry_label=industry_label,
+            narrative=narrative,
+            grounding=grounding,
+            model=model_used,
+            generated_at=datetime.now(timezone.utc),
         )
 
     # ── 4. Retrieve sample JD titles from BQ ─────────────────────────────

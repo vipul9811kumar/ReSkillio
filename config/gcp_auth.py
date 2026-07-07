@@ -21,10 +21,9 @@ def bootstrap_service_account() -> None:
     if not b64:
         return
 
-    if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-        logger.debug("GOOGLE_APPLICATION_CREDENTIALS already set — skipping bootstrap")
-        return
-
+    # Always decode from GOOGLE_SERVICE_ACCOUNT_JSON when it is present —
+    # do NOT skip if GOOGLE_APPLICATION_CREDENTIALS is already set, because
+    # it might point to a non-existent path (e.g. a placeholder value).
     try:
         json_bytes = base64.b64decode(b64)
         json.loads(json_bytes)  # validate before writing

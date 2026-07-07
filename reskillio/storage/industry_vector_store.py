@@ -156,9 +156,8 @@ class IndustryVectorStore:
         # Truncate and replace
         self.client.query(f"DELETE FROM `{self.table}` WHERE TRUE").result()
         if rows_to_insert:
-            errors = self.client.insert_rows_json(self.table, rows_to_insert)
-            if errors:
-                raise RuntimeError(f"industry_vectors insert errors: {errors}")
+            from reskillio.utils.bq_insert import bq_insert
+            bq_insert(self.client, self.table, rows_to_insert)
 
         logger.info(f"Built {len(rows_to_insert)} industry vectors")
         return len(rows_to_insert)

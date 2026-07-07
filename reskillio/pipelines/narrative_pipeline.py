@@ -145,85 +145,10 @@ Write exactly 3 sentences. Reference only the facts above. Do not add skills, co
 
 
 def _call_gemini(prompt: str, project_id: str, region: str) -> tuple[str, str]:
-    """
-    Call Gemini Flash with the grounded prompt.
-
-    Tries three paths in order:
-    1. Vertex AI (google-genai SDK, vertexai=True) — uses GCP billing, preferred
-    2. Vertex AI (vertexai SDK)                    — legacy fallback
-    3. AI Studio API key                           — if GEMINI_API_KEY set in .env
-
-    Returns
-    -------
-    (narrative_text, model_identifier)
-    """
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
-
-    # Path 1 — google-genai SDK via Vertex AI (uses GCP billing)
-    try:
-        from google import genai
-        from google.genai import types as genai_types
-        client = genai.Client(vertexai=True, project=project_id, location=region)
-        response = client.models.generate_content(
-            model=NARRATIVE_MODEL_VERTEX,
-            contents=prompt,
-            config=genai_types.GenerateContentConfig(
-                system_instruction=_SYSTEM_INSTRUCTION,
-                temperature=0.2,
-                max_output_tokens=512,
-                thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
-            ),
-        )
-        return response.text.strip(), NARRATIVE_MODEL_VERTEX
-    except Exception as e:
-        logger.warning(f"Vertex AI (genai SDK) failed: {e}. Trying fallback...")
-
-    # Path 2 — vertexai SDK (legacy)
-    try:
-        import vertexai
-        from vertexai.generative_models import GenerationConfig, GenerativeModel
-        vertexai.init(project=project_id, location=region)
-        model = GenerativeModel(
-            model_name=NARRATIVE_MODEL_VERTEX,
-            system_instruction=_SYSTEM_INSTRUCTION,
-        )
-        response = model.generate_content(
-            prompt,
-            generation_config=GenerationConfig(temperature=0.2, max_output_tokens=200),
-        )
-        return response.text.strip(), NARRATIVE_MODEL_VERTEX
-    except Exception as e:
-        logger.warning(f"Vertex AI (vertexai SDK) failed: {e}. Trying AI Studio key...")
-
-    # Path 3 — AI Studio API key
-    try:
-        from config.settings import settings
-        api_key = settings.gemini_api_key
-    except Exception:
-        api_key = ""
-
-    if not api_key:
-        raise RuntimeError(
-            "Gemini is unavailable. Enable Vertex AI Generative AI at: "
-            "https://console.cloud.google.com/vertex-ai/model-garden"
-            f"?project={project_id}  OR set GEMINI_API_KEY in .env"
-        )
-
-    from google import genai
-    from google.genai import types as genai_types
-    client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model=NARRATIVE_MODEL_STUDIO,
-        contents=prompt,
-        config=genai_types.GenerateContentConfig(
-            system_instruction=_SYSTEM_INSTRUCTION,
-            temperature=0.2,
-            max_output_tokens=200,
-            candidate_count=1,
-        ),
-    )
-    return response.text.strip(), NARRATIVE_MODEL_STUDIO
+    from reskillio.utils.gemini import call_gemini, _STUDIO_MODEL, _VERTEX_MODEL, _prefer_studio
+    text = call_gemini(prompt, _SYSTEM_INSTRUCTION, project_id, region, temperature=0.2, max_tokens=512)
+    model = _STUDIO_MODEL if _prefer_studio() else _VERTEX_MODEL
+    return text, model
 
 
 def run_narrative_pipeline(

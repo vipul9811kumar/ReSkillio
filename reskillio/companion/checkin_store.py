@@ -101,9 +101,8 @@ class CompanionStore:
             "digest_generated":      checkin.digest_generated,
             "digest_id":             checkin.digest_id,
         }
-        errors = self.client.insert_rows_json(self._table("weekly_checkins"), [row])
-        if errors:
-            raise RuntimeError(f"Checkin save failed: {errors}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(self.client, self._table("weekly_checkins"), [row])
 
     def save_digest(self, digest: WeeklyDigest) -> None:
         row = {
@@ -124,9 +123,8 @@ class CompanionStore:
             "sections_json":     json.dumps([s.dict() for s in digest.sections]),
             "action_items_json": json.dumps([a.dict() for a in digest.action_items]),
         }
-        errors = self.client.insert_rows_json(self._table("companion_digests"), [row])
-        if errors:
-            raise RuntimeError(f"Digest save failed: {errors}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(self.client, self._table("companion_digests"), [row])
 
     # ── Reads ────────────────────────────────────────────────────────────────
 

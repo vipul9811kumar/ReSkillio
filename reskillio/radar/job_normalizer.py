@@ -126,58 +126,10 @@ class JobNormalizer:
     # ------------------------------------------------------------------
 
     def _call_gemini(self, text: str) -> dict:
-        warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
-
+        from reskillio.utils.gemini import call_gemini
         prompt = _PROMPT.format(text=text[:3000])
-
-        try:
-            from google import genai
-            from google.genai import types as genai_types
-
-            client = genai.Client(
-                vertexai=True,
-                project=self.project_id,
-                location=self.region,
-            )
-            response = client.models.generate_content(
-                model=_MODEL_VERTEX,
-                contents=prompt,
-                config=genai_types.GenerateContentConfig(
-                    system_instruction=_SYSTEM,
-                    temperature=0.1,
-                    max_output_tokens=800,
-                    thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
-                ),
-            )
-            return _parse_json(response.text)
-
-        except Exception:
-            pass
-
-        # Studio fallback
-        try:
-            import os
-            api_key = os.environ.get("GEMINI_API_KEY")
-            if not api_key:
-                raise RuntimeError("No API key")
-
-            from google import genai
-            from google.genai import types as genai_types
-
-            client = genai.Client(api_key=api_key)
-            response = client.models.generate_content(
-                model=_MODEL_STUDIO,
-                contents=prompt,
-                config=genai_types.GenerateContentConfig(
-                    system_instruction=_SYSTEM,
-                    temperature=0.1,
-                    max_output_tokens=800,
-                ),
-            )
-            return _parse_json(response.text)
-
-        except Exception as exc:
-            raise RuntimeError(f"Gemini unavailable: {exc}") from exc
+        raw = call_gemini(prompt, _SYSTEM, self.project_id, self.region, temperature=0.1, max_tokens=800)
+        return _parse_json(raw)
 
 
 # ---------------------------------------------------------------------------

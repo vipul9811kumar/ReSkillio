@@ -114,53 +114,8 @@ def _apply_credentials() -> None:
 
 
 def _call_gemini(prompt: str, project_id: str, region: str) -> str:
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
-
-    try:
-        from google import genai
-        from google.genai import types as genai_types
-
-        client = genai.Client(vertexai=True, project=project_id, location=region)
-        response = client.models.generate_content(
-            model=_MODEL_VERTEX,
-            contents=prompt,
-            config=genai_types.GenerateContentConfig(
-                system_instruction=_SYSTEM_INSTRUCTION,
-                temperature=0.2,
-                max_output_tokens=1000,
-                thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
-            ),
-        )
-        return response.text.strip()
-    except Exception as e:
-        logger.warning(f"[salary] Vertex AI failed: {e} — trying AI Studio key")
-
-    try:
-        from config.settings import settings
-        api_key = settings.gemini_api_key
-    except Exception:
-        api_key = ""
-
-    if not api_key:
-        raise RuntimeError(
-            "Gemini unavailable for salary intel — enable Vertex AI or set GEMINI_API_KEY"
-        )
-
-    from google import genai
-    from google.genai import types as genai_types
-
-    client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model=_MODEL_STUDIO,
-        contents=prompt,
-        config=genai_types.GenerateContentConfig(
-            system_instruction=_SYSTEM_INSTRUCTION,
-            temperature=0.2,
-            max_output_tokens=1000,
-        ),
-    )
-    return response.text.strip()
+    from reskillio.utils.gemini import call_gemini
+    return call_gemini(prompt, _SYSTEM_INSTRUCTION, project_id, region, temperature=0.2, max_tokens=1000)
 
 
 def _safe_fallback(target_role: str, industry: str) -> SalaryIntelResult:

@@ -101,56 +101,8 @@ def _apply_credentials() -> None:
 
 
 def _call_gemini(prompt: str, project_id: str, region: str) -> str:
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
-
-    # Path 1 — Vertex AI via google-genai SDK
-    try:
-        from google import genai
-        from google.genai import types as genai_types
-
-        client = genai.Client(vertexai=True, project=project_id, location=region)
-        response = client.models.generate_content(
-            model=_MODEL_VERTEX,
-            contents=prompt,
-            config=genai_types.GenerateContentConfig(
-                system_instruction=_SYSTEM_INSTRUCTION,
-                temperature=0.2,
-                max_output_tokens=1024,
-                thinking_config=genai_types.ThinkingConfig(thinking_budget=0),
-            ),
-        )
-        return response.text.strip()
-    except Exception as e:
-        logger.warning(f"[trait] Vertex AI failed: {e} — trying AI Studio key")
-
-    # Path 2 — AI Studio API key fallback
-    try:
-        from config.settings import settings
-        api_key = settings.gemini_api_key
-    except Exception:
-        api_key = ""
-
-    if not api_key:
-        raise RuntimeError(
-            "Gemini unavailable for trait inference — enable Vertex AI or set GEMINI_API_KEY"
-        )
-
-    from google import genai
-    from google.genai import types as genai_types
-
-    client = genai.Client(api_key=api_key)
-    response = client.models.generate_content(
-        model=_MODEL_STUDIO,
-        contents=prompt,
-        config=genai_types.GenerateContentConfig(
-            system_instruction=_SYSTEM_INSTRUCTION,
-            temperature=0.2,
-            max_output_tokens=1024,
-            candidate_count=1,
-        ),
-    )
-    return response.text.strip()
+    from reskillio.utils.gemini import call_gemini
+    return call_gemini(prompt, _SYSTEM_INSTRUCTION, project_id, region, temperature=0.2, max_tokens=1024)
 
 
 def _parse_response(raw: str) -> Optional[dict]:

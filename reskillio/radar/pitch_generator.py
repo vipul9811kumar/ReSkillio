@@ -81,24 +81,8 @@ def _call_gemini(
     max_tokens: int = 300,
     system: str = PITCH_SYSTEM,
 ) -> str:
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
-
-    from google import genai
-    from google.genai import types as gt
-
-    client = genai.Client(vertexai=True, project=project_id, location=region)
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-        config=gt.GenerateContentConfig(
-            system_instruction=system,
-            temperature=temperature,
-            max_output_tokens=max_tokens,
-            thinking_config=gt.ThinkingConfig(thinking_budget=0),
-        ),
-    )
-    return response.text.strip()
+    from reskillio.utils.gemini import call_gemini
+    return call_gemini(prompt, system, project_id, region, temperature=temperature, max_tokens=max_tokens)
 
 
 class PitchGenerator:

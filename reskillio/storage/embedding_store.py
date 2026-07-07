@@ -134,9 +134,8 @@ class EmbeddingStore:
             logger.info("All skills already in embedding catalog — nothing to insert")
             return 0
 
-        errors = self.client.insert_rows_json(self.full_table_id, rows)
-        if errors:
-            raise RuntimeError(f"Embedding insert errors: {errors}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(self.client, self.full_table_id, rows)
 
         logger.info(f"Inserted {len(rows)} new skill embeddings")
         return len(rows)

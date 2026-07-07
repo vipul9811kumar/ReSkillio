@@ -137,11 +137,8 @@ class BigQuerySkillStore:
             for skill in result.skills
         ]
 
-        errors = self.client.insert_rows_json(self.full_table_id, rows)
-
-        if errors:
-            logger.error(f"BigQuery insert errors: {errors}")
-            raise RuntimeError(f"Failed to insert {len(errors)} rows: {errors}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(self.client, self.full_table_id, rows)
 
         logger.info(
             f"Stored {len(rows)} skills for candidate {candidate_id} "

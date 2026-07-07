@@ -171,75 +171,33 @@ _CHAT_SYSTEM = (
 
 # ── Gemini helpers ──────────────────────────────────────────────────────────
 
-def _apply_credentials() -> None:
-    if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-        return
-    try:
-        from config.settings import settings
-        if settings.google_application_credentials:
-            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = settings.google_application_credentials
-    except Exception:
-        pass
-
-
-def _gemini_client(project_id: str, region: str):
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
-    from google import genai
-    return genai.Client(vertexai=True, project=project_id, location=region)
+from reskillio.utils.gemini import call_gemini as _call_gemini_shared
 
 
 def _call_gemini_chat(messages: list[dict], project_id: str, region: str) -> str:
-    from google import genai
-    from google.genai import types as gt
-
-    # Build conversation string from messages
     conversation = "\n".join(f"{m['role'].upper()}: {m['content']}" for m in messages)
-
     try:
-        client = _gemini_client(project_id, region)
-        response = client.models.generate_content(
-            model=_MODEL_VERTEX,
-            contents=conversation,
-            config=gt.GenerateContentConfig(
-                system_instruction=_CHAT_SYSTEM,
-                temperature=0.75,
-                max_output_tokens=300,
-                thinking_config=gt.ThinkingConfig(thinking_budget=0),
-            ),
+        return _call_gemini_shared(
+            conversation, _CHAT_SYSTEM, project_id, region, temperature=0.75, max_tokens=300
         )
-        return response.text.strip()
-    except Exception as e:
-        logger.warning(f"[intake] Vertex chat failed: {e}")
+    except Exception as exc:
+        logger.warning(f"[intake] Gemini chat failed: {exc}")
         return ""
 
 
 def _call_gemini_extract(user_message: str, extract_prompt: str, project_id: str, region: str) -> dict:
-    from google import genai
-    from google.genai import types as gt
-
     prompt = f"{extract_prompt}\n\nUser said: {user_message}"
-
     try:
-        client = _gemini_client(project_id, region)
-        response = client.models.generate_content(
-            model=_MODEL_VERTEX,
-            contents=prompt,
-            config=gt.GenerateContentConfig(
-                temperature=0.05,
-                max_output_tokens=300,
-                thinking_config=gt.ThinkingConfig(thinking_budget=0),
-            ),
+        text = _call_gemini_shared(
+            prompt, "", project_id, region, temperature=0.05, max_tokens=300
         )
-        text = response.text.strip()
-        # Strip markdown code fences if present
         if text.startswith("```"):
             text = text.split("```")[1]
             if text.startswith("json"):
                 text = text[4:]
         return json.loads(text)
-    except Exception as e:
-        logger.warning(f"[intake] Extract failed: {e}")
+    except Exception as exc:
+        logger.warning(f"[intake] Gemini extract failed: {exc}")
         return {}
 
 

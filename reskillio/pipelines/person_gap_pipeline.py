@@ -95,54 +95,11 @@ def _apply_credentials() -> None:
 
 
 def _call_gemini(prompt: str, project_id: str, region: str) -> dict:
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
-
-    from google import genai
-    from google.genai import types as gt
-
-    try:
-        client = genai.Client(vertexai=True, project=project_id, location=region)
-        response = client.models.generate_content(
-            model=_MODEL_VERTEX,
-            contents=prompt,
-            config=gt.GenerateContentConfig(
-                system_instruction=_SYSTEM,
-                temperature=0.3,
-                max_output_tokens=1200,
-                thinking_config=gt.ThinkingConfig(thinking_budget=0),
-            ),
-        )
-        text = response.text.strip()
-    except Exception as e:
-        logger.warning(f"[person_gap] Vertex failed: {e}, trying AI Studio")
-        try:
-            from config.settings import settings
-            api_key = settings.gemini_api_key
-        except Exception:
-            api_key = ""
-        if not api_key:
-            raise RuntimeError("Gemini unavailable") from e
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=_MODEL_STUDIO,
-            contents=prompt,
-            config=gt.GenerateContentConfig(
-                system_instruction=_SYSTEM,
-                temperature=0.3,
-                max_output_tokens=1200,
-            ),
-        )
-        text = response.text.strip()
-
-    # Strip markdown fences
-    if text.startswith("```"):
-        parts = text.split("```")
-        text = parts[1] if len(parts) > 1 else text
-        if text.startswith("json"):
-            text = text[4:]
-
-    return json.loads(text.strip())
+    import re
+    from reskillio.utils.gemini import call_gemini
+    text = call_gemini(prompt, _SYSTEM, project_id, region, temperature=0.3, max_tokens=1200)
+    text = re.sub(r"```(?:json)?\s*|\s*```", "", text).strip()
+    return json.loads(text)
 
 
 def run_person_gap(

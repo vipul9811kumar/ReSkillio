@@ -80,11 +80,9 @@ class IntakeStore:
             "completed_at":             profile.completed_at.isoformat() if profile.completed_at else None,
         }
 
-        errors = bq.insert_rows_json(_TABLE, [row])
-        if errors:
-            logger.error(f"[intake_store] BQ insert errors: {errors}")
-        else:
-            logger.info(f"[intake_store] Upserted profile for {profile.candidate_id}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(bq, f"{self.project_id}.{_TABLE}", [row])
+        logger.info(f"[intake_store] Upserted profile for {profile.candidate_id}")
 
     def get_profile(self, candidate_id: str) -> Optional[IntakeProfile]:
         import json

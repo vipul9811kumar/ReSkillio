@@ -163,21 +163,8 @@ def _call_gemini_synthesis(
     )
 
     try:
-        from google import genai
-        from google.genai import types as gt
-
-        _apply_credentials()
-        client = genai.Client(vertexai=True, project=project_id, location=region)
-        response = client.models.generate_content(
-            model=_GEMINI_MODEL,
-            contents=prompt,
-            config=gt.GenerateContentConfig(
-                temperature=0.3,
-                max_output_tokens=3000,
-                thinking_config=gt.ThinkingConfig(thinking_budget=0),
-            ),
-        )
-        return response.text.strip()
+        from reskillio.utils.gemini import call_gemini
+        return call_gemini(prompt, "", project_id, region, temperature=0.3, max_tokens=3000)
     except Exception as exc:
         logger.error(f"[pathway] Gemini synthesis failed: {exc}")
         return ""

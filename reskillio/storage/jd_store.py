@@ -123,9 +123,8 @@ class JDStore:
             "preferred_skill_count": len(result.preferred_skills),
             "created_at":            created_at,
         }]
-        errors = self.client.insert_rows_json(self.jd_profiles_table, profile_row)
-        if errors:
-            raise RuntimeError(f"jd_profiles insert error: {errors}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(self.client, self.jd_profiles_table, profile_row)
 
         # jd_skills rows
         all_skills: list[JDSkill] = result.required_skills + result.preferred_skills
@@ -143,9 +142,7 @@ class JDStore:
                 }
                 for skill in all_skills
             ]
-            errors = self.client.insert_rows_json(self.jd_skills_table, skill_rows)
-            if errors:
-                raise RuntimeError(f"jd_skills insert error: {errors}")
+            bq_insert(self.client, self.jd_skills_table, skill_rows)
 
         logger.info(
             f"Stored JD jd_id={result.jd_id} "

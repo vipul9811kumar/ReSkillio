@@ -103,9 +103,8 @@ class DriftMetricStore:
             "alert_triggered":    metric.alert_triggered,
             "recorded_at":        metric.recorded_at.isoformat(),
         }
-        errors = self.client.insert_rows_json(self.full_table_id, [row])
-        if errors:
-            raise RuntimeError(f"drift_metrics insert failed: {errors}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(self.client, self.full_table_id, [row])
         logger.debug(
             f"[drift] BQ write: run={metric.run_id[:8]}  "
             f"unknown_rate={metric.unknown_skill_rate:.3f}  "

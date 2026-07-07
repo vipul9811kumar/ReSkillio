@@ -292,9 +292,8 @@ class LakehouseManager:
             "char_count":      len(raw_text),
             "ingested_at":     datetime.now(timezone.utc).isoformat(),
         }
-        errors = self.client.insert_rows_json(self._fqn(BRONZE, "resume_raw"), [row])
-        if errors:
-            raise RuntimeError(f"Bronze resume insert failed: {errors}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(self.client, self._fqn(BRONZE, "resume_raw"), [row])
         logger.info(f"[lakehouse] Bronze ← resume_raw candidate={candidate_id}")
         return resume_id
 
@@ -318,9 +317,8 @@ class LakehouseManager:
             "char_count":  len(raw_text),
             "ingested_at": datetime.now(timezone.utc).isoformat(),
         }
-        errors = self.client.insert_rows_json(self._fqn(BRONZE, "jd_raw"), [row])
-        if errors:
-            raise RuntimeError(f"Bronze JD insert failed: {errors}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(self.client, self._fqn(BRONZE, "jd_raw"), [row])
         logger.info(f"[lakehouse] Bronze ← jd_raw jd_id={jd_id}")
 
     # ------------------------------------------------------------------
@@ -801,9 +799,8 @@ class LakehouseManager:
             "readiness_tier":              ready.readiness_tier,
             "computed_at":                 ready.computed_at.isoformat(),
         }
-        errors = self.client.insert_rows_json(gold_ready, [row])
-        if errors:
-            logger.warning(f"[lakehouse] Gold readiness insert warning: {errors}")
+        from reskillio.utils.bq_insert import bq_insert
+        bq_insert(self.client, gold_ready, [row])
 
         logger.info(
             f"[lakehouse] Gold ← candidate_readiness candidate={candidate_id} "

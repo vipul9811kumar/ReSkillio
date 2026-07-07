@@ -97,24 +97,8 @@ def _apply_credentials() -> None:
 
 def _call_gemini(prompt: str, project_id: str, region: str,
                  temperature: float = 0.6, max_tokens: int = 600) -> str:
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")
-
-    from google import genai
-    from google.genai import types as gt
-
-    client = genai.Client(vertexai=True, project=project_id, location=region)
-    response = client.models.generate_content(
-        model=_MODEL,
-        contents=prompt,
-        config=gt.GenerateContentConfig(
-            system_instruction=_SYSTEM,
-            temperature=temperature,
-            max_output_tokens=max_tokens,
-            thinking_config=gt.ThinkingConfig(thinking_budget=0),
-        ),
-    )
-    return response.text.strip()
+    from reskillio.utils.gemini import call_gemini
+    return call_gemini(prompt, _SYSTEM, project_id, region, temperature=temperature, max_tokens=max_tokens)
 
 
 class DigestGenerator:

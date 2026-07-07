@@ -67,13 +67,21 @@ def _patch_bq_table_expirations(
     # 1. Patch dataset default expiration first (Sandbox prerequisite)
     try:
         dataset = client.get_dataset(f"{project_id}.{dataset_id}")
-        needs_patch = (
+        table_needs_patch = (
             dataset.default_table_expiration_ms is None
             or dataset.default_table_expiration_ms > expiry_ms
         )
-        if needs_patch:
+        partition_needs_patch = (
+            dataset.default_partition_expiration_ms is None
+            or dataset.default_partition_expiration_ms > expiry_ms
+        )
+        if table_needs_patch or partition_needs_patch:
             dataset.default_table_expiration_ms = expiry_ms
-            client.update_dataset(dataset, ["default_table_expiration_ms"])
+            dataset.default_partition_expiration_ms = expiry_ms
+            client.update_dataset(
+                dataset,
+                ["default_table_expiration_ms", "default_partition_expiration_ms"],
+            )
             logger.info(f"[bq-sandbox] Set dataset default expiration to {days} days")
     except Exception as exc:
         logger.warning(f"[bq-sandbox] Could not patch dataset expiration: {exc}")

@@ -104,8 +104,6 @@ def run_full_analysis(
 
     try:
         from reskillio.pipelines.skill_pipeline import run_skill_extraction
-        from reskillio.storage.bigquery_store import BigQuerySkillStore
-        from reskillio.storage.profile_store import CandidateProfileStore
 
         result = run_skill_extraction(
             text=resume_text,
@@ -114,14 +112,7 @@ def run_full_analysis(
         )
         skill_count = len(result.skills)
 
-        # Persist to BigQuery
-        bq_store = BigQuerySkillStore(project_id=project_id)
-        bq_store.store_extraction(result, candidate_id)
-
-        # Upsert profile (needed by all downstream stages)
-        profile_store = CandidateProfileStore(project_id=project_id)
-        profile_store.upsert_profile(candidate_id)
-
+        # Build top_skills immediately — before any BQ operations that may fail
         top_skills = [
             SkillSummary(
                 name=s.name,
@@ -141,6 +132,21 @@ def run_full_analysis(
                 candidate_name = _persons[0]
         except Exception:
             pass
+
+        # Persist to BigQuery — best-effort; never block the response
+        # BQ Sandbox blocks DML (MERGE) and streaming inserts; batch load may also
+        # fail until table expirations are patched. Skills are already in top_skills.
+        try:
+            from reskillio.storage.bigquery_store import BigQuerySkillStore
+            from reskillio.storage.profile_store import CandidateProfileStore
+
+            bq_store = BigQuerySkillStore(project_id=project_id)
+            bq_store.store_extraction(result, candidate_id)
+
+            profile_store = CandidateProfileStore(project_id=project_id)
+            profile_store.upsert_profile(candidate_id)
+        except Exception as bq_exc:
+            logger.warning(f"[analyze] Stage 1 BQ persist skipped (non-fatal): {bq_exc}")
 
         stages["extract"] = StageResult(success=True, duration_ms=_ms(t))
         logger.info(f"[analyze] Stage 1 extract: {skill_count} skills in {_ms(t)} ms")

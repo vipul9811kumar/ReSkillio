@@ -58,6 +58,13 @@ def run_enrichment(
         profile = profile_store.get_profile(candidate_id)
         skill_names = [s.skill_name for s in profile.skills[:20]]
 
+        # candidate_profiles may be empty if DML MERGE was blocked (BQ Sandbox).
+        # Fall back to skill_extractions, which is written via batch load job.
+        if not skill_names:
+            from reskillio.storage.bigquery_store import BigQuerySkillStore
+            skill_rows = BigQuerySkillStore(project_id=project_id).get_skills_for_candidate(candidate_id)
+            skill_names = [r["skill_name"] for r in skill_rows[:20]]
+
         if skill_names:
             industry_result = run_industry_match(
                 candidate_id=candidate_id,

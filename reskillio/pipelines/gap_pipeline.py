@@ -27,7 +27,7 @@ from __future__ import annotations
 import numpy as np
 from loguru import logger
 
-from reskillio.embeddings.vertex_embedder import VertexEmbedder, skill_text, EMBEDDING_MODEL
+from reskillio.embeddings.ai_studio_embedder import AIStudioEmbedder as VertexEmbedder, skill_text, EMBEDDING_MODEL
 from reskillio.models.gap import GapAnalysisResult, TransferableSkill
 from reskillio.models.jd import Industry, JDExtractionResult
 from reskillio.pipelines.jd_pipeline import run_jd_pipeline

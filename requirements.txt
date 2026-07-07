@@ -1,6 +1,6 @@
 # --- NLP core ---
 spacy==3.8.14
-https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0.tar.gz
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz
 
 # --- LangChain / LangGraph ecosystem ---
 langchain-core>=1.2.0

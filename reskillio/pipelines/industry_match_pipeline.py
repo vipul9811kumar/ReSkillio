@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 from loguru import logger
 
-from reskillio.embeddings.vertex_embedder import VertexEmbedder, skill_text, EMBEDDING_MODEL
+from reskillio.embeddings.ai_studio_embedder import AIStudioEmbedder as VertexEmbedder, skill_text, EMBEDDING_MODEL
 from reskillio.models.industry import IndustryMatchResult
 from reskillio.storage.embedding_store import EmbeddingStore
 from reskillio.storage.industry_vector_store import IndustryVectorStore

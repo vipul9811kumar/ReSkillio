@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     gemini_use_ai_studio: bool = False
 
     # spaCy
-    spacy_model: str = "en_core_web_lg"
+    spacy_model: str = "en_core_web_sm"
 
     # Adzuna job search API (https://developer.adzuna.com)
     adzuna_app_id:  str = ""

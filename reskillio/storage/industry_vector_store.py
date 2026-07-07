@@ -108,7 +108,7 @@ class IndustryVectorStore:
         # Embed any missing skills on the fly
         missing = [n for n in all_skill_names if n.lower() not in skill_vecs]
         if missing and embedder is not None and embedding_store is not None:
-            from reskillio.embeddings.vertex_embedder import skill_text, EMBEDDING_MODEL
+            from reskillio.embeddings.ai_studio_embedder import skill_text, EMBEDDING_MODEL
             logger.info(f"Embedding {len(missing)} uncached industry skills...")
             cat_map = {
                 r["skill_name"].lower(): r["category"] for r in profile_rows
@@ -168,42 +168,39 @@ class IndustryVectorStore:
 
     def score_candidate(self, candidate_vector: list[float]) -> list[dict]:
         """
-        Score a candidate vector against all 8 industry vectors using
-        BigQuery ML.DISTANCE (COSINE).
+        Score a candidate vector against all industry vectors.
+        Cosine similarity computed in Python (avoids BigQuery ML dependency).
 
         Returns
         -------
         list of dicts ordered by match_score desc:
             industry, cosine_distance, match_score (0–100)
         """
-        job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ArrayQueryParameter(
-                    "candidate_vec", "FLOAT64", candidate_vector
-                )
-            ]
-        )
+        rows = self.client.query(
+            f"SELECT industry, embedding FROM `{self.table}`"
+        ).result()
 
-        query = f"""
-        SELECT
-            industry,
-            ML.DISTANCE(@candidate_vec, embedding, 'COSINE') AS cosine_distance,
-            ROUND(
-                GREATEST(0.0,
-                    (1.0 - ML.DISTANCE(@candidate_vec, embedding, 'COSINE'))
-                ) * 100.0,
-                1
-            ) AS match_score
-        FROM `{self.table}`
-        ORDER BY match_score DESC
-        """
+        import numpy as np
 
-        rows = self.client.query(query, job_config=job_config).result()
-        return [
-            {
-                "industry":       row["industry"],
-                "cosine_distance": float(row["cosine_distance"]),
-                "match_score":    float(row["match_score"]),
-            }
-            for row in rows
-        ]
+        cand = np.array(candidate_vector, dtype=np.float64)
+        cand_norm = np.linalg.norm(cand)
+
+        results = []
+        for row in rows:
+            ind_vec = np.array(list(row["embedding"]), dtype=np.float64)
+            ind_norm = np.linalg.norm(ind_vec)
+            if cand_norm == 0 or ind_norm == 0:
+                similarity = 0.0
+            else:
+                similarity = float(np.dot(cand, ind_vec) / (cand_norm * ind_norm))
+
+            cosine_dist = 1.0 - similarity
+            match_score = round(max(0.0, similarity) * 100.0, 1)
+            results.append({
+                "industry":        row["industry"],
+                "cosine_distance": round(cosine_dist, 4),
+                "match_score":     match_score,
+            })
+
+        results.sort(key=lambda r: r["match_score"], reverse=True)
+        return results

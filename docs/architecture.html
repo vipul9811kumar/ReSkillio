@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ReSkillio — System Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg:       #0d1117;
@@ -11,16 +14,18 @@
       --border:   #30363d;
       --text:     #e6edf3;
       --muted:    #8b949e;
-      --accent:   #58a6ff;
+      --accent:   #FBBF24;
       --green:    #3fb950;
       --yellow:   #d29922;
-      --purple:   #bc8cff;
+      --purple:   #FCD34D;
       --orange:   #ffa657;
       --red:      #f85149;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    h1, h2, h3, h4, .section-title, .hero h1, .page-header h1,
+    .nav-logo, .stat-num { font-family: 'Space Grotesk', sans-serif; }
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
@@ -329,26 +334,26 @@
       <svg class="arch-svg" viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg" font-family="monospace" font-size="13">
         <defs>
           <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#58a6ff"/>
+            <path d="M0,0 L0,6 L8,3 z" fill="#FBBF24"/>
           </marker>
         </defs>
 
         <!-- Client -->
-        <rect x="340" y="10" width="220" height="50" rx="8" fill="#1a2e3a" stroke="#58a6ff" stroke-width="1.5"/>
-        <text x="450" y="30" text-anchor="middle" fill="#58a6ff" font-weight="bold">Client / Demo UI</text>
+        <rect x="340" y="10" width="220" height="50" rx="8" fill="#1a2e3a" stroke="#FBBF24" stroke-width="1.5"/>
+        <text x="450" y="30" text-anchor="middle" fill="#FBBF24" font-weight="bold">Client / Demo UI</text>
         <text x="450" y="50" text-anchor="middle" fill="#8b949e" font-size="11">curl · Postman · Streamlit</text>
 
         <!-- Arrow down to API -->
-        <line x1="450" y1="60" x2="450" y2="95" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="450" y1="60" x2="450" y2="95" stroke="#FBBF24" stroke-width="1.5" marker-end="url(#arr)"/>
         <text x="460" y="82" fill="#8b949e" font-size="11">POST /analyze</text>
 
         <!-- FastAPI -->
-        <rect x="250" y="95" width="400" height="55" rx="8" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+        <rect x="250" y="95" width="400" height="55" rx="8" fill="#161b22" stroke="#FBBF24" stroke-width="1.5"/>
         <text x="450" y="118" text-anchor="middle" fill="#e6edf3" font-weight="bold">FastAPI  (Cloud Run)</text>
         <text x="450" y="140" text-anchor="middle" fill="#8b949e" font-size="11">16 routers · /analyze · /extract · /gap · /narrative · /pathway · ...</text>
 
         <!-- Arrow to pipeline -->
-        <line x1="450" y1="150" x2="450" y2="185" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="450" y1="150" x2="450" y2="185" stroke="#FBBF24" stroke-width="1.5" marker-end="url(#arr)"/>
 
         <!-- Pipeline box -->
         <rect x="100" y="185" width="700" height="145" rx="8" fill="#0f1318" stroke="#30363d" stroke-width="1"/>
@@ -359,16 +364,16 @@
         <text x="175" y="238" text-anchor="middle" fill="#3fb950" font-weight="bold" font-size="12">Stage 1</text>
         <text x="175" y="256" text-anchor="middle" fill="#8b949e" font-size="10">spaCy Extract</text>
 
-        <rect x="250" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#58a6ff" stroke-width="1"/>
-        <text x="305" y="238" text-anchor="middle" fill="#58a6ff" font-weight="bold" font-size="12">Stage 2</text>
+        <rect x="250" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#FBBF24" stroke-width="1"/>
+        <text x="305" y="238" text-anchor="middle" fill="#FBBF24" font-weight="bold" font-size="12">Stage 2</text>
         <text x="305" y="256" text-anchor="middle" fill="#8b949e" font-size="10">Gap Analysis</text>
 
         <rect x="380" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#ffa657" stroke-width="1"/>
         <text x="435" y="238" text-anchor="middle" fill="#ffa657" font-weight="bold" font-size="12">Stage 3</text>
         <text x="435" y="256" text-anchor="middle" fill="#8b949e" font-size="10">Industry Match</text>
 
-        <rect x="510" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#bc8cff" stroke-width="1"/>
-        <text x="565" y="238" text-anchor="middle" fill="#bc8cff" font-weight="bold" font-size="12">Stage 4</text>
+        <rect x="510" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#FCD34D" stroke-width="1"/>
+        <text x="565" y="238" text-anchor="middle" fill="#FCD34D" font-weight="bold" font-size="12">Stage 4</text>
         <text x="565" y="256" text-anchor="middle" fill="#8b949e" font-size="10">Gemini Narrative</text>
 
         <rect x="640" y="215" width="110" height="55" rx="6" fill="#161b22" stroke="#d29922" stroke-width="1"/>
@@ -386,9 +391,9 @@
 
         <!-- Arrow down to GCP services row -->
         <line x1="180" y1="330" x2="180" y2="370" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arr)"/>
-        <line x1="310" y1="330" x2="310" y2="370" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="310" y1="330" x2="310" y2="370" stroke="#FBBF24" stroke-width="1.5" marker-end="url(#arr)"/>
         <line x1="440" y1="330" x2="440" y2="370" stroke="#ffa657" stroke-width="1.5" marker-end="url(#arr)"/>
-        <line x1="570" y1="330" x2="570" y2="370" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="570" y1="330" x2="570" y2="370" stroke="#FCD34D" stroke-width="1.5" marker-end="url(#arr)"/>
         <line x1="700" y1="330" x2="700" y2="370" stroke="#d29922" stroke-width="1.5" marker-end="url(#arr)"/>
 
         <!-- GCP service boxes -->
@@ -397,8 +402,8 @@
         <text x="180" y="410" text-anchor="middle" fill="#8b949e" font-size="10">skill_extractions</text>
         <text x="180" y="425" text-anchor="middle" fill="#8b949e" font-size="10">candidate_profiles</text>
 
-        <rect x="275" y="370" width="160" height="60" rx="6" fill="#1a2e3a" stroke="#58a6ff" stroke-width="1"/>
-        <text x="355" y="393" text-anchor="middle" fill="#58a6ff" font-weight="bold" font-size="12">Vertex AI Embeddings</text>
+        <rect x="275" y="370" width="160" height="60" rx="6" fill="#1a2e3a" stroke="#FBBF24" stroke-width="1"/>
+        <text x="355" y="393" text-anchor="middle" fill="#FBBF24" font-weight="bold" font-size="12">Vertex AI Embeddings</text>
         <text x="355" y="410" text-anchor="middle" fill="#8b949e" font-size="10">text-embedding-004</text>
         <text x="355" y="425" text-anchor="middle" fill="#8b949e" font-size="10">768-dim · COSINE</text>
 
@@ -407,8 +412,8 @@
         <text x="530" y="410" text-anchor="middle" fill="#8b949e" font-size="10">industry_vectors</text>
         <text x="530" y="425" text-anchor="middle" fill="#8b949e" font-size="10">ML.DISTANCE · 8 industries</text>
 
-        <rect x="625" y="370" width="160" height="60" rx="6" fill="#1e1a2e" stroke="#bc8cff" stroke-width="1"/>
-        <text x="705" y="393" text-anchor="middle" fill="#bc8cff" font-weight="bold" font-size="12">Gemini 2.5 Flash</text>
+        <rect x="625" y="370" width="160" height="60" rx="6" fill="#1e1a2e" stroke="#FCD34D" stroke-width="1"/>
+        <text x="705" y="393" text-anchor="middle" fill="#FCD34D" font-weight="bold" font-size="12">Gemini 2.5 Flash</text>
         <text x="705" y="410" text-anchor="middle" fill="#8b949e" font-size="10">RAG narrative</text>
         <text x="705" y="425" text-anchor="middle" fill="#8b949e" font-size="10">Vertex AI · Studio</text>
 

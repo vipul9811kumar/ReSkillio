@@ -4,12 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ReSkillio — Weekly Companion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --teal:       #0d9373; --teal-50:  rgba(13,147,115,0.09); --teal-100: rgba(13,147,115,0.2); --teal-600: #0d9373; --teal-800: #065f46;
-  --blue:       #2563eb; --blue-50:  rgba(37,99,235,0.08);  --blue-100: rgba(37,99,235,0.18); --blue-800: #1e3a8a;
+  --blue:       #D97706; --blue-50:  rgba(217,119,6,0.08);  --blue-100: rgba(217,119,6,0.18); --blue-800: #1e3a8a;
   --amber:      #d97706; --amber-50: rgba(217,119,6,0.09);  --amber-100: rgba(217,119,6,0.2); --amber-800: #92400e;
   --red-50:     rgba(220,38,38,0.08); --red-800: #7f1d1d;
   --green-50:   rgba(22,163,74,0.09); --green-800: #14532d;
@@ -17,7 +20,7 @@
   --gray-400:   #64748b; --gray-600: #475569; --gray-800: #1e293b;
   --ink:        #0f172a; --surface:  #ffffff;
   --border:     rgba(0,0,0,0.08); --border-md: rgba(0,0,0,0.14);
-  --font-sans:  -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-serif: Georgia, "Times New Roman", serif;
   --font-mono:  ui-monospace, "SF Mono", monospace;
   --r-md: 10px; --r-lg: 16px; --r-xl: 20px;
@@ -33,7 +36,7 @@ nav {
   display: flex; align-items: center;
 }
 .nav-inner { max-width: var(--max); margin: 0 auto; padding: 0 24px; width: 100%; display: flex; align-items: center; gap: 16px; }
-.nav-logo { font-size: 16px; font-weight: 800; background: linear-gradient(90deg, #0d9373, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+.nav-logo { font-size: 16px; font-weight: 800; background: linear-gradient(135deg, #D97706, #F59E0B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
 .nav-back { margin-left: auto; font-size: 14px; color: var(--gray-400); text-decoration: none; transition: color .15s; }
 .nav-back:hover { color: var(--ink); }
 .nav-links { display: flex; gap: 20px; list-style: none; margin-left: auto; }
@@ -179,7 +182,7 @@ nav.nav-open .nav-mobile-panel { display: block; }
 .slider-label { font-size: 13px; color: var(--gray-600); margin-bottom: 6px; }
 .slider-val { font-size: 14px; color: var(--teal); font-weight: 600; margin-top: 4px; }
 input[type="range"] { width: 100%; accent-color: var(--teal); }
-.btn-primary { display: block; width: 100%; padding: 14px 20px; font-family: var(--font-sans); font-size: 16px; font-weight: 600; border-radius: var(--r-md); background: linear-gradient(135deg, #0d9373, #2563eb); color: #fff; border: none; cursor: pointer; transition: opacity .15s, transform .1s; text-align: center; }
+.btn-primary { display: block; width: 100%; padding: 14px 20px; font-family: var(--font-sans); font-size: 16px; font-weight: 600; border-radius: var(--r-md); background: linear-gradient(135deg, #D97706, #F59E0B); color: #fff; border: none; cursor: pointer; transition: opacity .15s, transform .1s; text-align: center; }
 .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
 .btn-primary:disabled { opacity: .7; cursor: not-allowed; transform: none; }
 @keyframes spin { to { transform: rotate(360deg); } }

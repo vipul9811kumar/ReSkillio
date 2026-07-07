@@ -4,13 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ReSkillio — Deployment Diagram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#30363d;
-  --text:#e6edf3;--muted:#8b949e;--blue:#58a6ff;--green:#3fb950;
-  --teal:#2da07a;--yellow:#d29922;--purple:#bc8cff;--orange:#ffa657;
+  --text:#e6edf3;--muted:#8b949e;--blue:#FBBF24;--green:#3fb950;
+  --teal:#2da07a;--yellow:#d29922;--purple:#FCD34D;--orange:#ffa657;
   --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   --mono:ui-monospace,"SF Mono",Consolas,monospace;
 }
@@ -74,7 +77,7 @@ h1{font-size:1.7rem;font-weight:700;margin-bottom:.4rem}
   <div class="section-title">Infrastructure Topology</div>
   <div class="diagram-wrap">
     <div class="mermaid">
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1c2128', 'primaryTextColor': '#e6edf3', 'primaryBorderColor': '#30363d', 'lineColor': '#58a6ff', 'secondaryColor': '#161b22', 'tertiaryColor': '#0d1117', 'edgeLabelBackground':'#161b22', 'clusterBkg':'#161b22', 'clusterBorder':'#30363d', 'titleColor':'#e6edf3', 'nodeBorder':'#30363d', 'mainBkg':'#1c2128', 'nodeTextColor':'#e6edf3', 'fontFamily':'ui-monospace,SF Mono,Consolas,monospace'}}}%%
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1c2128', 'primaryTextColor': '#e6edf3', 'primaryBorderColor': '#30363d', 'lineColor': '#FBBF24', 'secondaryColor': '#161b22', 'tertiaryColor': '#0d1117', 'edgeLabelBackground':'#161b22', 'clusterBkg':'#161b22', 'clusterBorder':'#30363d', 'titleColor':'#e6edf3', 'nodeBorder':'#30363d', 'mainBkg':'#1c2128', 'nodeTextColor':'#e6edf3', 'fontFamily':'ui-monospace,SF Mono,Consolas,monospace'}}}%%
 graph LR
 
   subgraph PAGES["🌐 GitHub Pages  —  reskillio.com"]

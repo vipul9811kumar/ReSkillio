@@ -38,3 +38,46 @@ def bootstrap_service_account() -> None:
     tmp.close()
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = tmp.name
     logger.info(f"GCP credentials bootstrapped from GOOGLE_SERVICE_ACCOUNT_JSON → {tmp.name}")
+
+    # Patch table expirations for BigQuery Sandbox compatibility
+    try:
+        from config.settings import settings
+        if settings.gcp_project_id:
+            _patch_bq_table_expirations(settings.gcp_project_id)
+    except Exception as exc:
+        logger.warning(f"[bq-sandbox] Expiration patch skipped: {exc}")
+
+
+def _patch_bq_table_expirations(
+    project_id: str, dataset_id: str = "reskillio", days: int = 59
+) -> None:
+    """
+    BigQuery Sandbox blocks batch load jobs into tables with expiration=NEVER.
+    Update any such table to 59-day expiration so load jobs work.
+    This is a metadata-only tables.patch call — supported in Sandbox.
+    """
+    from datetime import datetime, timezone, timedelta
+    from google.cloud import bigquery
+
+    client = bigquery.Client(project=project_id)
+    expiry = datetime.now(timezone.utc) + timedelta(days=days)
+    updated = 0
+
+    try:
+        tables = list(client.list_tables(f"{project_id}.{dataset_id}"))
+    except Exception as exc:
+        logger.warning(f"[bq-sandbox] Could not list tables: {exc}")
+        return
+
+    for table_ref in tables:
+        try:
+            table = client.get_table(table_ref)
+            if table.expires is None:
+                table.expires = expiry
+                client.update_table(table, ["expires"])
+                updated += 1
+        except Exception as exc:
+            logger.warning(f"[bq-sandbox] Could not patch {table_ref.table_id}: {exc}")
+
+    if updated:
+        logger.info(f"[bq-sandbox] Set 59-day expiration on {updated} tables (Sandbox compat)")

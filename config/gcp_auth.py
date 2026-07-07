@@ -52,17 +52,35 @@ def _patch_bq_table_expirations(
     project_id: str, dataset_id: str = "reskillio", days: int = 59
 ) -> None:
     """
-    BigQuery Sandbox blocks batch load jobs into tables with expiration=NEVER.
-    Update any such table to 59-day expiration so load jobs work.
-    This is a metadata-only tables.patch call — supported in Sandbox.
+    BigQuery Sandbox requires BOTH dataset default expiration AND table
+    expiration to be < 60 days before batch load jobs work.
+    Patch dataset first, then each table — all metadata-only operations.
     """
     from datetime import datetime, timezone, timedelta
     from google.cloud import bigquery
 
-    client = bigquery.Client(project=project_id)
-    expiry = datetime.now(timezone.utc) + timedelta(days=days)
-    updated = 0
+    ms_per_day = 24 * 60 * 60 * 1000
+    expiry_ms  = days * ms_per_day
+    expiry_ts  = datetime.now(timezone.utc) + timedelta(days=days)
+    client     = bigquery.Client(project=project_id)
 
+    # 1. Patch dataset default expiration first (Sandbox prerequisite)
+    try:
+        dataset = client.get_dataset(f"{project_id}.{dataset_id}")
+        needs_patch = (
+            dataset.default_table_expiration_ms is None
+            or dataset.default_table_expiration_ms > expiry_ms
+        )
+        if needs_patch:
+            dataset.default_table_expiration_ms = expiry_ms
+            client.update_dataset(dataset, ["default_table_expiration_ms"])
+            logger.info(f"[bq-sandbox] Set dataset default expiration to {days} days")
+    except Exception as exc:
+        logger.warning(f"[bq-sandbox] Could not patch dataset expiration: {exc}")
+        return  # table patches will also fail — no point continuing
+
+    # 2. Patch each table that still has expiration=NEVER
+    updated = 0
     try:
         tables = list(client.list_tables(f"{project_id}.{dataset_id}"))
     except Exception as exc:
@@ -73,7 +91,7 @@ def _patch_bq_table_expirations(
         try:
             table = client.get_table(table_ref)
             if table.expires is None:
-                table.expires = expiry
+                table.expires = expiry_ts
                 client.update_table(table, ["expires"])
                 updated += 1
         except Exception as exc:

@@ -91,38 +91,70 @@ def _groq_industry_match(
     industries_list = "\n".join(f'  "{k}": "{v}"' for k, v in _INDUSTRY_LABELS.items())
     skills_str = ", ".join(skill_names[:20]) or "no skills provided"
 
-    prompt = f"""Given this candidate skill set, rate how well they match each industry on a scale of 0-100.
+    prompt = f"""Rate how well this skill set matches each industry. Return JSON only.
 
-Candidate skills: {skills_str}
+Skills: {skills_str}
 
-Industries to score:
+Industries:
 {industries_list}
 
-Return ONLY valid JSON (no markdown):
-{{
-  "scores": [
-    {{"industry": "<key>", "score": <0-100>}},
-    ...
-  ]
-}}
+JSON format (no preamble, no markdown):
+{{"scores":[{{"industry":"<key>","score":<0-100>}}]}}
 
-Score all 8 industries. Higher = stronger match. Base scores only on the skill set."""
+Include all 8 industries. Higher score = stronger match."""
 
-    system = "You are a recruiting analyst. Respond only with valid JSON."
-    raw = call_gemini(prompt, system, project_id, region, temperature=0.1, max_tokens=400)
-    raw = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()
-    data = json.loads(raw)
+    system = "Respond with valid JSON only. No markdown, no explanation, no preamble."
+    raw = call_gemini(prompt, system, project_id, region, temperature=0.0, max_tokens=500)
 
-    scored = sorted(data["scores"], key=lambda x: x["score"], reverse=True)
+    # Try to extract a JSON object even if the model adds preamble text
+    data = None
+    # Strip markdown fences first
+    cleaned = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()
+    # Try direct parse
+    try:
+        data = json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+    # Extract the first {...} block if direct parse failed
+    if data is None:
+        m = re.search(r'\{[\s\S]*"scores"[\s\S]*\}', cleaned)
+        if m:
+            try:
+                data = json.loads(m.group(0))
+            except json.JSONDecodeError:
+                pass
+    # Hard fallback: assign rough scores from keyword matching if Groq returned garbage
+    if data is None or not data.get("scores"):
+        logger.warning("[industry-match] Groq response unparseable — using keyword fallback")
+        skill_str_lower = skills_str.lower()
+        keyword_map = {
+            "data_ai":        ["python", "machine learning", "tensorflow", "pytorch", "nlp", "data science", "ai", "ml", "scikit"],
+            "cloud_devops":   ["aws", "azure", "gcp", "kubernetes", "docker", "terraform", "devops", "ci/cd", "jenkins"],
+            "fintech":        ["financial", "banking", "payments", "trading", "risk", "compliance", "fintech"],
+            "healthcare":     ["clinical", "ehr", "healthcare", "medical", "hospital", "pharma"],
+            "ecommerce":      ["e-commerce", "retail", "shopify", "marketplace", "logistics"],
+            "operations":     ["operations", "supply chain", "procurement", "logistics", "lean", "six sigma"],
+            "cyber_security": ["security", "soc", "penetration", "firewall", "siem", "vulnerability"],
+            "media_content":  ["content", "marketing", "seo", "social media", "creative", "design"],
+        }
+        fallback_scores = []
+        for ind_key, keywords in keyword_map.items():
+            hits = sum(1 for kw in keywords if kw in skill_str_lower)
+            score = min(85, hits * 15 + 10)
+            fallback_scores.append({"industry": ind_key, "score": score})
+        data = {"scores": fallback_scores}
+
+    scored = sorted(data["scores"], key=lambda x: x.get("score", 0), reverse=True)
     scores = [
         IndustryScore(
             rank=i + 1,
             industry=row["industry"],
             industry_label=_INDUSTRY_LABELS.get(row["industry"], row["industry"]),
-            match_score=float(row["score"]),
-            cosine_distance=round(1.0 - row["score"] / 100.0, 6),
+            match_score=float(row.get("score", 0)),
+            cosine_distance=round(1.0 - float(row.get("score", 0)) / 100.0, 6),
         )
         for i, row in enumerate(scored)
+        if row.get("industry") in _INDUSTRY_LABELS
     ]
     top = scores[0] if scores else None
     logger.info(
@@ -156,10 +188,19 @@ def run_industry_match(
 
     logger.info(f"Industry match started for candidate='{candidate_id}'")
 
-    # Read candidate skills — session cache first, then candidate_profiles, then skill_extractions
+    # Read candidate skills — session cache first (fast path), then BQ fallbacks
     skill_names_for_fallback: list[str] = []
     from reskillio.storage.session_cache import get as _cache_get
     skill_names_for_fallback = _cache_get(candidate_id)
+
+    # If session cache has skills, skip BQ path entirely — BQ Sandbox DML is blocked
+    # and the candidate vector would fail anyway. Go straight to Groq scoring.
+    if skill_names_for_fallback:
+        logger.info(
+            f"[industry-match] Session cache hit ({len(skill_names_for_fallback)} skills) "
+            "— using Groq scoring directly"
+        )
+        return _groq_industry_match(candidate_id, skill_names_for_fallback, project_id, region)
 
     if not skill_names_for_fallback:
         try:

@@ -2958,10 +2958,10 @@ function triggerPathway() {
 }
 
 async function fetchPathway(data) {
-  // If enrichment hasn't landed yet and we have no JD gap, wait up to 20s
+  // Enrichment takes ~25-30s. Wait up to 50s for auto_gap before giving up.
   if (!data.gap?.missing_skills?.length && !enrichData?.auto_gap) {
     let waited = 0;
-    while (!enrichData?.auto_gap && waited < 20000) {
+    while (!enrichData?.auto_gap && waited < 50000) {
       await new Promise(r => setTimeout(r, 2000));
       waited += 2000;
     }
@@ -3122,6 +3122,15 @@ async function fetchEnrichment(candidateId, targetRole, contextText, idealStage,
     console.info('[enrich] Enrichment complete:', enrichData);
 
     try { renderEnrichment(enrichData); } catch(e) { console.error('[renderEnrichment]', e); }
+
+    // If the pathway showed "run gap analysis" because it timed out before enrich arrived,
+    // re-trigger it now that we have auto_gap data.
+    const pathwayErr = document.getElementById('pathway-error');
+    if (_pathwayFired && pathwayErr && pathwayErr.style.display !== 'none' && enrichData?.auto_gap) {
+      _pathwayFired = false;
+      console.info('[pathway] Enrich arrived late — re-triggering pathway');
+      triggerPathway();
+    }
   } catch(e) {
     clearTimeout(timeout);
     console.warn('[enrich] Background enrichment failed (non-blocking):', e.message);

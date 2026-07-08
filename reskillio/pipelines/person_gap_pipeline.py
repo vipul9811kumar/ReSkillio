@@ -97,9 +97,19 @@ def _apply_credentials() -> None:
 def _call_gemini(prompt: str, project_id: str, region: str) -> dict:
     import re
     from reskillio.utils.gemini import call_gemini
-    text = call_gemini(prompt, _SYSTEM, project_id, region, temperature=0.3, max_tokens=1200)
+    text = call_gemini(prompt, _SYSTEM, project_id, region, temperature=0.3, max_tokens=2000)
+    # Strip markdown fences
     text = re.sub(r"```(?:json)?\s*|\s*```", "", text).strip()
-    return json.loads(text)
+    # Try direct parse first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    # Extract JSON object if model added preamble
+    m = re.search(r'\{[\s\S]*"narrative"[\s\S]*\}', text)
+    if m:
+        return json.loads(m.group(0))
+    raise ValueError(f"Could not parse JSON from person_gap response: {text[:200]}")
 
 
 def run_person_gap(

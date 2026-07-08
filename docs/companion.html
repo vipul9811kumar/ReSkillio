@@ -420,7 +420,7 @@ function saveGapHistory(h)   { localStorage.setItem(`reskillio_gap_history_${can
 function getBaseGapScore() {
   if (pathwayData?.gap_score != null) return Math.round(pathwayData.gap_score);
   if (gapData?.gap_score    != null) return Math.round(gapData.gap_score);
-  if (enrichData?.auto_gap?.overall_readiness != null) return Math.round(enrichData.auto_gap.overall_readiness * 100);
+  if (enrichData?.auto_gap?.overall_readiness != null) return Math.round(enrichData.auto_gap.overall_readiness);
   return null;
 }
 

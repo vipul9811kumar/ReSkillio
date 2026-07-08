@@ -76,6 +76,29 @@ Critical constraints:
 - Do NOT include companies you know from training data but that do not appear in the snippets.
 """
 
+_PROMPT_GROQ_DIRECT = """\
+A professional is job searching. Recommend 5 real companies that actively hire for this profile.
+
+Their skills: {skills_csv}
+Industry focus: {industry}
+Target roles: {roles_csv}
+Preferred company stage: {ideal_stage}
+
+Name 5 well-known companies that hire people with these skills and roles. Be specific.
+
+Return ONLY valid JSON:
+{{
+  "companies": [
+    {{
+      "name":         "<real company name>",
+      "industry":     "<company primary industry>",
+      "size":         "<startup|mid-size|enterprise>",
+      "match_reason": "<one sentence: why they need this candidate's specific skills>",
+      "source_note":  "Based on known hiring patterns for {industry} roles."
+    }}
+  ]
+}}"""
+
 
 def _ddg_search(query: str, max_results: int = _DDG_RESULTS) -> list[str]:
     snippets: list[str] = []
@@ -165,6 +188,39 @@ def _safe_fallback(industry: str) -> CompanyRadarResult:
     )
 
 
+def _parse_companies(raw: str, industry: str) -> list[CompanyMatch]:
+    """Parse Groq/Gemini JSON response into CompanyMatch list."""
+    clean = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()
+    data = None
+    try:
+        data = json.loads(clean)
+    except json.JSONDecodeError:
+        m = re.search(r'\{[\s\S]*"companies"[\s\S]*\}', clean)
+        if m:
+            try:
+                data = json.loads(m.group(0))
+            except json.JSONDecodeError:
+                pass
+    if not data:
+        return []
+    companies: list[CompanyMatch] = []
+    for c in (data.get("companies") or [])[:7]:
+        size = c.get("size", "enterprise")
+        if size not in _VALID_SIZES:
+            size = "enterprise"
+        name = (c.get("name") or "").strip()
+        if not name or "search returned" in name.lower():
+            continue
+        companies.append(CompanyMatch(
+            name=name,
+            industry=c.get("industry", industry),
+            size=size,
+            match_reason=c.get("match_reason", ""),
+            source_note=c.get("source_note", "Based on industry hiring patterns."),
+        ))
+    return companies
+
+
 def run_company_radar_agent(
     skill_names:  list[str],
     industry:     str,
@@ -176,21 +232,8 @@ def run_company_radar_agent(
     """
     Find 5–7 named employers actively hiring for this candidate's profile.
 
-    Uses DDG search to ground every company name in real search evidence.
-    Gemini is instructed not to invent companies absent from the results.
-
-    Parameters
-    ----------
-    skill_names:  Top skills from the candidate's profile.
-    industry:     Human-readable industry label.
-    top_roles:    Role titles from MarketPulseResult (used in search queries).
-    ideal_stage:  Ideal company stage from TraitProfile (Startup/Growth-stage/…).
-    project_id:   GCP project ID.
-    region:       Vertex AI region.
-
-    Returns
-    -------
-    CompanyRadarResult with company list and data_freshness date.
+    Primary path: DDG search → Groq synthesis (companies grounded in search evidence).
+    Fallback: Groq direct from training knowledge when DDG returns no results.
     """
     _apply_credentials()
     skills = skill_names[:10]
@@ -201,14 +244,25 @@ def run_company_radar_agent(
     )
 
     snippets = _gather_snippets(skills, industry, top_roles, ideal_stage)
+    ddg_found = "No live search results" not in snippets
 
-    prompt = _PROMPT_TEMPLATE.format(
-        skills_csv=", ".join(skills),
-        industry=industry,
-        roles_csv=", ".join(top_roles[:3]),
-        ideal_stage=ideal_stage,
-        search_snippets=snippets,
-    )
+    if ddg_found:
+        prompt = _PROMPT_TEMPLATE.format(
+            skills_csv=", ".join(skills),
+            industry=industry,
+            roles_csv=", ".join(top_roles[:3]),
+            ideal_stage=ideal_stage,
+            search_snippets=snippets,
+        )
+    else:
+        # DDG returned nothing — use Groq's training knowledge directly
+        logger.info("[company-radar] DDG returned no snippets — using Groq direct mode")
+        prompt = _PROMPT_GROQ_DIRECT.format(
+            skills_csv=", ".join(skills),
+            industry=industry,
+            roles_csv=", ".join(top_roles[:3]),
+            ideal_stage=ideal_stage,
+        )
 
     try:
         raw = _call_gemini(prompt, project_id, region)
@@ -217,31 +271,10 @@ def run_company_radar_agent(
         return _safe_fallback(industry)
 
     logger.debug(f"[company-radar] Raw response: {raw[:400]}")
-
-    try:
-        clean = re.sub(r"```(?:json)?\s*|\s*```", "", raw).strip()
-        data = json.loads(clean)
-    except Exception as exc:
-        logger.warning(f"[company-radar] JSON parse failed: {exc}")
-        return _safe_fallback(industry)
-
-    companies: list[CompanyMatch] = []
-    for c in (data.get("companies") or [])[:7]:
-        size = c.get("size", "enterprise")
-        if size not in _VALID_SIZES:
-            size = "enterprise"
-        name = (c.get("name") or "").strip()
-        if not name:
-            continue
-        companies.append(CompanyMatch(
-            name=name,
-            industry=c.get("industry", industry),
-            size=size,
-            match_reason=c.get("match_reason", ""),
-            source_note=c.get("source_note", "Based on recent job postings."),
-        ))
+    companies = _parse_companies(raw, industry)
 
     if not companies:
+        logger.warning("[company-radar] No companies parsed — using fallback")
         return _safe_fallback(industry)
 
     result = CompanyRadarResult(

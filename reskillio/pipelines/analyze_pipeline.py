@@ -112,6 +112,14 @@ def run_full_analysis(
         )
         skill_count = len(result.skills)
 
+        # Cache skill names immediately so downstream pipelines can read them
+        # without depending on BQ writes succeeding (BQ Sandbox restrictions).
+        try:
+            from reskillio.storage.session_cache import put as _cache_put
+            _cache_put(candidate_id, [s.name for s in result.skills])
+        except Exception:
+            pass
+
         # Build top_skills immediately — before any BQ operations that may fail
         top_skills = [
             SkillSummary(

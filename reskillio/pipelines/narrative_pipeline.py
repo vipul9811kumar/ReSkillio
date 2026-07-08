@@ -191,13 +191,18 @@ def run_narrative_pipeline(
     candidate_top_skills = [s.skill_name for s in profile.skills[:_TOP_CANDIDATE_SKILLS]]
 
     # candidate_profiles may be empty (DML MERGE blocked in BQ Sandbox).
-    # Fall back to skill_extractions which is written via batch load job.
+    # Check session cache first, then skill_extractions.
+    if not candidate_top_skills:
+        from reskillio.storage.session_cache import get as _cache_get
+        cached = _cache_get(candidate_id)
+        if cached:
+            candidate_top_skills = cached[:_TOP_CANDIDATE_SKILLS]
+            logger.info(f"[narrative] Using {len(candidate_top_skills)} skills from session cache")
     if not candidate_top_skills:
         try:
             from reskillio.storage.bigquery_store import BigQuerySkillStore
             rows = BigQuerySkillStore(project_id=project_id).get_skills_for_candidate(candidate_id)
             candidate_top_skills = [r["skill_name"] for r in rows[:_TOP_CANDIDATE_SKILLS]]
-            logger.info(f"[narrative] Using {len(candidate_top_skills)} skills from skill_extractions fallback")
         except Exception as exc:
             logger.warning(f"[narrative] skill_extractions fallback failed: {exc}")
 

@@ -173,7 +173,12 @@ def run_auto_gap(
         logger.warning(f"[auto-gap] Could not load candidate profile: {exc}")
 
     # candidate_profiles may be empty (DML MERGE blocked in BQ Sandbox).
-    # Fall back to skill_extractions which is written via batch load job.
+    # Check session cache first, then fall back to skill_extractions.
+    if not candidate_skills_lower:
+        from reskillio.storage.session_cache import get as _cache_get
+        cached = _cache_get(candidate_id)
+        if cached:
+            candidate_skills_lower = {s.lower() for s in cached}
     if not candidate_skills_lower:
         try:
             from reskillio.storage.bigquery_store import BigQuerySkillStore

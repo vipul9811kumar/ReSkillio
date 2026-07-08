@@ -58,8 +58,12 @@ def run_enrichment(
         profile = profile_store.get_profile(candidate_id)
         skill_names = [s.skill_name for s in profile.skills[:20]]
 
-        # candidate_profiles may be empty if DML MERGE was blocked (BQ Sandbox).
-        # Fall back to skill_extractions, which is written via batch load job.
+        # candidate_profiles may be empty (DML MERGE blocked in BQ Sandbox).
+        # Check session cache first (populated by /analyze in same session), then
+        # fall back to skill_extractions batch load table.
+        if not skill_names:
+            from reskillio.storage.session_cache import get as _cache_get
+            skill_names = _cache_get(candidate_id)[:20]
         if not skill_names:
             from reskillio.storage.bigquery_store import BigQuerySkillStore
             skill_rows = BigQuerySkillStore(project_id=project_id).get_skills_for_candidate(candidate_id)

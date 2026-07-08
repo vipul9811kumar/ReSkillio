@@ -137,7 +137,14 @@ def run_person_gap(
         logger.warning(f"[person_gap] Profile read failed: {exc}")
 
     # candidate_profiles may be empty (DML MERGE blocked in BQ Sandbox).
-    # Fall back to skill_extractions which is written via batch load job.
+    # Check session cache first (most reliable), then skill_extractions.
+    if not skill_block_lines:
+        from reskillio.storage.session_cache import get as _cache_get
+        cached = _cache_get(candidate_id)
+        if cached:
+            skill_names = cached[:20]
+            skill_block_lines = [f"  - {s}" for s in cached[:20]]
+            logger.info(f"[person_gap] Using {len(skill_names)} skills from session cache")
     if not skill_block_lines:
         try:
             from reskillio.storage.bigquery_store import BigQuerySkillStore
@@ -145,7 +152,6 @@ def run_person_gap(
             if rows:
                 skill_names = [r["skill_name"] for r in rows[:20]]
                 skill_block_lines = [f"  - {r['skill_name']} (category: {r['category']}, confidence: {r['confidence']:.2f})" for r in rows[:20]]
-                logger.info(f"[person_gap] Using {len(skill_names)} skills from skill_extractions fallback")
         except Exception as exc:
             logger.warning(f"[person_gap] skill_extractions fallback failed: {exc}")
 

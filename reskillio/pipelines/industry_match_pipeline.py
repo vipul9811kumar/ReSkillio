@@ -156,13 +156,17 @@ def run_industry_match(
 
     logger.info(f"Industry match started for candidate='{candidate_id}'")
 
-    # Read candidate skills — try candidate_profiles, fall back to skill_extractions
+    # Read candidate skills — session cache first, then candidate_profiles, then skill_extractions
     skill_names_for_fallback: list[str] = []
-    try:
-        profile = profile_store.get_profile(candidate_id)
-        skill_names_for_fallback = [s.skill_name for s in profile.skills]
-    except Exception:
-        pass
+    from reskillio.storage.session_cache import get as _cache_get
+    skill_names_for_fallback = _cache_get(candidate_id)
+
+    if not skill_names_for_fallback:
+        try:
+            profile = profile_store.get_profile(candidate_id)
+            skill_names_for_fallback = [s.skill_name for s in profile.skills]
+        except Exception:
+            pass
 
     if not skill_names_for_fallback:
         try:

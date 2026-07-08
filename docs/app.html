@@ -2401,6 +2401,11 @@ async function startAnalysis() {
   startTimer();
   startProgressAnimation();
 
+  // Clear hardcoded placeholder content so stale data never shows as real results
+  const indList = document.getElementById('ind-list');
+  if (indList) indList.innerHTML = '<div style="opacity:0.4;font-size:0.85rem;padding:0.5rem 0">Scoring your industry fit…</div>';
+  document.getElementById('narrative-text').textContent = 'Generating your career narrative from your skill profile…';
+
   try {
     const res = await fetch(`${API_BASE}/analyze`, { method: 'POST', body: formData });
     if (!res.ok) {
@@ -2531,14 +2536,14 @@ function renderIndustry(data) {
   const match = data.industry_match;
   if (!match || !match.scores || match.scores.length === 0) return;
 
-  const maxScore = match.scores[0].match_score;
+  const maxScore = Math.max(...match.scores.map(s => s.match_score), 1);
   const list = document.getElementById('ind-list');
   list.innerHTML = '';
 
   match.scores.forEach((s, i) => {
     const pct = (s.match_score / maxScore) * 100;
-    const isStrong = s.match_score >= 99;
-    const isMid    = s.match_score >= 97 && !isStrong;
+    const isStrong = pct >= 75;
+    const isMid    = pct >= 45 && !isStrong;
     const barCls   = isStrong ? 'ibc-strong' : isMid ? 'ibc-mid' : 'ibc-low';
     const scoreCls = isStrong ? 'is-strong'  : isMid ? 'is-mid'  : 'is-low';
 
@@ -2827,7 +2832,7 @@ async function fetchPersonGap(data) {
   const industry = data.industry_match?.scores?.[0]?.industry_label || 'your field';
   const workValues = (t.work_values || []).join(',');
 
-  const topSkillsCsv = (data.top_skills || []).slice(0, 20).join(',');
+  const topSkillsCsv = (data.top_skills || []).map(s => s.name || s).slice(0, 20).join(',');
 
   const fd = new FormData();
   fd.append('candidate_id',       data.candidate_id);

@@ -48,13 +48,15 @@ async def search_opportunities(request: RadarRequest) -> RadarResponse:
         skill_names = [sk.skill_name for sk in (profile.skills or [])]
 
         # candidate_profiles may be empty (DML MERGE blocked in BQ Sandbox).
-        # Fall back to skill_extractions which is written via batch load job.
+        # Check session cache first (populated at /analyze time), then skill_extractions.
+        if not skill_names:
+            from reskillio.storage.session_cache import get as _cache_get
+            skill_names = _cache_get(request.candidate_id)[:20]
         if not skill_names:
             try:
                 from reskillio.storage.bigquery_store import BigQuerySkillStore
                 rows = BigQuerySkillStore(project_id=s.gcp_project_id).get_skills_for_candidate(request.candidate_id)
                 skill_names = [r["skill_name"] for r in rows[:20]]
-                logger.info(f"[radar] Using {len(skill_names)} skills from skill_extractions fallback")
             except Exception as exc:
                 logger.warning(f"[radar] skill_extractions fallback failed: {exc}")
 

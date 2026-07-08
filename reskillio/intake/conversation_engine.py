@@ -225,7 +225,7 @@ class IntakeConversationEngine:
     def __init__(self, project_id: str, region: str = "us-central1"):
         self.project_id = project_id
         self.region = region
-        _apply_credentials()
+        # Credentials already bootstrapped at startup by config/gcp_auth.py
 
     def start_session(self, candidate_id: str) -> tuple[str, str, list[str]]:
         """Create a new session and return (session_id, opening_message, suggestions)."""

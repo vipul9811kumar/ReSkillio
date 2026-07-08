@@ -15,9 +15,10 @@ import warnings
 
 from loguru import logger
 
-_GROQ_MODEL   = "llama-3.3-70b-versatile"
-_VERTEX_MODEL = "gemini-2.5-flash"
-_STUDIO_MODEL = "gemini-2.0-flash"
+_GROQ_MODEL      = "llama-3.3-70b-versatile"
+_GROQ_MODEL_FAST = "llama-3.1-8b-instant"   # 500K TPD — fallback when 70B hits daily cap
+_VERTEX_MODEL    = "gemini-2.5-flash"
+_STUDIO_MODEL    = "gemini-2.0-flash"
 
 
 def _groq_key() -> str:
@@ -51,6 +52,7 @@ def _call_groq(
     system_instruction: str,
     temperature: float,
     max_tokens: int,
+    model: str = _GROQ_MODEL,
 ) -> str:
     from groq import Groq
     client = Groq(api_key=_groq_key())
@@ -59,7 +61,7 @@ def _call_groq(
         messages.append({"role": "system", "content": system_instruction})
     messages.append({"role": "user", "content": prompt})
     completion = client.chat.completions.create(
-        model=_GROQ_MODEL,
+        model=model,
         messages=messages,
         temperature=temperature,
         max_tokens=max_tokens,
@@ -91,7 +93,18 @@ def call_gemini(
             logger.debug(f"[llm] Groq {_GROQ_MODEL} OK ({len(result)} chars)")
             return result
         except Exception as exc:
-            logger.warning(f"[llm] Groq failed ({type(exc).__name__}: {exc}) — trying Gemini")
+            exc_str = str(exc)
+            # TPD = tokens per day limit on the 70B model — retry with 8B (500K TPD)
+            if "tokens per day" in exc_str or ("rate_limit_exceeded" in exc_str and "TPD" in exc_str):
+                logger.warning(f"[llm] Groq 70B daily cap hit — retrying with {_GROQ_MODEL_FAST}")
+                try:
+                    result = _call_groq(prompt, system_instruction, temperature, max_tokens, model=_GROQ_MODEL_FAST)
+                    logger.debug(f"[llm] Groq {_GROQ_MODEL_FAST} OK ({len(result)} chars)")
+                    return result
+                except Exception as exc2:
+                    logger.warning(f"[llm] Groq 8B also failed ({type(exc2).__name__}: {exc2}) — trying Gemini")
+            else:
+                logger.warning(f"[llm] Groq failed ({type(exc).__name__}: {exc}) — trying Gemini")
 
     # 2. Google Gemini (AI Studio or Vertex)
     warnings.filterwarnings("ignore", category=UserWarning, module="vertexai")

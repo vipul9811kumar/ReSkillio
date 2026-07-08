@@ -263,12 +263,20 @@ def run_full_analysis(
     try:
         from reskillio.pipelines.narrative_pipeline import run_narrative_pipeline
 
+        # Re-use Stage 3 industry to avoid a duplicate Groq call for auto-detection.
+        narrative_industry = industry_enum
+        if narrative_industry is None and industry_match and industry_match.top_industry:
+            try:
+                narrative_industry = Industry(industry_match.top_industry)
+            except ValueError:
+                pass
+
         narrative_result: NarrativeResult = run_narrative_pipeline(
             candidate_id=candidate_id,
             target_role=target_role,
             project_id=project_id,
             region=region,
-            industry=industry_enum,
+            industry=narrative_industry,
         )
         narrative_text      = narrative_result.narrative
         narrative_grounding = narrative_result.grounding

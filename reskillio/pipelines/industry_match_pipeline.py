@@ -123,24 +123,25 @@ Include all 8 industries. Higher score = stronger match."""
                 data = json.loads(m.group(0))
             except json.JSONDecodeError:
                 pass
-    # Hard fallback: assign rough scores from keyword matching if Groq returned garbage
+    # Hard fallback: keyword-based scoring if Groq response is unparseable
     if data is None or not data.get("scores"):
         logger.warning("[industry-match] Groq response unparseable — using keyword fallback")
         skill_str_lower = skills_str.lower()
+        # Keys MUST match _INDUSTRY_LABELS exactly
         keyword_map = {
-            "data_ai":        ["python", "machine learning", "tensorflow", "pytorch", "nlp", "data science", "ai", "ml", "scikit"],
-            "cloud_devops":   ["aws", "azure", "gcp", "kubernetes", "docker", "terraform", "devops", "ci/cd", "jenkins"],
-            "fintech":        ["financial", "banking", "payments", "trading", "risk", "compliance", "fintech"],
-            "healthcare":     ["clinical", "ehr", "healthcare", "medical", "hospital", "pharma"],
-            "ecommerce":      ["e-commerce", "retail", "shopify", "marketplace", "logistics"],
-            "operations":     ["operations", "supply chain", "procurement", "logistics", "lean", "six sigma"],
-            "cyber_security": ["security", "soc", "penetration", "firewall", "siem", "vulnerability"],
-            "media_content":  ["content", "marketing", "seo", "social media", "creative", "design"],
+            "data_ai":              ["python", "machine learning", "tensorflow", "pytorch", "nlp", "data science", "ai", "ml", "scikit", "llm"],
+            "software_engineering": ["software", "backend", "frontend", "react", "java", "go", "rust", "typescript", "api", "microservices"],
+            "cloud_devops":         ["aws", "azure", "gcp", "kubernetes", "docker", "terraform", "devops", "ci/cd", "jenkins", "ansible"],
+            "fintech":              ["financial", "banking", "payments", "trading", "risk", "compliance", "fintech", "bloomberg"],
+            "healthtech":           ["clinical", "ehr", "healthcare", "medical", "hospital", "pharma", "fhir", "dicom"],
+            "ecommerce":            ["e-commerce", "retail", "shopify", "marketplace", "logistics", "supply chain"],
+            "cybersecurity":        ["security", "soc", "penetration", "firewall", "siem", "vulnerability", "nist", "owasp"],
+            "product_management":   ["product", "roadmap", "stakeholder", "agile", "scrum", "okr", "user research"],
         }
         fallback_scores = []
         for ind_key, keywords in keyword_map.items():
             hits = sum(1 for kw in keywords if kw in skill_str_lower)
-            score = min(85, hits * 15 + 10)
+            score = min(90.0, hits * 12.0 + 10.0)
             fallback_scores.append({"industry": ind_key, "score": score})
         data = {"scores": fallback_scores}
 
@@ -150,8 +151,9 @@ Include all 8 industries. Higher score = stronger match."""
             rank=i + 1,
             industry=row["industry"],
             industry_label=_INDUSTRY_LABELS.get(row["industry"], row["industry"]),
-            match_score=float(row.get("score", 0)),
-            cosine_distance=round(1.0 - float(row.get("score", 0)) / 100.0, 6),
+            # Clamp to 0-100 to satisfy Pydantic Field(ge=0, le=100)
+            match_score=min(100.0, max(0.0, float(row.get("score", 0)))),
+            cosine_distance=round(1.0 - min(100.0, max(0.0, float(row.get("score", 0)))) / 100.0, 6),
         )
         for i, row in enumerate(scored)
         if row.get("industry") in _INDUSTRY_LABELS
@@ -178,57 +180,54 @@ def run_industry_match(
 ) -> IndustryMatchResult:
     """
     Score a candidate against all 8 industries.
-    Primary path: BQ embedding centroid + ML.DISTANCE against industry vectors.
-    Fallback: Groq LLM scoring from skill list (no BQ dependencies).
-    """
-    profile_store   = CandidateProfileStore(project_id=project_id)
-    embedding_store = EmbeddingStore(project_id=project_id)
-    industry_store  = IndustryVectorStore(project_id=project_id)
-    embedder        = VertexEmbedder(project_id=project_id, region=region)
+    Primary path: session cache → Groq LLM scoring (fast, no BQ dependencies).
+    BQ embedding path is the fallback only when cache is empty.
 
+    NOTE: VertexEmbedder (AIStudioEmbedder) is NOT constructed at startup because
+    its __init__ raises RuntimeError when GEMINI_API_KEY is absent.  It is only
+    created inside the BQ try-block where it is actually needed.
+    """
     logger.info(f"Industry match started for candidate='{candidate_id}'")
 
-    # Read candidate skills — session cache first (fast path), then BQ fallbacks
-    skill_names_for_fallback: list[str] = []
+    # ── 1. Session cache (populated by Stage 1 of analyze pipeline) ──────────
     from reskillio.storage.session_cache import get as _cache_get
-    skill_names_for_fallback = _cache_get(candidate_id)
+    skill_names = _cache_get(candidate_id)
 
-    # If session cache has skills, skip BQ path entirely — BQ Sandbox DML is blocked
-    # and the candidate vector would fail anyway. Go straight to Groq scoring.
-    if skill_names_for_fallback:
+    if skill_names:
         logger.info(
-            f"[industry-match] Session cache hit ({len(skill_names_for_fallback)} skills) "
-            "— using Groq scoring directly"
+            f"[industry-match] Cache hit ({len(skill_names)} skills) — Groq scoring"
         )
-        return _groq_industry_match(candidate_id, skill_names_for_fallback, project_id, region)
+        return _groq_industry_match(candidate_id, skill_names, project_id, region)
 
-    if not skill_names_for_fallback:
-        try:
-            profile = profile_store.get_profile(candidate_id)
-            skill_names_for_fallback = [s.skill_name for s in profile.skills]
-        except Exception:
-            pass
+    # ── 2. BQ candidate_profiles → skill_extractions fallbacks ───────────────
+    profile_store = CandidateProfileStore(project_id=project_id)
+    try:
+        profile = profile_store.get_profile(candidate_id)
+        skill_names = [s.skill_name for s in profile.skills]
+    except Exception:
+        pass
 
-    if not skill_names_for_fallback:
+    if not skill_names:
         try:
             from reskillio.storage.bigquery_store import BigQuerySkillStore
             rows = BigQuerySkillStore(project_id=project_id).get_skills_for_candidate(candidate_id)
-            skill_names_for_fallback = [r["skill_name"] for r in rows]
+            skill_names = [r["skill_name"] for r in rows]
         except Exception:
             pass
 
+    # ── 3. BQ embedding centroid path (requires GEMINI_API_KEY + seeded vectors) ─
     try:
-        # 1. Build candidate centroid vector (needs candidate_profiles)
+        # VertexEmbedder raises if GEMINI_API_KEY is absent — keep inside try block
+        embedder        = VertexEmbedder(project_id=project_id, region=region)
+        embedding_store = EmbeddingStore(project_id=project_id)
+        industry_store  = IndustryVectorStore(project_id=project_id)
+
         candidate_vec = _build_candidate_vector(
             candidate_id, profile_store, embedding_store, embedder
         )
-
-        # 2. BQML cosine scoring against pre-built industry vectors
-        logger.info("Running ML.DISTANCE against industry_vectors...")
         scored_rows = industry_store.score_candidate(candidate_vec)
-
         if not scored_rows:
-            raise RuntimeError("No industry vectors found — falling back to Groq scoring")
+            raise RuntimeError("No industry vectors found")
 
         logger.info("Industry match scores (BQ):")
         for row in scored_rows:
@@ -240,7 +239,7 @@ def run_industry_match(
         return IndustryMatchResult.from_bq_rows(candidate_id, scored_rows)
 
     except Exception as exc:
-        logger.warning(f"[industry-match] BQ path failed ({exc}) — using Groq fallback")
-        if not skill_names_for_fallback:
+        logger.warning(f"[industry-match] BQ path failed ({exc}) — Groq fallback")
+        if not skill_names:
             raise RuntimeError("No skills available for industry match") from exc
-        return _groq_industry_match(candidate_id, skill_names_for_fallback, project_id, region)
+        return _groq_industry_match(candidate_id, skill_names, project_id, region)

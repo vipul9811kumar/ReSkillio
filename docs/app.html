@@ -1941,9 +1941,7 @@ nav.nav-open .nav-mobile-panel { display: block; }
         </div>
       </div>
 
-      <div class="roles-callout" id="roles-callout">
-        <strong>Top suggested roles for you:</strong> Operations Analyst &middot; Supply Chain Data Analyst &middot; Logistics Technology Consultant &middot; Vendor Operations Manager &middot; Process Improvement Specialist
-      </div>
+      <div class="roles-callout" id="roles-callout"></div>
 
       <p style="font-size:12px;color:var(--gray-400);line-height:1.6">A low score is not a failure &mdash; it is guidance on where <em>not</em> to spend energy. Focus your search on the top 2 industries where your existing skills are already most valuable.</p>
 
@@ -2401,9 +2399,11 @@ async function startAnalysis() {
   startTimer();
   startProgressAnimation();
 
-  // Clear hardcoded placeholder content so stale data never shows as real results
+  // Clear stale content so old results never bleed into a fresh analysis
   const indList = document.getElementById('ind-list');
   if (indList) indList.innerHTML = '<div style="opacity:0.4;font-size:0.85rem;padding:0.5rem 0">Scoring your industry fit…</div>';
+  const rolesCallout = document.getElementById('roles-callout');
+  if (rolesCallout) rolesCallout.innerHTML = '';
   document.getElementById('narrative-text').textContent = 'Generating your career narrative from your skill profile…';
 
   try {
@@ -2556,11 +2556,25 @@ function renderIndustry(data) {
       </div>`;
   });
 
-  // Suggested roles from grounding data
+  // Suggested roles — from BQ narrative grounding, or industry-aware fallback
   const titles = data.narrative_grounding?.sample_jd_titles || [];
-  if (titles.length) {
-    document.getElementById('roles-callout').innerHTML =
-      `<strong>Top suggested roles for you:</strong> ${titles.join(' &middot; ')}`;
+  const topIndustryLabel = match.scores[0]?.industry_label || '';
+  const _INDUSTRY_ROLES = {
+    'Data & AI':              ['AI/ML Engineer', 'Data Scientist', 'ML Platform Engineer', 'LLM Engineer', 'Data Engineer'],
+    'Software Engineering':   ['Senior Software Engineer', 'Backend Engineer', 'Full-Stack Engineer', 'Tech Lead', 'Principal Engineer'],
+    'Cloud & DevOps':         ['Platform Engineer', 'Site Reliability Engineer', 'DevOps Architect', 'Cloud Solutions Architect', 'Infrastructure Engineer'],
+    'Financial Technology':   ['FinTech Engineer', 'Quant Developer', 'Risk Technology Analyst', 'Payments Engineer', 'Compliance Tech Lead'],
+    'Health Technology':      ['Clinical Data Engineer', 'Health Informatics Specialist', 'Digital Health Product Lead', 'Healthcare AI Engineer', 'EHR Systems Architect'],
+    'E-Commerce & Retail Tech': ['E-Commerce Engineer', 'Growth Engineer', 'Marketplace Platform Lead', 'Commerce Data Analyst', 'Retail Technology Architect'],
+    'Cybersecurity':          ['Security Engineer', 'Cloud Security Architect', 'Penetration Tester', 'SOC Analyst', 'AppSec Engineer'],
+    'Product Management':     ['Senior Product Manager', 'Principal PM', 'Group Product Manager', 'Product Strategist', 'Head of Product'],
+  };
+  const roleList = titles.length ? titles : (_INDUSTRY_ROLES[topIndustryLabel] || []);
+  const callout = document.getElementById('roles-callout');
+  if (callout && roleList.length) {
+    callout.innerHTML = `<strong>Top suggested roles for you:</strong> ${roleList.join(' &middot; ')}`;
+  } else if (callout) {
+    callout.innerHTML = '';
   }
 }
 
